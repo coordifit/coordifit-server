@@ -1,0 +1,134 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.miracle.coordifit.auth.repository.UserRepository">
+
+    <insert id="insertUser" parameterType="com.miracle.coordifit.auth.model.User">
+        INSERT INTO users (
+            user_id, email, password, nickname, file_id,
+            login_type_code, kakao_id, gender_code, birth_date, is_active,
+            created_at, created_by, logined_at
+        ) VALUES (
+            #{userId}, #{email}, #{password}, #{nickname}, #{fileId},
+            #{loginTypeCode}, #{kakaoId}, #{genderCode}, #{birthDate}, #{isActive},
+            CURRENT_TIMESTAMP, #{createdBy}, #{loginedAt}
+        )
+    </insert>
+
+    <select id="selectUserByEmail" parameterType="string" resultType="com.miracle.coordifit.auth.model.User">
+        SELECT 
+            user_id             AS userId,
+            email,
+            password,
+            nickname,
+            file_id             AS fileId,
+
+            login_type_code     AS loginTypeCode,
+            kakao_id            AS kakaoId,
+            gender_code         AS genderCode,
+            birth_date          AS birthDate,
+            is_active           AS isActive,
+
+            created_at          AS createdAt,
+            created_by          AS createdBy,
+            updated_at          AS updatedAt,
+            updated_by          AS updatedBy,
+            logined_at          AS loginedAt
+        FROM users 
+        WHERE email = #{email} 
+        AND is_active = 'Y'
+    </select>
+
+    <select id="selectUserByUserId" parameterType="string" resultType="com.miracle.coordifit.auth.model.User">
+        SELECT 
+            user_id             AS userId,
+            email,
+            password,
+            nickname,
+            file_id             AS fileId,
+
+            login_type_code     AS loginTypeCode,
+            kakao_id            AS kakaoId,
+            gender_code         AS genderCode,
+            birth_date          AS birthDate,
+            is_active           AS isActive,
+
+            created_at          AS createdAt,
+            created_by          AS createdBy,
+            updated_at          AS updatedAt,
+            updated_by          AS updatedBy,
+            logined_at          AS loginedAt
+        FROM users 
+        WHERE user_id = #{userId} 
+        AND is_active = 'Y'
+    </select>
+
+    <select id="selectUserByNickname" parameterType="string" resultType="com.miracle.coordifit.auth.model.User">
+        SELECT 
+            user_id             AS userId,
+            email,
+            password,
+            nickname,
+            file_id             AS fileId,
+
+            login_type_code     AS loginTypeCode,
+            kakao_id            AS kakaoId,
+            gender_code         AS genderCode,
+            birth_date          AS birthDate,
+            is_active           AS isActive,
+
+            created_at          AS createdAt,
+            created_by          AS createdBy,
+            updated_at          AS updatedAt,
+            updated_by          AS updatedBy,
+            logined_at          AS loginedAt
+        FROM users 
+        WHERE nickname = #{nickname} 
+        AND is_active = 'Y'
+    </select>
+
+    <select id="countByEmail" parameterType="string" resultType="int">
+        SELECT COUNT(*)
+        FROM users 
+        WHERE email = #{email} 
+        AND is_active = 'Y'
+    </select>
+
+    <select id="countByNickname" parameterType="string" resultType="int">
+        SELECT COUNT(*)
+        FROM users 
+        WHERE nickname = #{nickname} 
+        AND is_active = 'Y'
+    </select>
+
+    <select id="getNextUserSequence" resultType="int">
+        SELECT NVL(MAX(TO_NUMBER(SUBSTR(user_id, 2))), 0) + 1 AS NEXT_SEQ
+        FROM users
+    </select>
+
+    <update id="updateUser" parameterType="com.miracle.coordifit.auth.model.User">
+        UPDATE users 
+        SET email = #{email},
+            password = #{password},
+            nickname = #{nickname},
+            file_id = #{fileId},
+            login_type_code = #{loginTypeCode},
+
+            kakao_id = #{kakaoId},
+            gender_code = #{genderCode},
+            birth_date = #{birthDate},
+            is_active = #{isActive},
+            updated_at = CURRENT_TIMESTAMP,
+
+            updated_by = #{updatedBy}
+        WHERE user_id = #{userId}
+    </update>
+
+    <update id="updateLastLoginTime" parameterType="string">
+        UPDATE users 
+        SET logined_at = CURRENT_TIMESTAMP
+        WHERE user_id = #{userId}
+        AND is_active = 'Y'
+    </update>
+
+</mapper>
