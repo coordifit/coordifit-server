@@ -13,10 +13,13 @@ public class WebConfig {
             @Override
             public void addCorsMappings(CorsRegistry registry) {
                 registry.addMapping("/api/**")
-                        .allowedOrigins("http://localhost:5173")
+                        .allowedOriginPatterns("*") // 개발 중에는 모든 오리진 허용
                         .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS")
                         .allowedHeaders("*")
                         .allowCredentials(true);
+                
+                // TODO: 프로덕션 환경에서는 특정 도메인만 허용하도록 변경
+                // .allowedOrigins("http://localhost:5173", "https://your-domain.com")
             }
         };
     }
