@@ -54,7 +54,7 @@ jobs:
           push: true
           tags: |
             ${{ secrets.DOCKERHUB_USERNAME }}/coordifit-spring:dev-latest
-            ${{ secrets.DOCKERHUB_USERNAME }}/coordifit:${{ steps.meta.outputs.SHA_TAG }}
+            ${{ secrets.DOCKERHUB_USERNAME }}/coordifit-spring:${{ steps.meta.outputs.SHA_TAG }}
 
   deploy_to_ec2:
     needs: build_and_push
