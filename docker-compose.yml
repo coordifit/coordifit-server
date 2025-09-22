@@ -9,7 +9,7 @@ volumes:
 
 services:
   oracle-db:
-    image: gvenzl/oracle-free:slim
+    image: gvenzl/oracle-free
     container_name: oracle-db
     networks:
       - app_network
@@ -26,7 +26,7 @@ services:
       test:
         [
           "CMD-SHELL",
-          "echo 'select 1 from dual;' | sqlplus -s system/${ORACLE_PASSWORD}@localhost:1521/${ORACLE_DATABASE} || exit 1",
+          "echo 'select 1 from dual;' | sqlplus -L -s system/${ORACLE_PASSWORD}@localhost:1521/${ORACLE_DATABASE} || exit 1",
         ]
       interval: 20s
       timeout: 10s
@@ -54,8 +54,9 @@ services:
     env_file:
       - .env
     depends_on:
-      oracle-db:
-        condition: service_healthy
+      - spring-boot
+      # oracle-db:
+      #   condition: service_healthy
     ports:
       - "80:80"
       - "443:443"
@@ -78,3 +79,14 @@ services:
                certbot renew --webroot --webroot-path=/var/www/certbot --quiet;
                sleep 12h & wait $${!};
              done"
+  yolo-service:
+    build: ./yolo
+    container_name: yolo
+    networks:
+      - app_network
+    # ports:
+    #   - "8000:8000"     # 외부에서 직접 확인 필요할 때만 사용
+    environment:
+      UVICORN_WORKERS: "1"
+      MODEL_NAME: "yolov8n-stub"
+    restart: unless-stopped
