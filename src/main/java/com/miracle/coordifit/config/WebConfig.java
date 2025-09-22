@@ -7,19 +7,19 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
 @Configuration
 public class WebConfig implements WebMvcConfigurer {
-
-    @Value("${app.cors.allowed-origins:}") // 콤마로 구분
+    @Value("${app.cors.allowed-origins:}")
     private String allowedOriginCsv;
 
     @Override
     public void addCorsMappings(CorsRegistry registry) {
         String[] origins = org.springframework.util.StringUtils.hasText(allowedOriginCsv)
                 ? org.springframework.util.StringUtils.commaDelimitedListToStringArray(allowedOriginCsv)
-                : new String[0]; // 비어 있으면 전부 거부
+                : new String[0];
 
-        registry.addMapping("/**")                 // 필요 시 "/api/**"로 좁히기
-                .allowedOrigins(origins)           // 정확 매칭만 허용
-                .allowedMethods("*")               // 필요 메서드로 좁히면 더 안전
+        // registry.addMapping("/api/**") prod
+        registry.addMapping("/**")
+                .allowedOrigins(origins)
+                .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS")
                 .allowedHeaders("*")
                 .allowCredentials(true)
                 .maxAge(3600);
