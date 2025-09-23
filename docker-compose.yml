@@ -19,7 +19,7 @@ services:
       - .env
     shm_size: "2g"
     environment:
-      ORACLE_DATABASE: ${ORACLE_DATABASE:-FREE}
+      ORACLE_DATABASE: ${ORACLE_DATABASE:-FREEPDB1}
       ORACLE_PASSWORD: ${ORACLE_PASSWORD:-miracle}
       ORACLE_CHARACTERSET: ${ORACLE_CHARACTERSET:-AL32UTF8}
     healthcheck:
