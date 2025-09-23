@@ -1,0 +1,30 @@
+# Git 관련
+.git
+.gitignore
+.gitattributes
+
+# Gradle 캐시/빌드 아웃풋
+.gradle
+build/
+
+# IDE 환경 설정
+*.iml
+.idea/
+.vscode/
+
+# OS / 임시파일
+*.log
+*.tmp
+*.swp
+.DS_Store
+
+# 테스트 코드 제외 (배포용 이미지면)
+src/test/
+
+# 환경변수 / 민감한 파일
+.env
+.env.*
+
+# 문서 / 기타 불필요한 파일
+HELP.md
+README.md
