@@ -5,7 +5,7 @@ COPY gradlew gradlew
 COPY gradle gradle
 COPY build.gradle* settings.gradle* ./
 RUN chmod +x gradlew
-RUN ./gradlew dependencies
+RUN ./gradlew dependencies --no-daemon --stacktrace
 
 COPY src src
 RUN ./gradlew clean bootJar -x test --no-daemon -Dorg.gradle.vfs.watch=false --stacktrace --info
