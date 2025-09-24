@@ -9,8 +9,7 @@ import java.time.LocalDateTime;
 @AllArgsConstructor
 @ToString(exclude = "password") // 비밀번호는 로그에서 제외
 @Builder
-public class User {
-    
+public class User {    
     private String userId;              // U + 6자리 (U000001, U000002...)
     private String email;               // 이메일 로그인용, 소셜 로그인 시 NULL 허용
     private String password;            // BCrypt 암호화된 비밀번호, 소셜 로그인 시 NULL

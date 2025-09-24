@@ -3,15 +3,11 @@ package com.miracle.coordifit.auth.model;
 import lombok.*;
 import java.time.LocalDateTime;
 
-/**
- * 이메일 인증 엔티티 (임시 테이블, 메모리나 Redis 사용 가능)
- */
 @Getter
 @Setter
 @NoArgsConstructor
 @ToString
-public class EmailVerification {
-    
+public class EmailVerification {    
     private String email;               // 인증할 이메일
     private String verificationCode;    // 인증 코드
     private LocalDateTime createdAt;    // 생성 시간
