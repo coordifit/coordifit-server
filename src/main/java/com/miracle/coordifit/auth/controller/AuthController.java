@@ -80,12 +80,11 @@ public class AuthController {
                 return ResponseEntity.badRequest()
                         .body(ApiResponseDto.error("이미 사용 중인 이메일입니다."));
             }
+            String verificationCode = emailService.sendVerificationCode(requestDto.getEmail());
             
-            boolean sent = emailService.sendVerificationCode(requestDto.getEmail());
-            
-            if (sent) {
+            if (verificationCode != null) {
                 return ResponseEntity.ok()
-                        .body(ApiResponseDto.success("인증 코드가 발송되었습니다."));
+                        .body(ApiResponseDto.success("인증 코드가 발송되었습니다.", verificationCode));
             } else {
                 return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                         .body(ApiResponseDto.error("인증 코드 발송에 실패했습니다."));

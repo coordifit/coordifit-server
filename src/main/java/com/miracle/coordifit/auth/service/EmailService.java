@@ -22,7 +22,7 @@ public class EmailService implements IEmailService {
     private final Map<String, EmailVerification> verificationStore = new ConcurrentHashMap<>();
     
     @Override
-    public boolean sendVerificationCode(String email) {
+    public String sendVerificationCode(String email) {
         try {
             // 1. 인증 코드 생성
             String verificationCode = generateVerificationCode();
@@ -40,11 +40,11 @@ public class EmailService implements IEmailService {
             mailSender.send(message);
             
             log.info("인증 코드 발송 완료: {}", email);
-            return true;
+            return verificationCode;
             
         } catch (Exception e) {
             log.error("인증 코드 발송 실패: {}", email, e);
-            return false;
+            return null;
         }
     }
     
