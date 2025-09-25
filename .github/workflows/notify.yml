@@ -48,7 +48,7 @@ jobs:
       - name: Debug workflow_run payload
         run: echo '${{ toJson(github.event.workflow_run) }}'
 
-      # 실제 Discord 알림
+      # Discord 알림 전송
       - if: ${{ github.event.workflow_run.conclusion == 'success' }}
         env:
           DATA: >
@@ -58,15 +58,17 @@ jobs:
                 {
                   "title": "✅ backend-deploy 성공",
                   "description": "job: **build_and_push** 완료\nworkflow: ${{ github.event.workflow_run.name }}",
-                  "url": ${{ github.event.workflow_run.html_url }},
+                  "url": ${{ toJson(github.event.workflow_run.html_url) }},
                   "color": 5763719
                 }
               ]
             }
-        run: >
-          curl -X POST -H 'Content-type:application/json'
-          -d "$DATA"
-          ${{ secrets.DISCORD_WEBHOOK_URL }}
+        run: |
+          echo "=== Sending to Discord ==="
+          echo "$DATA"
+          curl -X POST -H 'Content-type:application/json' \
+            -d "$DATA" \
+            ${{ secrets.DISCORD_WEBHOOK_URL }}
   notify-build-failure:
     if: ${{ github.event_name == 'workflow_run' }}
     runs-on: ubuntu-latest
@@ -83,13 +85,15 @@ jobs:
               "embeds": [
                 {
                   "title": "❌ backend-deploy 실패",
-                  "description": "workflow: ${{ github.event.workflow_run.name }}\n결과: ${{ github.event.workflow_run.conclusion }}",
-                  "url": ${{ github.event.workflow_run.html_url }},
+                  "description": "workflow: ${{ github.event.workflow_run.name }}\n결과: **${{ github.event.workflow_run.conclusion }}**",
+                  "url": ${{ toJson(github.event.workflow_run.html_url) }},
                   "color": 15548997
                 }
               ]
             }
-        run: >
-          curl -X POST -H 'Content-type:application/json'
-          -d "$DATA"
-          ${{ secrets.DISCORD_WEBHOOK_URL }}
+        run: |
+          echo "=== Sending Failure Alert to Discord ==="
+          echo "$DATA"
+          curl -X POST -H 'Content-type:application/json' \
+            -d "$DATA" \
+            ${{ secrets.DISCORD_WEBHOOK_URL }}
