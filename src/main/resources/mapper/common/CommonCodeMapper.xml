@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.miracle.coordifit.common.repository.CommonCodeRepository">
+
+    <select id="selectLastCodeIdByHeader" resultType="String">        
+        SELECT code_id FROM (            
+            SELECT code_id 
+            FROM common_codes
+            WHERE code_id LIKE #{header}
+            ORDER BY code_id DESC 
+        ) WHERE ROWNUM = 1
+    </select>    
+    
+    <select id="selectLastCodeId" resultType="String">        
+        SELECT code_id FROM (            
+            SELECT code_id 
+            FROM common_codes
+            ORDER BY code_id DESC 
+        ) WHERE ROWNUM = 1
+    </select>
+    
+    <insert id="insertCommonCode" parameterType="com.miracle.coordifit.common.model.CommonCode">
+        INSERT INTO common_codes (
+            code_id, code_name, parent_code_id, is_active, created_by, 
+            created_at
+        ) VALUES (
+            #{codeId}, #{codeName}, #{parentCodeId}, #{isActive}, #{createdBy}, 
+            CURRENT_TIMESTAMP
+        )
+    </insert>
+    
+    <update id="updateCommonCode" parameterType="com.miracle.coordifit.common.model.CommonCode">
+        UPDATE common_codes 
+        SET code_name = #{codeName},
+            is_active = #{isActive},
+            updated_at = CURRENT_TIMESTAMP,
+            updated_by = #{updatedBy}
+        WHERE code_id = #{codeId}
+    </update>
+    
+    <delete id="deleteCommonCode" parameterType="string">
+        DELETE FROM common_codes 
+        WHERE code_id = #{codeId}
+    </delete>
+    
+    <select id="selectCommonCodes" resultType="com.miracle.coordifit.common.model.CommonCode">
+        SELECT 
+            code_id, 
+            code_name, 
+            parent_code_id, 
+            is_active,
+            LEVEL
+        FROM common_codes
+        START WITH parent_code_id IS NULL
+        CONNECT BY PRIOR code_id = parent_code_id
+        ORDER SIBLINGS BY code_id
+    </select>
+</mapper>
