@@ -1,4 +1,4 @@
-package com.miracle.coordifit.s3;
+package com.miracle.coordifit.common.service;
 
 import java.io.IOException;
 import java.util.UUID;
@@ -14,26 +14,29 @@ import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 
 @Service
 @RequiredArgsConstructor
-public class S3Service {
-    private final S3Client s3;
+public class S3Service implements IS3Service {
+    private final S3Client s3Client;
+
     @Value("${aws.s3.bucket}")
 	private String bucket;
+
     @Value("${aws.s3.region}")
 	private String region;
     
+    @Override
 	public String uploadFile(MultipartFile file) throws IOException {
 		String key = UUID.randomUUID() + "_" + file.getOriginalFilename();
 		
-        s3.putObject(
-    		PutObjectRequest.builder()
+        PutObjectRequest putObjectRequest = PutObjectRequest.builder()
                 .bucket(bucket)
                 .key(key)
                 .contentType(file.getContentType())
-                .build(),
-            RequestBody.fromBytes(file.getBytes())
-        );
+                .build();
+
+        s3Client.putObject(putObjectRequest, RequestBody.fromInputStream(file.getInputStream(), file.getSize()));
 
         return "https://" + bucket + ".s3." + region + ".amazonaws.com/" + key;
-	}
+	}    
+}
 
-};
+

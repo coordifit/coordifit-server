@@ -2,6 +2,7 @@ plugins {
 	id 'java'
 	id 'org.springframework.boot' version '3.5.5'
 	id 'io.spring.dependency-management' version '1.1.7'
+	id 'eclipse'
 }
 
 group = 'com.miracle'
@@ -41,7 +42,12 @@ dependencies {
 
 	// AWS
 	implementation platform("software.amazon.awssdk:bom:2.25.19")
-	implementation "software.amazon.awssdk:s3"
+	//implementation "software.amazon.awssdk:s3"
+	
+    // AWS S3 의존성 추가
+    implementation 'software.amazon.awssdk:s3:2.24.12'
+    implementation 'software.amazon.awssdk:sts:2.24.12'
+    
 
 	// Lombok
 	compileOnly 'org.projectlombok:lombok'
@@ -56,6 +62,7 @@ dependencies {
 	testImplementation 'me.paulschwarz:spring-dotenv:4.0.0'
 	testImplementation 'org.springframework.boot:spring-boot-starter-test'
 	testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+	
 }
 
 tasks.named('test') {
