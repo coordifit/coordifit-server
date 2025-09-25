@@ -41,7 +41,7 @@ jobs:
           ${{ secrets.DISCORD_WEBHOOK_URL }}
 
   notify-build-success:
-    if: github.event_name == 'workflow_run'
+    if: ${{ github.event_name == 'workflow_run' }}
     runs-on: ubuntu-latest
     steps:
       # Debug: 실제 이벤트 값 찍어보기
@@ -49,7 +49,7 @@ jobs:
         run: echo '${{ toJson(github.event.workflow_run) }}'
 
       # 실제 Discord 알림
-      - if: github.event.workflow_run.conclusion == 'success'
+      - if: ${{ github.event.workflow_run.conclusion == 'success' }}
         env:
           DATA: >
             {
@@ -67,12 +67,16 @@ jobs:
           curl -X POST -H 'Content-type:application/json'
           -d "$DATA"
           ${{ secrets.DISCORD_WEBHOOK_URL }}
-
   notify-build-failure:
-    if: github.event_name == 'workflow_run' && github.event.workflow_run.conclusion != 'success'
+    if: ${{ github.event_name == 'workflow_run' }}
     runs-on: ubuntu-latest
     steps:
-      - env:
+      # Debug: 실제 이벤트 값 찍어보기
+      - name: Debug workflow_run payload
+        run: echo '${{ toJson(github.event.workflow_run) }}'
+
+      - if: ${{ github.event.workflow_run.conclusion != 'success' }}
+        env:
           DATA: >
             {
               "username": "GitHub Actions",
