@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.miracle.coordifit.common.repository.FileRepository">
+    <insert id="insertFileInfo" parameterType="com.miracle.coordifit.common.model.FileInfo"
+            useGeneratedKeys="true" keyProperty="fileId" keyColumn="FILE_ID">
+        INSERT INTO file_info (
+            original_name, s3_key, s3_url, bucket_name, file_size, 
+            file_type, upload_by, upload_date
+        ) VALUES (
+            #{originalName}, #{s3Key}, #{s3Url}, #{bucketName}, #{fileSize}, 
+            #{fileType}, #{uploadBy}, CURRENT_TIMESTAMP
+        )
+    </insert>
+
+    <select id="selectFileInfoById" parameterType="Integer" resultType="com.miracle.coordifit.common.model.FileInfo">
+        SELECT 
+            file_id, original_name, s3_key, s3_url, bucket_name, 
+            file_size, file_type, upload_by, upload_date
+        FROM file_info 
+        WHERE file_id = #{fileId}
+    </select>
+
+    <select id="selectFileInfos" resultType="com.miracle.coordifit.common.model.FileInfo">
+        SELECT 
+            file_id, original_name, s3_key, s3_url, bucket_name, 
+            file_size, file_type, upload_by, upload_date
+        FROM file_info 
+        ORDER BY upload_date DESC
+    </select>
+</mapper>
