@@ -16,6 +16,22 @@ on:
     types: [closed]
 
 jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: "temurin"
+          java-version: "21"
+
+      - name: Gradle wrapper permission
+        run: chmod +x ./gradlew
+
+      - name: Run spotless & checkstyle
+        run: ./gradlew check
+
   build_and_push:
     if: github.event_name != 'pull_request' || github.event.pull_request.merged == true
     runs-on: ubuntu-latest

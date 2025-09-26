@@ -1,0 +1,17 @@
+#!/bin/sh
+# === Pre-commit Hook (Spotless-only for originally staged files) ===
+
+# 1. 현재 스테이징된 파일 목록을 백업
+STAGED=$(git diff --cached --name-only)
+
+echo "[HOOK] 🔧 Running Spotless Apply..."
+./gradlew spotlessApply --quiet || exit 1
+
+# 2. 원래 스테이징돼 있던 파일들만 다시 스테이징
+echo "[HOOK] 🔄 Re-staging only originally staged files..."
+echo "$STAGED" | xargs git add
+
+echo "[HOOK] 🔍 Running Spotless Check..."
+./gradlew spotlessCheck --quiet || exit 1
+
+echo "[HOOK] ✅ All checks passed. Commit continues."
