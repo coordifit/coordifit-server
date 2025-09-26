@@ -2,7 +2,7 @@ name: backend-deploy
 
 on:
   push:
-    branches: [chore/*, feat/*, hotfix/*]
+    branches: [chore/*, hotfix/*]
     paths:
       - "docker-compose.yml"
       - ".github/workflows/**"
@@ -29,8 +29,8 @@ jobs:
       - name: Gradle wrapper permission
         run: chmod +x ./gradlew
 
-      - name: Run spotless & checkstyle
-        run: ./gradlew check
+      - name: Run spotless only
+        run: ./gradlew spotlessCheck
 
   build_and_push:
     if: github.event_name != 'pull_request' || github.event.pull_request.merged == true

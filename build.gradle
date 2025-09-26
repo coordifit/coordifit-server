@@ -20,10 +20,6 @@ compileJava {
     dependsOn("updateGitHooks")
 }
 
-tasks.named("check") {
-    dependsOn("spotlessCheck")
-}
-
 spotless {
     java {
         eclipse().configFile("$rootDir/config/checkstyle/naver-eclipse-formatter.xml")
@@ -96,4 +92,5 @@ dependencies {
 
 tasks.named('test') {
 	useJUnitPlatform()
+    dependsOn("spotlessCheck")
 }
