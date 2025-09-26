@@ -20,21 +20,22 @@ import lombok.RequiredArgsConstructor;
 @RequestMapping("/api/images")
 @RequiredArgsConstructor
 public class ImageController {
-    private final ImageService imageService;
-    
-    @PostMapping
-    public ResponseEntity<String> uploadImage(@RequestParam("file") MultipartFile file) {
-        try {
-            imageService.uploadImage(file);
-            return ResponseEntity.ok("Image uploaded successfully");
-        } catch (IOException e) {
-            return ResponseEntity.internalServerError()
-                    .body("Image upload failed: " + e.getMessage());
-        }
-    }
-    
-    @GetMapping
-    public ResponseEntity<List<Image>> getAllImages() {
-        return ResponseEntity.ok(imageService.getAllImages());
-    }
+	private final ImageService imageService;
+
+	@PostMapping
+	public ResponseEntity<String> uploadImage(@RequestParam("file")
+	MultipartFile file) {
+		try {
+			imageService.uploadImage(file);
+			return ResponseEntity.ok("Image uploaded successfully");
+		} catch (IOException e) {
+			return ResponseEntity.internalServerError()
+				.body("Image upload failed: " + e.getMessage());
+		}
+	}
+
+	@GetMapping
+	public ResponseEntity<List<Image>> getAllImages() {
+		return ResponseEntity.ok(imageService.getAllImages());
+	}
 }
