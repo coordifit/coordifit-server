@@ -1,15 +1,9 @@
 package com.miracle.coordifit.clothes.model;
 
-import java.math.BigDecimal;
+import lombok.Data;
 import java.time.LocalDate;
 
-import lombok.*;
-
-@Getter
-@Setter
-@NoArgsConstructor
-@AllArgsConstructor
-@Builder
+@Data
 public class Clothes {
 	private String clothesId;
 	private String userId;
@@ -17,10 +11,13 @@ public class Clothes {
 	private String brand;
 	private String categoryCode;
 	private String clothesSize;
-	private BigDecimal price;
+	private Integer price;
 	private LocalDate purchaseDate;
 	private String purchaseUrl;
 	private String description;
+	private Integer wearCount;
+	private LocalDate lastWornDate;
 	private String isActive;
 	private String createdBy;
+	private String updatedBy;
 }
