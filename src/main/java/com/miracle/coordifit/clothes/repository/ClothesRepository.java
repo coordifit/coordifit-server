@@ -1,30 +1,45 @@
 package com.miracle.coordifit.clothes.repository;
 
-import com.miracle.coordifit.clothes.model.Clothes;
-import com.miracle.coordifit.clothes.model.ClothesImageLink;
-import com.miracle.coordifit.common.model.FileInfo;
+import java.util.List;
+
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 
-import java.util.List;
+import com.miracle.coordifit.clothes.model.Clothes;
+import com.miracle.coordifit.clothes.model.ClothesImageLink;
+import com.miracle.coordifit.common.model.FileInfo;
 
 @Mapper
 public interface ClothesRepository {
 
-    int insertClothes(Clothes clothes);
-    int updateClothes(Clothes clothes);
-    int deleteClothes(@Param("clothesId") String clothesId);
+	int insertClothes(Clothes clothes);
 
-    Clothes findById(@Param("clothesId") String clothesId);
-    List<Clothes> findAllByUser(@Param("userId") String userId);
+	int updateClothes(Clothes clothes);
 
-    int insertImageLink(ClothesImageLink link);
-    int deleteAllImageLinks(@Param("clothesId") String clothesId);
-    int deleteImageLink(@Param("clothesId") String clothesId, @Param("fileId") Long fileId);
+	int deleteClothes(@Param("clothesId")
+	String clothesId);
 
-    List<ClothesImageLink> findImageLinks(@Param("clothesId") String clothesId);
+	Clothes findById(@Param("clothesId")
+	String clothesId);
 
-    int countImageLinks(@Param("clothesId") String clothesId);
+	List<Clothes> findAllByUser(@Param("userId")
+	String userId);
 
-    List<FileInfo> findImageFiles(@Param("clothesId") String clothesId);
+	int insertImageLink(ClothesImageLink link);
+
+	int deleteAllImageLinks(@Param("clothesId")
+	String clothesId);
+
+	int deleteImageLink(@Param("clothesId")
+	String clothesId, @Param("fileId")
+	Long fileId);
+
+	List<ClothesImageLink> findImageLinks(@Param("clothesId")
+	String clothesId);
+
+	int countImageLinks(@Param("clothesId")
+	String clothesId);
+
+	List<FileInfo> findImageFiles(@Param("clothesId")
+	String clothesId);
 }

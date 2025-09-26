@@ -1,12 +1,21 @@
 // src/main/java/com/miracle/coordifit/clothes/controller/ClothesController.java
 package com.miracle.coordifit.clothes.controller;
 
+import java.util.*;
+import java.util.stream.Collectors;
+
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
+
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.miracle.coordifit.clothes.model.Clothes;
 import com.miracle.coordifit.clothes.service.IClothesService;
 import com.miracle.coordifit.common.model.CommonCode;
 import com.miracle.coordifit.common.model.FileInfo;
 import com.miracle.coordifit.common.service.ICommonCodeService;
+
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.ArraySchema;
@@ -14,13 +23,6 @@ import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.MediaType;
-import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
-import org.springframework.web.multipart.MultipartFile;
-
-import java.util.*;
-import java.util.stream.Collectors;
 
 @Tag(name = "Clothes", description = "옷 등록/수정/조회 API")
 @RestController

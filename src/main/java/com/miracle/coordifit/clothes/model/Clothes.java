@@ -1,7 +1,8 @@
 package com.miracle.coordifit.clothes.model;
 
-import lombok.Data;
 import java.time.LocalDate;
+
+import lombok.Data;
 
 @Data
 public class Clothes {
