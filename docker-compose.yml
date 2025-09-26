@@ -19,14 +19,14 @@ services:
       - .env
     shm_size: "2g"
     environment:
-      ORACLE_DATABASE: ${ORACLE_DATABASE:-FREEPDB1}
-      ORACLE_PASSWORD: ${ORACLE_PASSWORD:-miracle}
-      ORACLE_CHARACTERSET: ${ORACLE_CHARACTERSET:-AL32UTF8}
+      ORACLE_DATABASE: ${ORACLE_DATABASE}
+      ORACLE_PASSWORD: ${ORACLE_PASSWORD}
+      ORACLE_CHARACTERSET: ${ORACLE_CHARACTERSET}
     healthcheck:
       test:
         [
           "CMD-SHELL",
-          "echo 'select 1 from dual;' | sqlplus -L -s system/${ORACLE_PASSWORD}@localhost:1521/${ORACLE_DATABASE} || exit 1",
+          "echo 'select 1 from dual;' | sqlplus -L -s system/${ORACLE_PASSWORD}@oracle-db:1521/${ORACLE_DATABASE} || exit 1",
         ]
       interval: 20s
       timeout: 10s
@@ -53,10 +53,11 @@ services:
     container_name: nginx
     env_file:
       - .env
+    environment:
+      - SPRING_PROFILES_ACTIVE=prod
     depends_on:
       - spring-boot
-      # oracle-db:
-      #   condition: service_healthy
+
     ports:
       - "80:80"
       - "443:443"

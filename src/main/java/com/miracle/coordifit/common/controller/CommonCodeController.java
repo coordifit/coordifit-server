@@ -21,27 +21,31 @@ import lombok.RequiredArgsConstructor;
 @RequestMapping("api/common-codes")
 @RequiredArgsConstructor
 public class CommonCodeController {
-    private final CommonCodeService commonCodeService;
+	private final CommonCodeService commonCodeService;
 
-    @GetMapping
-    public Map<String, CommonCode> getCommonCodes() {
-        return commonCodeService.getCommonCodes();
-    }
+	@GetMapping
+	public Map<String, CommonCode> getCommonCodes() {
+		return commonCodeService.getCommonCodes();
+	}
 
-    @PostMapping
-    public CommonCode createCommonCode(@RequestBody CommonCode commonCode) {
-        return commonCodeService.createCommonCode(commonCode);
-    }
+	@PostMapping
+	public CommonCode createCommonCode(@RequestBody
+	CommonCode commonCode) {
+		return commonCodeService.createCommonCode(commonCode);
+	}
 
-    @PutMapping("/{codeId}")
-    public CommonCode updateCommonCode(@PathVariable("codeId") String codeId, @RequestBody CommonCode commonCode) {
-        commonCode.setCodeId(codeId);
-        return commonCodeService.updateCommonCode(commonCode);
-    }
+	@PutMapping("/{codeId}")
+	public CommonCode updateCommonCode(@PathVariable("codeId")
+	String codeId, @RequestBody
+	CommonCode commonCode) {
+		commonCode.setCodeId(codeId);
+		return commonCodeService.updateCommonCode(commonCode);
+	}
 
-    @DeleteMapping("/{codeId}")
-    public ResponseEntity<Void> deleteCommonCode(@PathVariable("codeId") String codeId) {
-        commonCodeService.deleteCommonCode(codeId);
-        return ResponseEntity.ok().build();
-    }
+	@DeleteMapping("/{codeId}")
+	public ResponseEntity<Void> deleteCommonCode(@PathVariable("codeId")
+	String codeId) {
+		commonCodeService.deleteCommonCode(codeId);
+		return ResponseEntity.ok().build();
+	}
 }

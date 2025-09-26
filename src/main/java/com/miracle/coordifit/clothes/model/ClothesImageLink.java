@@ -7,7 +7,7 @@ import lombok.*;
 @AllArgsConstructor
 @Builder
 public class ClothesImageLink {
-    private String clothesId;   
-    private Long fileId;     
-    private String createdBy;   
+	private String clothesId;
+	private Long fileId;
+	private String createdBy;
 }

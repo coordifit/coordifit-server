@@ -6,7 +6,7 @@ import org.springframework.context.annotation.Configuration;
 import lombok.Data;
 
 @Configuration
-@ConfigurationProperties(prefix="aws.s3")
+@ConfigurationProperties(prefix = "aws.s3")
 @Data
 public class AwsProperties {
 	private String bucket;

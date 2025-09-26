@@ -9,10 +9,16 @@ import com.miracle.coordifit.common.model.CommonCode;
 
 @Mapper
 public interface CommonCodeRepository {
-    String selectLastCodeId();
-    String selectLastCodeIdByHeader(@Param("header") String header);
-    List<CommonCode> selectCommonCodes();
-    int insertCommonCode(CommonCode commonCode);
-    int updateCommonCode(CommonCode commonCode);
-    int deleteCommonCode(String codeId);
+	String selectLastCodeId();
+
+	String selectLastCodeIdByHeader(@Param("header")
+	String header);
+
+	List<CommonCode> selectCommonCodes();
+
+	int insertCommonCode(CommonCode commonCode);
+
+	int updateCommonCode(CommonCode commonCode);
+
+	int deleteCommonCode(String codeId);
 }

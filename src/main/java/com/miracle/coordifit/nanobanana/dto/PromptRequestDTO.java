@@ -11,5 +11,5 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 public class PromptRequestDTO {
-    private String prompt;
+	private String prompt;
 }
