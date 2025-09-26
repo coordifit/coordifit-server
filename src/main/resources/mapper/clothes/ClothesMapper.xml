@@ -2,137 +2,137 @@
 <!DOCTYPE mapper
   PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
   "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
-<mapper namespace="com.miracle.coordifit.clothes.repository.ClothesMapper">
 
-  <!-- ===== Clothes INSERT (선발급) ===== -->
-  <insert id="insertClothes" parameterType="com.miracle.coordifit.clothes.model.Clothes">
-    <selectKey keyProperty="clothesId" resultType="string" order="BEFORE">
-      SELECT 'C' || TO_CHAR(SYSDATE, 'YYMMDD') || LPAD(TO_CHAR(SEQ_CLOTHES_ID.NEXTVAL), 3, '0')
-      FROM DUAL
-    </selectKey>
-    INSERT INTO CLOTHES (
-      CLOTHES_ID, USER_ID, NAME, BRAND, CATEGORY_CODE, CLOTHES_SIZE,
-      PRICE, PURCHASE_DATE, PURCHASE_URL, DESCRIPTION,
-      IS_ACTIVE, CREATED_BY
-    ) VALUES (
-      #{clothesId}, #{userId}, #{name}, #{brand}, #{categoryCode}, #{clothesSize},
-      #{price}, #{purchaseDate, jdbcType=DATE}, #{purchaseUrl}, #{description},
-      NVL(#{isActive}, 'Y'), #{createdBy}
-    )
-  </insert>
+<mapper namespace="com.miracle.coordifit.clothes.repository.ClothesRepository">
 
-  <!-- ===== ResultMaps ===== -->
-  <resultMap id="ClothesDetailMap" type="com.miracle.coordifit.clothes.dto.ClothesDetailResponseDto">
-    <id     column="CLOTHES_ID"      property="clothesId"/>
-    <result column="USER_ID"         property="userId"/>
-    <result column="NAME"            property="name"/>
-    <result column="BRAND"           property="brand"/>
-    <result column="CATEGORY_CODE"   property="categoryCode"/>
-    <result column="CATEGORY_NAME"   property="categoryName"/>
-    <result column="CLOTHES_SIZE"    property="clothesSize"/>
-    <result column="PRICE"           property="price" javaType="java.math.BigDecimal"/>
-    <result column="PURCHASE_DATE"   property="purchaseDate" jdbcType="DATE"      javaType="java.time.LocalDate"/>
-    <result column="PURCHASE_URL"    property="purchaseUrl"/>
-    <result column="DESCRIPTION"     property="description"/>
-    <result column="WEAR_COUNT"      property="wearCount" javaType="java.lang.Integer"/>
-    <result column="LAST_WORN_DATE"  property="lastWornDate" jdbcType="DATE"      javaType="java.time.LocalDate"/>
-    <result column="IS_ACTIVE"       property="isActive"/>
-    <result column="CREATED_AT"      property="createdAt"  jdbcType="TIMESTAMP"  javaType="java.time.LocalDateTime"/>
-    <result column="UPDATED_AT"      property="updatedAt"  jdbcType="TIMESTAMP"  javaType="java.time.LocalDateTime"/>
-
-    <collection property="imageUrls" ofType="string"
-                column="CLOTHES_ID"
-                select="selectClothesImageUrls"/>
+  <!-- ===== Clothes 기본 매핑 ===== -->
+  <resultMap id="ClothesMap" type="com.miracle.coordifit.clothes.model.Clothes">
+    <id     property="clothesId"    column="CLOTHES_ID"/>
+    <result property="userId"       column="USER_ID"/>
+    <result property="name"         column="NAME"/>
+    <result property="brand"        column="BRAND"/>
+    <result property="categoryCode" column="CATEGORY_CODE"/>
+    <result property="clothesSize"  column="CLOTHES_SIZE"/>
+    <result property="price"        column="PRICE"/>
+    <result property="purchaseDate" column="PURCHASE_DATE"/>
+    <result property="purchaseUrl"  column="PURCHASE_URL"/>
+    <result property="description"  column="DESCRIPTION"/>
+    <result property="wearCount"    column="WEAR_COUNT"/>
+    <result property="lastWornDate" column="LAST_WORN_DATE"/>
+    <result property="isActive"     column="IS_ACTIVE"/>
+    <result property="createdBy"    column="CREATED_BY"/>
+    <result property="createdAt"    column="CREATED_AT"/>
+    <result property="updatedBy"    column="UPDATED_BY"/>
+    <result property="updatedAt"    column="UPDATED_AT"/>
   </resultMap>
 
-  <resultMap id="CodeMap" type="com.miracle.coordifit.clothes.dto.CodeDto">
-    <id     column="CODE_ID"        property="codeId"/>
-    <result column="CODE_NAME"      property="codeName"/>
-    <result column="PARENT_CODE_ID" property="parentCodeId"/>
+  <!-- ===== FileInfo 매핑 ===== -->
+  <resultMap id="FileInfoMap" type="com.miracle.coordifit.common.model.FileInfo">
+    <id     property="fileId"      column="FILE_ID"/>
+    <result property="originalName" column="ORIGINAL_NAME"/>
+    <result property="s3Key"        column="S3_KEY"/>
+    <result property="s3Url"        column="S3_URL"/>
+    <result property="bucketName"   column="BUCKET_NAME"/>
+    <result property="fileSize"     column="FILE_SIZE"/>
+    <result property="fileType"     column="FILE_TYPE"/>
+    <result property="uploadBy"     column="UPLOAD_BY"/>
+    <result property="uploadDate"   column="UPLOAD_DATE"/>
   </resultMap>
 
-  <!-- ===== Clothes 조회 ===== -->
-  <select id="selectClothesDetail" parameterType="string" resultMap="ClothesDetailMap">
-    SELECT
-      c.CLOTHES_ID, c.USER_ID, c.NAME, c.BRAND, c.CATEGORY_CODE,
-      cc.CODE_NAME AS CATEGORY_NAME,
-      c.CLOTHES_SIZE, c.PRICE, c.PURCHASE_DATE, c.PURCHASE_URL, c.DESCRIPTION,
-      c.WEAR_COUNT, c.LAST_WORN_DATE, c.IS_ACTIVE,
-      c.CREATED_AT, c.UPDATED_AT
-    FROM CLOTHES c
-    LEFT JOIN COMMON_CODES cc ON cc.CODE_ID = c.CATEGORY_CODE
-    WHERE c.CLOTHES_ID = #{clothesId}
+<!-- ===== INSERT (ID 선발급) ===== -->
+<insert id="insertClothes" parameterType="com.miracle.coordifit.clothes.model.Clothes">
+  <!-- ① INSERT 전에 CLOTHES_ID 생성해서 VO에 주입 -->
+  <selectKey keyProperty="clothesId" resultType="string" order="BEFORE">
+    SELECT 'C' || TO_CHAR(SYSDATE, 'YYMMDD') || LPAD(SEQ_CLOTHES.NEXTVAL, 3, '0')
+    FROM DUAL
+  </selectKey>
+
+  INSERT INTO CLOTHES
+    (CLOTHES_ID, USER_ID, NAME, BRAND, CATEGORY_CODE, CLOTHES_SIZE, PRICE,
+     PURCHASE_DATE, PURCHASE_URL, DESCRIPTION, WEAR_COUNT, LAST_WORN_DATE,
+     IS_ACTIVE, CREATED_BY, UPDATED_BY)
+  VALUES
+    (#{clothesId,jdbcType=VARCHAR}, #{userId}, #{name}, #{brand}, #{categoryCode}, #{clothesSize},
+     #{price,jdbcType=NUMERIC},
+     #{purchaseDate}, #{purchaseUrl}, #{description},
+     NVL(#{wearCount,jdbcType=NUMERIC}, 0),
+     #{lastWornDate},
+     NVL(#{isActive}, 'Y'),
+     #{createdBy}, #{updatedBy})
+</insert>
+
+
+  <!-- ===== UPDATE ===== -->
+  <update id="updateClothes" parameterType="com.miracle.coordifit.clothes.model.Clothes">
+    UPDATE CLOTHES
+       SET NAME           = #{name},
+           BRAND          = #{brand},
+           CATEGORY_CODE  = #{categoryCode},
+           CLOTHES_SIZE   = #{clothesSize},
+           PRICE          = #{price,jdbcType=NUMERIC},
+           PURCHASE_DATE  = #{purchaseDate,jdbcType=DATE},
+           PURCHASE_URL   = #{purchaseUrl},
+           DESCRIPTION    = #{description},
+           WEAR_COUNT     = #{wearCount,jdbcType=NUMERIC},
+           LAST_WORN_DATE = #{lastWornDate,jdbcType=DATE},
+           UPDATED_BY     = #{updatedBy}
+     WHERE CLOTHES_ID     = #{clothesId}
+  </update>
+
+  <!-- ===== DELETE ===== -->
+  <delete id="deleteClothes">
+    DELETE FROM CLOTHES WHERE CLOTHES_ID = #{clothesId}
+  </delete>
+
+  <delete id="deleteAllImageLinks">
+    DELETE FROM CLOTHES_IMAGES WHERE CLOTHES_ID = #{clothesId}
+  </delete>
+
+  <delete id="deleteImageLink">
+    DELETE FROM CLOTHES_IMAGES
+     WHERE CLOTHES_ID = #{clothesId}
+       AND FILE_ID    = #{fileId}
+  </delete>
+
+  <!-- ===== SELECT ===== -->
+  <select id="findById" resultMap="ClothesMap">
+    SELECT * FROM CLOTHES WHERE CLOTHES_ID = #{clothesId}
   </select>
 
-  <select id="selectClothesList" parameterType="map" resultMap="ClothesDetailMap">
-    SELECT
-      c.CLOTHES_ID, c.USER_ID, c.NAME, c.BRAND, c.CATEGORY_CODE,
-      cc.CODE_NAME AS CATEGORY_NAME,
-      c.CLOTHES_SIZE, c.PRICE, c.PURCHASE_DATE, c.PURCHASE_URL, c.DESCRIPTION,
-      c.WEAR_COUNT, c.LAST_WORN_DATE, c.IS_ACTIVE,
-      c.CREATED_AT, c.UPDATED_AT
-    FROM CLOTHES c
-    LEFT JOIN COMMON_CODES cc ON cc.CODE_ID = c.CATEGORY_CODE
-    WHERE c.USER_ID = #{userId}
-    <if test="categoryCode != null and categoryCode != ''">
-      AND c.CATEGORY_CODE = #{categoryCode}
-    </if>
-    ORDER BY c.CREATED_AT DESC
+  <select id="findAllByUser" resultMap="ClothesMap">
+    SELECT *
+      FROM CLOTHES
+     WHERE USER_ID = #{userId}
+       AND NVL(IS_ACTIVE,'Y')='Y'
+     ORDER BY CREATED_AT DESC
   </select>
 
-  <!-- 이미지 URL -->
-  <select id="selectClothesImageUrls" parameterType="string" resultType="string">
-    SELECT fi.S3_URL
-    FROM CLOTHES_IMAGES ci
-    JOIN FILE_INFO fi ON fi.FILE_ID = ci.FILE_ID
-    WHERE ci.CLOTHES_ID = #{clothesId}
-    ORDER BY ci.CREATED_AT ASC
-  </select>
-
-  <!-- CLOTHES_IMAGES 벌크 insert -->
-  <insert id="insertClothesImages">
-    INSERT ALL
-    <foreach collection="fileIds" item="fid">
-      INTO CLOTHES_IMAGES (CLOTHES_ID, FILE_ID, CREATED_BY)
-      VALUES (#{clothesId}, #{fid}, (SELECT CREATED_BY FROM CLOTHES WHERE CLOTHES_ID = #{clothesId}))
-    </foreach>
-    SELECT 1 FROM DUAL
+  <!-- ===== 이미지 링크 처리 ===== -->
+  <insert id="insertImageLink" parameterType="com.miracle.coordifit.clothes.model.ClothesImageLink">
+    INSERT INTO CLOTHES_IMAGES (CLOTHES_ID, FILE_ID, CREATED_BY)
+    VALUES (#{clothesId}, #{fileId,jdbcType=NUMERIC}, #{createdBy})
   </insert>
 
-  <!-- ===== 카테고리(COMMON_CODES) ===== -->
-  <select id="selectTopCategories" resultMap="CodeMap">
-    SELECT CODE_ID, CODE_NAME, PARENT_CODE_ID
-    FROM COMMON_CODES
-    WHERE IS_ACTIVE = 'Y'
-      AND PARENT_CODE_ID = 'B10001'
-    ORDER BY CODE_ID
+  <select id="findImageLinks" resultType="com.miracle.coordifit.clothes.model.ClothesImageLink">
+    SELECT CLOTHES_ID AS clothesId,
+           FILE_ID    AS fileId,
+           CREATED_BY AS createdBy
+      FROM CLOTHES_IMAGES
+     WHERE CLOTHES_ID = #{clothesId}
+     ORDER BY FILE_ID ASC
   </select>
 
-  <select id="selectChildren" parameterType="string" resultMap="CodeMap">
-    SELECT CODE_ID, CODE_NAME, PARENT_CODE_ID
-    FROM COMMON_CODES
-    WHERE IS_ACTIVE = 'Y'
-      AND PARENT_CODE_ID = #{parentCodeId}
-    ORDER BY CODE_ID
+  <select id="countImageLinks" resultType="int">
+    SELECT COUNT(*) FROM CLOTHES_IMAGES WHERE CLOTHES_ID = #{clothesId}
   </select>
 
-  <!-- ✅ 여기 'selectOne'은 단 한 번만! -->
-  <select id="selectOne" parameterType="string" resultMap="CodeMap">
-    SELECT CODE_ID, CODE_NAME, PARENT_CODE_ID
-    FROM COMMON_CODES
-    WHERE CODE_ID = #{codeId}
-  </select>
-
-  <!-- ===== FILE_INFO helpers ===== -->
-  <select id="selectMaxFileId" resultType="long">
-    SELECT MAX(FILE_ID) FROM FILE_INFO
-  </select>
-
-  <select id="selectFileIdsAfter" parameterType="long" resultType="long">
-    SELECT FILE_ID
-    FROM FILE_INFO
-    WHERE FILE_ID > NVL(#{lastFileId, jdbcType=NUMERIC}, -1)
-    ORDER BY FILE_ID
+  <!-- 실제 파일 정보 조회 -->
+  <select id="findImageFiles" resultMap="FileInfoMap">
+    SELECT f.*
+      FROM FILE_INFO f
+      JOIN CLOTHES_IMAGES ci ON f.FILE_ID = ci.FILE_ID
+     WHERE ci.CLOTHES_ID = #{clothesId}
+     ORDER BY f.FILE_ID ASC
   </select>
 
 </mapper>
