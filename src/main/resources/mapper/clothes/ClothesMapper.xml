@@ -38,11 +38,6 @@
     <result property="uploadDate"   column="UPLOAD_DATE"/>
   </resultMap>
 
-  <select id="getNextClothesSeq" resultType="int">
-    SELECT NVL(MAX(TO_NUMBER(SUBSTR(c.CLOTHES_ID, 2))), 0) + 1
-      FROM CLOTHES c
-  </select>
-
   <select id="getNextClothesDailySeq" resultType="int">
     SELECT NVL(MAX(TO_NUMBER(SUBSTR(c.CLOTHES_ID, 8))), 0) + 1
       FROM CLOTHES c

@@ -33,7 +33,5 @@ public interface ClothesRepository {
 
 	List<FileInfo> findImageFiles(@Param("clothesId") String clothesId);
 
-	int getNextClothesSeq();
-
 	int getNextClothesDailySeq();
 }

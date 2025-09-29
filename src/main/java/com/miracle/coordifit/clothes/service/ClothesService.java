@@ -1,6 +1,8 @@
 // src/main/java/com/miracle/coordifit/clothes/service/ClothesService.java
 package com.miracle.coordifit.clothes.service;
 
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
 
 import org.springframework.stereotype.Service;
@@ -37,8 +39,9 @@ public class ClothesService implements IClothesService {
 		if (clothes.getWearCount() == null)
 			clothes.setWearCount(0);
 
-		Integer next = clothesRepository.getNextClothesSeq();
-		String clothesId = String.format("C%05d", next);
+		Integer next = clothesRepository.getNextClothesDailySeq();
+		String date = LocalDate.now().format(DateTimeFormatter.ofPattern("yyMMdd"));
+	    String clothesId = String.format("C%s%03d", date, next);
 
 		clothes.setClothesId(clothesId);
 
