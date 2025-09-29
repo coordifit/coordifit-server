@@ -7,7 +7,7 @@
 <!-- [newline-after-annotation] -->
 <setting id="org.eclipse.jdt.core.formatter.insert_new_line_after_annotation_on_local_variable" value="do not insert"/>
 <setting id="org.eclipse.jdt.core.formatter.insert_new_line_after_annotation_on_member" value="insert"/>
-<setting id="org.eclipse.jdt.core.formatter.insert_new_line_after_annotation_on_parameter" value="insert"/>
+<setting id="org.eclipse.jdt.core.formatter.insert_new_line_after_annotation_on_parameter" value="do not insert"/>
 
 <!-- End of Declarations chapter -->
 
@@ -188,7 +188,8 @@
 <setting id="org.eclipse.jdt.core.formatter.insert_space_before_closing_angle_bracket_in_type_parameters" value="do not insert"/>
 <setting id="org.eclipse.jdt.core.formatter.insert_space_before_opening_angle_bracket_in_type_parameters" value="do not insert"/>
 <setting id="org.eclipse.jdt.core.formatter.insert_space_after_closing_angle_bracket_in_type_arguments" value="do not insert"/>
-	<!-- ex) Util.<Integer, String>compare(l1, l2); -->
+
+<!-- ex) Util.<Integer, String>compare(l1, l2); -->
 <setting id="org.eclipse.jdt.core.formatter.insert_space_before_opening_brace_in_annotation_type_declaration" value="do not insert"/>
 <setting id="org.eclipse.jdt.core.formatter.insert_space_after_closing_angle_bracket_in_type_parameters" value="insert"/>
 <setting id="org.eclipse.jdt.core.formatter.insert_space_before_and_in_type_parameter" value="insert"/>
@@ -330,7 +331,8 @@
 <setting id="org.eclipse.jdt.core.formatter.alignment_for_arguments_in_allocation_expression" value="20"/>
 <setting id="org.eclipse.jdt.core.formatter.alignment_for_arguments_in_annotation" value="0"/>
 <setting id="org.eclipse.jdt.core.formatter.alignment_for_arguments_in_explicit_constructor_call" value="20"/>
-<setting id="org.eclipse.jdt.core.formatter.alignment_for_arguments_in_method_invocation" value="20"/>
+<setting id="org.eclipse.jdt.core.formatter.alignment_for_arguments_in_method_invocation" value="16"/>
+<setting id="org.eclipse.jdt.core.formatter.alignment_for_expression_in_method_invocation" value="16"/>
 <setting id="org.eclipse.jdt.core.formatter.alignment_for_arguments_in_qualified_allocation_expression" value="20"/>
 <setting id="org.eclipse.jdt.core.formatter.alignment_for_assignment" value="0"/>
 <setting id="org.eclipse.jdt.core.formatter.alignment_for_binary_expression" value="20"/>
@@ -358,6 +360,9 @@
 <setting id="org.eclipse.jdt.core.formatter.use_tabs_only_for_leading_indentations" value="false"/>
 <setting id="org.eclipse.jdt.core.formatter.wrap_outer_expressions_when_nested" value="true"/>
 
+<!-- Coordifit Custom rule-->
+<setting id="org.eclipse.jdt.core.formatter.insert_new_line_before_closing_paren_in_parenthesized_expression" value="insert"/>
+<setting id="org.eclipse.jdt.core.formatter.insert_new_line_after_opening_paren_in_parenthesized_expression" value="insert"/>
 <!-- End of not mandatory rules -->
 </profile>
 </profiles>

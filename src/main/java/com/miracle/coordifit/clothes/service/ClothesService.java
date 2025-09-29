@@ -46,12 +46,15 @@ public class ClothesService implements IClothesService {
 				continue;
 			FileInfo saved = fileService.uploadFile(file);
 			if (saved != null && saved.getFileId() != null) {
+				// @formatter:off
 				clothesRepository.insertImageLink(
 					ClothesImageLink.builder()
 						.clothesId(clothes.getClothesId())
 						.fileId(saved.getFileId().longValue())
 						.createdBy(userId)
-						.build());
+						.build()
+				);
+				// @formatter:on
 			}
 		}
 		return clothes.getClothesId();
@@ -76,12 +79,15 @@ public class ClothesService implements IClothesService {
 					continue;
 				FileInfo saved = fileService.uploadFile(file);
 				if (saved != null && saved.getFileId() != null) {
+					//@formatter:off
 					clothesRepository.insertImageLink(
 						ClothesImageLink.builder()
 							.clothesId(clothes.getClothesId())
 							.fileId(saved.getFileId().longValue())
 							.createdBy(userId)
-							.build());
+							.build()
+					);
+					//@formatter:on
 				}
 			}
 		}

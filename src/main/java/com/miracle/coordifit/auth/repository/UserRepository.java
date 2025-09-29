@@ -9,17 +9,13 @@ import com.miracle.coordifit.auth.model.User;
 public interface UserRepository {
 	int insertUser(User user);
 
-	User selectUserByEmail(@Param("email")
-	String email);
+	User selectUserByEmail(@Param("email") String email);
 
-	int countByEmail(@Param("email")
-	String email);
+	int countByEmail(@Param("email") String email);
 
-	int countByNickname(@Param("nickname")
-	String nickname);
+	int countByNickname(@Param("nickname") String nickname);
 
 	int getNextUserSequence();
 
-	int updateLastLoginTime(@Param("userId")
-	String userId);
+	int updateLastLoginTime(@Param("userId") String userId);
 }

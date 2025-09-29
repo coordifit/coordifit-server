@@ -50,8 +50,7 @@ public class ClothesController {
 
 	@Operation(summary = "하위 카테고리 목록")
 	@GetMapping("/categories/{parentCodeId}/children")
-	public ResponseEntity<?> categoryChildren(@PathVariable
-	String parentCodeId) {
+	public ResponseEntity<?> categoryChildren(@PathVariable String parentCodeId) {
 		Map<String, CommonCode> roots = commonCodeService.getCommonCodes();
 		CommonCode parent = findCodeById(roots, parentCodeId);
 		if (parent == null)
@@ -62,12 +61,9 @@ public class ClothesController {
 	@Operation(summary = "옷 등록 (이미지 1~5장 필수)", requestBody = @io.swagger.v3.oas.annotations.parameters.RequestBody(content = @Content(mediaType = MediaType.MULTIPART_FORM_DATA_VALUE)))
 	@PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
 	public ResponseEntity<?> register(
-		@Parameter(name = "clothes", description = "옷 정보(JSON 문자열). 예: {\"name\":\"셔츠\",\"categoryCode\":\"B30001\"}", required = true, content = @Content(schema = @Schema(type = "string"))) @RequestPart("clothes")
-		String clothesJson,
-		@Parameter(name = "images", description = "이미지 파일(1~5장)", required = true, content = @Content(array = @ArraySchema(schema = @Schema(type = "string", format = "binary")))) @RequestPart("images")
-		List<MultipartFile> images,
-		@Parameter(description = "로그인한 사용자 ID", required = true) @RequestHeader("X-User-Id")
-		String userId) {
+		@Parameter(name = "clothes", description = "옷 정보(JSON 문자열). 예: {\"name\":\"셔츠\",\"categoryCode\":\"B30001\"}", required = true, content = @Content(schema = @Schema(type = "string"))) @RequestPart("clothes") String clothesJson,
+		@Parameter(name = "images", description = "이미지 파일(1~5장)", required = true, content = @Content(array = @ArraySchema(schema = @Schema(type = "string", format = "binary")))) @RequestPart("images") List<MultipartFile> images,
+		@Parameter(description = "로그인한 사용자 ID", required = true) @RequestHeader("X-User-Id") String userId) {
 		try {
 			if (images == null || images.size() < 1 || images.size() > 5) {
 				return ResponseEntity.badRequest().body(error("이미지는 1~5장 업로드해야 합니다."));
@@ -86,17 +82,11 @@ public class ClothesController {
 
 	@Operation(summary = "옷 수정 (같은 폼 재사용)", requestBody = @io.swagger.v3.oas.annotations.parameters.RequestBody(content = @Content(mediaType = MediaType.MULTIPART_FORM_DATA_VALUE)))
 	@PutMapping(path = "/{clothesId}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-	public ResponseEntity<?> modify(
-		@Parameter(description = "옷 ID", required = true) @PathVariable
-		String clothesId,
-		@Parameter(name = "clothes", description = "수정할 옷 정보(JSON 문자열)", required = true, content = @Content(schema = @Schema(type = "string"))) @RequestPart("clothes")
-		String clothesJson,
-		@Parameter(name = "addImages", description = "추가 이미지 파일(0~5장, 총합 5장 이하 유지)", required = false, content = @Content(array = @ArraySchema(schema = @Schema(type = "string", format = "binary")))) @RequestPart(value = "addImages", required = false)
-		List<MultipartFile> addImages,
-		@Parameter(description = "true면 이미지 전체 교체", required = false) @RequestParam(defaultValue = "false")
-		boolean replaceAllImages,
-		@Parameter(description = "로그인한 사용자 ID", required = true) @RequestHeader("X-User-Id")
-		String userId) {
+	public ResponseEntity<?> modify(@Parameter(description = "옷 ID", required = true) @PathVariable String clothesId,
+		@Parameter(name = "clothes", description = "수정할 옷 정보(JSON 문자열)", required = true, content = @Content(schema = @Schema(type = "string"))) @RequestPart("clothes") String clothesJson,
+		@Parameter(name = "addImages", description = "추가 이미지 파일(0~5장, 총합 5장 이하 유지)", required = false, content = @Content(array = @ArraySchema(schema = @Schema(type = "string", format = "binary")))) @RequestPart(value = "addImages", required = false) List<MultipartFile> addImages,
+		@Parameter(description = "true면 이미지 전체 교체", required = false) @RequestParam(defaultValue = "false") boolean replaceAllImages,
+		@Parameter(description = "로그인한 사용자 ID", required = true) @RequestHeader("X-User-Id") String userId) {
 		try {
 			Clothes clothes = objectMapper.readValue(clothesJson, Clothes.class);
 			clothes.setClothesId(clothesId);
@@ -111,10 +101,8 @@ public class ClothesController {
 	@Operation(summary = "이미지 개별 삭제")
 	@DeleteMapping("/{clothesId}/images/{fileId}")
 	public ResponseEntity<?> deleteImage(
-		@Parameter(description = "옷 ID", required = true) @PathVariable
-		String clothesId,
-		@Parameter(description = "파일 ID", required = true) @PathVariable
-		Long fileId) {
+		@Parameter(description = "옷 ID", required = true) @PathVariable String clothesId,
+		@Parameter(description = "파일 ID", required = true) @PathVariable Long fileId) {
 		try {
 			clothesService.removeImage(clothesId, fileId);
 			return ResponseEntity.noContent().build();
@@ -125,8 +113,7 @@ public class ClothesController {
 
 	@Operation(summary = "옷 삭제")
 	@DeleteMapping("/{clothesId}")
-	public ResponseEntity<?> remove(@PathVariable
-	String clothesId) {
+	public ResponseEntity<?> remove(@PathVariable String clothesId) {
 		try {
 			clothesService.remove(clothesId);
 			return ResponseEntity.noContent().build();
@@ -137,22 +124,19 @@ public class ClothesController {
 
 	@Operation(summary = "옷 상세")
 	@GetMapping("/{clothesId}")
-	public ResponseEntity<Clothes> detail(@PathVariable
-	String clothesId) {
+	public ResponseEntity<Clothes> detail(@PathVariable String clothesId) {
 		return ResponseEntity.ok(clothesService.findOne(clothesId));
 	}
 
 	@Operation(summary = "옷 이미지 목록")
 	@GetMapping("/{clothesId}/images")
-	public ResponseEntity<List<FileInfo>> images(@PathVariable
-	String clothesId) {
+	public ResponseEntity<List<FileInfo>> images(@PathVariable String clothesId) {
 		return ResponseEntity.ok(clothesService.findImages(clothesId));
 	}
 
 	@Operation(summary = "내 옷 전체 조회")
 	@GetMapping("/me")
-	public ResponseEntity<?> myClothes(@RequestHeader("X-User-Id")
-	String userId) {
+	public ResponseEntity<?> myClothes(@RequestHeader("X-User-Id") String userId) {
 		return ResponseEntity.ok(clothesService.findMine(userId));
 	}
 

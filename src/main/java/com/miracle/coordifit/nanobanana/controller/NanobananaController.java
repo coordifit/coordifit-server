@@ -35,8 +35,7 @@ public class NanobananaController {
 	 * 단순 프롬프트 기반 이미지 생성
 	 */
 	@PostMapping("/generate")
-	public Mono<ResponseEntity<String>> generateImage(@RequestBody
-	PromptRequestDTO request) {
+	public Mono<ResponseEntity<String>> generateImage(@RequestBody PromptRequestDTO request) {
 		return nanobananaService.generateImage(request.getPrompt())
 			.map(base64Image -> ResponseEntity.ok().body(base64Image))
 			.onErrorResume(e -> {
@@ -49,26 +48,32 @@ public class NanobananaController {
 	 * 아바타 + 의류 기반 가상 피팅 이미지 생성 (JSON 버전)
 	 */
 	@PostMapping("/fitting")
-	public Mono<ResponseEntity<Map<String, Object>>> fitting(@RequestBody
-	FittingRequestDTO request) {
+	public Mono<ResponseEntity<Map<String, Object>>> fitting(@RequestBody FittingRequestDTO request) {
 		String prompt = buildPrompt(request);
 
 		long start = System.currentTimeMillis();
 		return nanobananaService.generateImage(prompt)
 			.map(base64 -> {
 				long duration = System.currentTimeMillis() - start;
+			//@formatter:off
 				Map<String, Object> response = Map.of(
 					"status", "success",
 					"data", Map.of(
 						"imageBase64", base64,
-						"durationMs", duration));
+						"durationMs", duration)
+					);
+				//@formatter:on
 				return ResponseEntity.ok(response);
 			})
 			.onErrorResume(e -> {
 				System.err.println("Error during fitting: " + e.getMessage());
+
+			//@formatter:off
 				return Mono.just(ResponseEntity.internalServerError().body(Map.of(
 					"status", "error",
-					"message", "Fitting failed")));
+					"message", "Fitting failed"))
+				);
+				//@formatter:on
 			});
 	}
 
@@ -76,15 +81,10 @@ public class NanobananaController {
 	 * 아바타 + 의류 기반 가상 피팅 이미지 생성 (파일 업로드 버전)
 	 */
 	@PostMapping(value = "/fitting/upload", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-	public Mono<ResponseEntity<Map<String, Object>>> fittingUpload(
-		@RequestPart("avatar")
-		MultipartFile avatar,
-		@RequestPart(value = "top", required = false)
-		MultipartFile top,
-		@RequestPart(value = "bottom", required = false)
-		MultipartFile bottom,
-		@RequestPart(value = "shoes", required = false)
-		MultipartFile shoes) {
+	public Mono<ResponseEntity<Map<String, Object>>> fittingUpload(@RequestPart("avatar") MultipartFile avatar,
+		@RequestPart(value = "top", required = false) MultipartFile top,
+		@RequestPart(value = "bottom", required = false) MultipartFile bottom,
+		@RequestPart(value = "shoes", required = false) MultipartFile shoes) {
 		try {
 			String avatarBase64 = Base64.getEncoder().encodeToString(avatar.getBytes());
 			String topBase64 = top != null ? Base64.getEncoder().encodeToString(top.getBytes()) : null;
@@ -97,18 +97,29 @@ public class NanobananaController {
 			return nanobananaService.generateImage(prompt)
 				.map(base64 -> {
 					long duration = System.currentTimeMillis() - start;
+				//@formatter:off
 					Map<String, Object> response = Map.of(
 						"status", "success",
 						"data", Map.of(
 							"imageBase64", base64,
-							"durationMs", duration));
+							"durationMs", duration)
+						);
 					return ResponseEntity.ok(response);
+					//@formatter:on
 				})
+				//@formatter:off
 				.onErrorResume(e -> {
 					System.err.println("Error during fitting upload: " + e.getMessage());
-					return Mono.just(ResponseEntity.internalServerError().body(Map.of(
-						"status", "error",
-						"message", "Fitting upload failed")));
+
+					return Mono.just(ResponseEntity.internalServerError().body(
+
+						Map.of(
+							"status", "error",
+							"message", "Fitting upload failed"
+						)
+					)
+					);
+					//@formatter:on
 				});
 
 		} catch (Exception e) {

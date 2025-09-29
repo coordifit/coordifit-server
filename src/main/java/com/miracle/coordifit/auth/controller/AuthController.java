@@ -27,9 +27,7 @@ public class AuthController {
 	private final IEmailService emailService;
 
 	@PostMapping("/signup")
-	public ResponseEntity<ApiResponseDto<User>> signUp(
-		@Valid @RequestBody
-		SignUpRequestDto signUpRequestDto,
+	public ResponseEntity<ApiResponseDto<User>> signUp(@Valid @RequestBody SignUpRequestDto signUpRequestDto,
 		BindingResult bindingResult) {
 
 		log.info("회원가입 요청: {}", signUpRequestDto.getEmail());
@@ -64,9 +62,7 @@ public class AuthController {
 
 	@PostMapping("/send-verification")
 	public ResponseEntity<ApiResponseDto<String>> sendVerificationCode(
-		@Valid @RequestBody
-		EmailVerificationRequestDto requestDto,
-		BindingResult bindingResult) {
+		@Valid @RequestBody EmailVerificationRequestDto requestDto, BindingResult bindingResult) {
 
 		log.info("이메일 인증 코드 발송 요청: {}", requestDto.getEmail());
 
@@ -101,9 +97,7 @@ public class AuthController {
 	}
 
 	@GetMapping("/check-email")
-	public ResponseEntity<ApiResponseDto<Boolean>> checkEmailAvailability(
-		@RequestParam("email")
-		String email) {
+	public ResponseEntity<ApiResponseDto<Boolean>> checkEmailAvailability(@RequestParam("email") String email) {
 
 		log.info("이메일 중복 검사: {}", email);
 
@@ -123,8 +117,7 @@ public class AuthController {
 
 	@GetMapping("/check-nickname")
 	public ResponseEntity<ApiResponseDto<Boolean>> checkNicknameAvailability(
-		@RequestParam("nickname")
-		String nickname) {
+		@RequestParam("nickname") String nickname) {
 
 		log.info("닉네임 중복 검사: {}", nickname);
 
@@ -143,9 +136,7 @@ public class AuthController {
 	}
 
 	@PostMapping("/login")
-	public ResponseEntity<ApiResponseDto<Map<String, Object>>> login(
-		@RequestBody
-		Map<String, Object> loginRequest) {
+	public ResponseEntity<ApiResponseDto<Map<String, Object>>> login(@RequestBody Map<String, Object> loginRequest) {
 
 		log.info("로그인 요청: {}", loginRequest.get("email"));
 
@@ -174,10 +165,13 @@ public class AuthController {
 
 			// 로그인 성공 응답 데이터 준비
 			Map<String, Object> responseData = new HashMap<>();
+			// @formatter:off
 			responseData.put("user", Map.of(
 				"userId", user.getUserId(),
 				"email", user.getEmail(),
-				"nickname", user.getNickname()));
+				"nickname", user.getNickname())
+			);
+			// @formatter:on
 
 			// TODO: JWT 토큰 생성 및 관리 구현 필요
 			// - JwtService 클래스 생성
