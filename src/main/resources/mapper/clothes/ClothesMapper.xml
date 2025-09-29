@@ -5,6 +5,7 @@
 
 <mapper namespace="com.miracle.coordifit.clothes.repository.ClothesRepository">
 
+  <!-- ========================= ResultMaps ========================= -->
   <resultMap id="ClothesMap" type="com.miracle.coordifit.clothes.model.Clothes">
     <id     property="clothesId"    column="CLOTHES_ID"/>
     <result property="userId"       column="USER_ID"/>
@@ -37,20 +38,18 @@
     <result property="uploadDate"   column="UPLOAD_DATE"/>
   </resultMap>
 
-  <insert id="insertClothes" parameterType="com.miracle.coordifit.clothes.model.Clothes">
-    <selectKey keyProperty="clothesId" resultType="string" order="BEFORE">
-      SELECT 'C'
-             || TO_CHAR(SYSDATE, 'YYMMDD')
-             || LPAD(
-                  NVL((
-                    SELECT MAX(TO_NUMBER(SUBSTR(c.CLOTHES_ID, 8)))
-                      FROM CLOTHES c
-                     WHERE SUBSTR(c.CLOTHES_ID, 2, 6) = TO_CHAR(SYSDATE, 'YYMMDD')
-                  ), 0) + 1
-                , 3, '0')
-      FROM DUAL
-    </selectKey>
+  <select id="getNextClothesSeq" resultType="int">
+    SELECT NVL(MAX(TO_NUMBER(SUBSTR(c.CLOTHES_ID, 2))), 0) + 1
+      FROM CLOTHES c
+  </select>
 
+  <select id="getNextClothesDailySeq" resultType="int">
+    SELECT NVL(MAX(TO_NUMBER(SUBSTR(c.CLOTHES_ID, 8))), 0) + 1
+      FROM CLOTHES c
+     WHERE SUBSTR(c.CLOTHES_ID, 2, 6) = TO_CHAR(SYSDATE, 'YYMMDD')
+  </select>
+
+  <insert id="insertClothes" parameterType="com.miracle.coordifit.clothes.model.Clothes">
     INSERT INTO CLOTHES (
       CLOTHES_ID, USER_ID, NAME, BRAND, CATEGORY_CODE, CLOTHES_SIZE, PRICE,
       PURCHASE_DATE, PURCHASE_URL, DESCRIPTION, WEAR_COUNT, LAST_WORN_DATE,
