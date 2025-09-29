@@ -11,6 +11,8 @@ public interface UserRepository {
 
 	User selectUserByEmail(@Param("email") String email);
 
+	User selectUserByUserId(@Param("userId") String userId);
+
 	int countByEmail(@Param("email") String email);
 
 	int countByNickname(@Param("nickname") String nickname);

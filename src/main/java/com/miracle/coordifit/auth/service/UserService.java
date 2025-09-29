@@ -1,5 +1,6 @@
 package com.miracle.coordifit.auth.service;
 
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -20,6 +21,7 @@ import lombok.extern.slf4j.Slf4j;
 public class UserService implements IUserService {
 	private final UserRepository userRepository;
 	private final IEmailService emailService;
+	private final PasswordEncoder passwordEncoder;
 
 	@Override
 	public User signUp(SignUpRequestDto signUpRequestDto) {
@@ -43,8 +45,8 @@ public class UserService implements IUserService {
 		// 4. 사용자 ID 생성
 		String userId = generateUserId();
 
-		// 5. 비밀번호 저장 (암호화 없이 평문 저장 - 임시)
-		String password = signUpRequestDto.getPassword();
+		// 5. 비밀번호 암호화
+		String password = passwordEncoder.encode(signUpRequestDto.getPassword());
 
 		// 6. 사용자 객체 생성
 		User user = User.builder()
@@ -93,8 +95,8 @@ public class UserService implements IUserService {
 		try {
 			User user = userRepository.selectUserByEmail(email);
 
-			// 평문 비밀번호 비교 (임시)
-			if (user != null && password.equals(user.getPassword())) {
+			// 암호화된 비밀번호 비교
+			if (user != null && passwordEncoder.matches(password, user.getPassword())) {
 				// 마지막 로그인 시간 업데이트
 				updateLastLoginTime(user.getUserId());
 				return user;
@@ -105,6 +107,17 @@ public class UserService implements IUserService {
 		} catch (Exception e) {
 			log.error("사용자 인증 중 오류 발생", e);
 			throw new RuntimeException("인증 처리 중 오류가 발생했습니다.");
+		}
+	}
+
+	@Override
+	@Transactional(readOnly = true)
+	public User getUserById(String userId) {
+		try {
+			return userRepository.selectUserByUserId(userId);
+		} catch (Exception e) {
+			log.error("사용자 조회 중 오류 발생: userId={}", userId, e);
+			throw new RuntimeException("사용자 조회 중 오류가 발생했습니다.", e);
 		}
 	}
 
