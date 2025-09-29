@@ -5,7 +5,6 @@
 
 <mapper namespace="com.miracle.coordifit.clothes.repository.ClothesRepository">
 
-  <!-- ===== Clothes 기본 매핑 ===== -->
   <resultMap id="ClothesMap" type="com.miracle.coordifit.clothes.model.Clothes">
     <id     property="clothesId"    column="CLOTHES_ID"/>
     <result property="userId"       column="USER_ID"/>
@@ -26,9 +25,8 @@
     <result property="updatedAt"    column="UPDATED_AT"/>
   </resultMap>
 
-  <!-- ===== FileInfo 매핑 ===== -->
   <resultMap id="FileInfoMap" type="com.miracle.coordifit.common.model.FileInfo">
-    <id     property="fileId"      column="FILE_ID"/>
+    <id     property="fileId"       column="FILE_ID"/>
     <result property="originalName" column="ORIGINAL_NAME"/>
     <result property="s3Key"        column="S3_KEY"/>
     <result property="s3Url"        column="S3_URL"/>
@@ -39,30 +37,36 @@
     <result property="uploadDate"   column="UPLOAD_DATE"/>
   </resultMap>
 
-<!-- ===== INSERT (ID 선발급) ===== -->
-<insert id="insertClothes" parameterType="com.miracle.coordifit.clothes.model.Clothes">
-  <!-- ① INSERT 전에 CLOTHES_ID 생성해서 VO에 주입 -->
-  <selectKey keyProperty="clothesId" resultType="string" order="BEFORE">
-    SELECT 'C' || TO_CHAR(SYSDATE, 'YYMMDD') || LPAD(SEQ_CLOTHES.NEXTVAL, 3, '0')
-    FROM DUAL
-  </selectKey>
+  <insert id="insertClothes" parameterType="com.miracle.coordifit.clothes.model.Clothes">
+    <selectKey keyProperty="clothesId" resultType="string" order="BEFORE">
+      SELECT 'C'
+             || TO_CHAR(SYSDATE, 'YYMMDD')
+             || LPAD(
+                  NVL((
+                    SELECT MAX(TO_NUMBER(SUBSTR(c.CLOTHES_ID, 8)))
+                      FROM CLOTHES c
+                     WHERE SUBSTR(c.CLOTHES_ID, 2, 6) = TO_CHAR(SYSDATE, 'YYMMDD')
+                  ), 0) + 1
+                , 3, '0')
+      FROM DUAL
+    </selectKey>
 
-  INSERT INTO CLOTHES
-    (CLOTHES_ID, USER_ID, NAME, BRAND, CATEGORY_CODE, CLOTHES_SIZE, PRICE,
-     PURCHASE_DATE, PURCHASE_URL, DESCRIPTION, WEAR_COUNT, LAST_WORN_DATE,
-     IS_ACTIVE, CREATED_BY, UPDATED_BY)
-  VALUES
-    (#{clothesId,jdbcType=VARCHAR}, #{userId}, #{name}, #{brand}, #{categoryCode}, #{clothesSize},
-     #{price,jdbcType=NUMERIC},
-     #{purchaseDate}, #{purchaseUrl}, #{description},
-     NVL(#{wearCount,jdbcType=NUMERIC}, 0),
-     #{lastWornDate},
-     NVL(#{isActive}, 'Y'),
-     #{createdBy}, #{updatedBy})
-</insert>
+    INSERT INTO CLOTHES (
+      CLOTHES_ID, USER_ID, NAME, BRAND, CATEGORY_CODE, CLOTHES_SIZE, PRICE,
+      PURCHASE_DATE, PURCHASE_URL, DESCRIPTION, WEAR_COUNT, LAST_WORN_DATE,
+      IS_ACTIVE, CREATED_BY, CREATED_AT, UPDATED_BY, UPDATED_AT
+    ) VALUES (
+      #{clothesId}, #{userId}, #{name}, #{brand}, #{categoryCode}, #{clothesSize},
+      #{price,jdbcType=NUMERIC},
+      #{purchaseDate}, #{purchaseUrl}, #{description},
+      NVL(#{wearCount,jdbcType=NUMERIC}, 0),
+      #{lastWornDate},
+      NVL(#{isActive}, 'Y'),
+      #{createdBy}, CURRENT_TIMESTAMP,
+      #{updatedBy}, CURRENT_TIMESTAMP
+    )
+  </insert>
 
-
-  <!-- ===== UPDATE ===== -->
   <update id="updateClothes" parameterType="com.miracle.coordifit.clothes.model.Clothes">
     UPDATE CLOTHES
        SET NAME           = #{name},
@@ -70,22 +74,24 @@
            CATEGORY_CODE  = #{categoryCode},
            CLOTHES_SIZE   = #{clothesSize},
            PRICE          = #{price,jdbcType=NUMERIC},
-           PURCHASE_DATE  = #{purchaseDate,jdbcType=DATE},
+           PURCHASE_DATE  = #{purchaseDate},
            PURCHASE_URL   = #{purchaseUrl},
            DESCRIPTION    = #{description},
-           WEAR_COUNT     = #{wearCount,jdbcType=NUMERIC},
-           LAST_WORN_DATE = #{lastWornDate,jdbcType=DATE},
-           UPDATED_BY     = #{updatedBy}
+           WEAR_COUNT     = NVL(#{wearCount,jdbcType=NUMERIC}, 0),
+           LAST_WORN_DATE = #{lastWornDate},
+           UPDATED_BY     = #{updatedBy},
+           UPDATED_AT     = CURRENT_TIMESTAMP
      WHERE CLOTHES_ID     = #{clothesId}
   </update>
 
-  <!-- ===== DELETE ===== -->
   <delete id="deleteClothes">
-    DELETE FROM CLOTHES WHERE CLOTHES_ID = #{clothesId}
+    DELETE FROM CLOTHES
+     WHERE CLOTHES_ID = #{clothesId}
   </delete>
 
   <delete id="deleteAllImageLinks">
-    DELETE FROM CLOTHES_IMAGES WHERE CLOTHES_ID = #{clothesId}
+    DELETE FROM CLOTHES_IMAGES
+     WHERE CLOTHES_ID = #{clothesId}
   </delete>
 
   <delete id="deleteImageLink">
@@ -94,23 +100,26 @@
        AND FILE_ID    = #{fileId}
   </delete>
 
-  <!-- ===== SELECT ===== -->
   <select id="findById" resultMap="ClothesMap">
-    SELECT * FROM CLOTHES WHERE CLOTHES_ID = #{clothesId}
+    SELECT *
+      FROM CLOTHES
+     WHERE CLOTHES_ID = #{clothesId}
   </select>
 
   <select id="findAllByUser" resultMap="ClothesMap">
     SELECT *
       FROM CLOTHES
      WHERE USER_ID = #{userId}
-       AND NVL(IS_ACTIVE,'Y')='Y'
+       AND NVL(IS_ACTIVE,'Y') = 'Y'
      ORDER BY CREATED_AT DESC
   </select>
 
-  <!-- ===== 이미지 링크 처리 ===== -->
   <insert id="insertImageLink" parameterType="com.miracle.coordifit.clothes.model.ClothesImageLink">
-    INSERT INTO CLOTHES_IMAGES (CLOTHES_ID, FILE_ID, CREATED_BY)
-    VALUES (#{clothesId}, #{fileId,jdbcType=NUMERIC}, #{createdBy})
+    INSERT INTO CLOTHES_IMAGES (
+      CLOTHES_ID, FILE_ID, CREATED_AT, CREATED_BY
+    ) VALUES (
+      #{clothesId}, #{fileId,jdbcType=NUMERIC}, CURRENT_TIMESTAMP, #{createdBy}
+    )
   </insert>
 
   <select id="findImageLinks" resultType="com.miracle.coordifit.clothes.model.ClothesImageLink">
@@ -123,10 +132,11 @@
   </select>
 
   <select id="countImageLinks" resultType="int">
-    SELECT COUNT(*) FROM CLOTHES_IMAGES WHERE CLOTHES_ID = #{clothesId}
+    SELECT COUNT(*)
+      FROM CLOTHES_IMAGES
+     WHERE CLOTHES_ID = #{clothesId}
   </select>
 
-  <!-- 실제 파일 정보 조회 -->
   <select id="findImageFiles" resultMap="FileInfoMap">
     SELECT f.*
       FROM FILE_INFO f
