@@ -13,4 +13,6 @@ public interface IUserService {
 	boolean updateLastLoginTime(String userId);
 
 	User authenticate(String email, String password);
+
+	User getUserById(String userId);
 }

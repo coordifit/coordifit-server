@@ -10,7 +10,9 @@ import org.springframework.web.bind.annotation.*;
 
 import com.miracle.coordifit.auth.dto.*;
 import com.miracle.coordifit.auth.model.User;
+import com.miracle.coordifit.auth.repository.JwtTokenRepository;
 import com.miracle.coordifit.auth.service.IEmailService;
+import com.miracle.coordifit.auth.service.IJwtService;
 import com.miracle.coordifit.auth.service.IUserService;
 import com.miracle.coordifit.common.dto.ApiResponseDto;
 
@@ -25,9 +27,12 @@ import lombok.extern.slf4j.Slf4j;
 public class AuthController {
 	private final IUserService userService;
 	private final IEmailService emailService;
+	private final IJwtService jwtService;
+	private final JwtTokenRepository jwtTokenRepository;
 
 	@PostMapping("/signup")
-	public ResponseEntity<ApiResponseDto<User>> signUp(@Valid @RequestBody SignUpRequestDto signUpRequestDto,
+	public ResponseEntity<ApiResponseDto<User>> signUp(
+		@Valid @RequestBody SignUpRequestDto signUpRequestDto,
 		BindingResult bindingResult) {
 
 		log.info("회원가입 요청: {}", signUpRequestDto.getEmail());
@@ -62,7 +67,8 @@ public class AuthController {
 
 	@PostMapping("/send-verification")
 	public ResponseEntity<ApiResponseDto<String>> sendVerificationCode(
-		@Valid @RequestBody EmailVerificationRequestDto requestDto, BindingResult bindingResult) {
+		@Valid @RequestBody EmailVerificationRequestDto requestDto,
+		BindingResult bindingResult) {
 
 		log.info("이메일 인증 코드 발송 요청: {}", requestDto.getEmail());
 
@@ -97,7 +103,8 @@ public class AuthController {
 	}
 
 	@GetMapping("/check-email")
-	public ResponseEntity<ApiResponseDto<Boolean>> checkEmailAvailability(@RequestParam("email") String email) {
+	public ResponseEntity<ApiResponseDto<Boolean>> checkEmailAvailability(
+		@RequestParam("email") String email) {
 
 		log.info("이메일 중복 검사: {}", email);
 
@@ -136,7 +143,8 @@ public class AuthController {
 	}
 
 	@PostMapping("/login")
-	public ResponseEntity<ApiResponseDto<Map<String, Object>>> login(@RequestBody Map<String, Object> loginRequest) {
+	public ResponseEntity<ApiResponseDto<Map<String, Object>>> login(
+		@RequestBody Map<String, Object> loginRequest) {
 
 		log.info("로그인 요청: {}", loginRequest.get("email"));
 
@@ -163,22 +171,25 @@ public class AuthController {
 					.body(ApiResponseDto.error("이메일 또는 비밀번호가 올바르지 않습니다."));
 			}
 
-			// 로그인 성공 응답 데이터 준비
-			Map<String, Object> responseData = new HashMap<>();
-			// @formatter:off
-			responseData.put("user", Map.of(
-				"userId", user.getUserId(),
-				"email", user.getEmail(),
-				"nickname", user.getNickname())
-			);
-			// @formatter:on
+			// JWT 토큰 생성
+			String accessToken = jwtService.generateToken(user, "ACCESS");
+			String refreshToken = jwtService.generateToken(user, "REFRESH");
 
-			// TODO: JWT 토큰 생성 및 관리 구현 필요
-			// - JwtService 클래스 생성
-			// - Access Token, Refresh Token 발급
-			// - 토큰 만료 시간 설정
-			// - 토큰 검증 및 갱신 기능
-			// responseData.put("token", jwtService.generateToken(user));
+			// 기존 토큰 삭제 (보안을 위해)
+			jwtTokenRepository.deleteToken(user.getUserId(), "access");
+			jwtTokenRepository.deleteToken(user.getUserId(), "refresh");
+
+			// 새 토큰들을 Redis에 저장
+			jwtTokenRepository.saveToken(user.getUserId(), accessToken, jwtService.getExpirationFromToken(accessToken),
+				"access");
+			jwtTokenRepository.saveToken(user.getUserId(), refreshToken,
+				jwtService.getExpirationFromToken(refreshToken), "refresh");
+
+			// 로그인 성공 응답 데이터 준비 (중복 사용자 정보 제거: JWT에 포함됨)
+			Map<String, Object> responseData = new HashMap<>();
+			responseData.put("accessToken", accessToken);
+			responseData.put("refreshToken", refreshToken);
+			responseData.put("tokenType", "Bearer");
 
 			return ResponseEntity.ok()
 				.body(ApiResponseDto.success("로그인이 완료되었습니다.", responseData));
@@ -190,4 +201,86 @@ public class AuthController {
 		}
 	}
 
+	@PostMapping("/refresh")
+	public ResponseEntity<ApiResponseDto<Map<String, Object>>> refreshToken(
+		@RequestBody Map<String, String> refreshRequest) {
+
+		log.info("토큰 갱신 요청");
+
+		try {
+			String refreshToken = refreshRequest.get("refreshToken");
+
+			if (refreshToken == null || refreshToken.trim().isEmpty()) {
+				return ResponseEntity.badRequest()
+					.body(ApiResponseDto.error("리프레시 토큰을 입력해주세요."));
+			}
+
+			// 리프레시 토큰 검증
+			if (!jwtService.validateToken(refreshToken)) {
+				log.warn("리프레시 토큰 JWT 검증 실패");
+				return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+					.body(ApiResponseDto.error("유효하지 않은 리프레시 토큰입니다."));
+			}
+
+			log.info("리프레시 토큰 검증 성공");
+
+			// 사용자 정보 조회
+			String userId = jwtService.getUserIdFromToken(refreshToken);
+			User user = userService.getUserById(userId);
+
+			if (user == null) {
+				return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+					.body(ApiResponseDto.error("사용자를 찾을 수 없습니다."));
+			}
+
+			// 새 액세스 토큰 생성
+			String newAccessToken = jwtService.generateToken(user, "ACCESS");
+
+			// 기존 액세스 토큰 삭제
+			jwtTokenRepository.deleteToken(userId, "access");
+
+			// 새 액세스 토큰 저장
+			jwtTokenRepository.saveToken(userId, newAccessToken, jwtService.getExpirationFromToken(newAccessToken),
+				"access");
+
+			// 응답 데이터 준비
+			Map<String, Object> responseData = new HashMap<>();
+			responseData.put("accessToken", newAccessToken);
+			responseData.put("tokenType", "Bearer");
+
+			return ResponseEntity.ok()
+				.body(ApiResponseDto.success("토큰이 갱신되었습니다.", responseData));
+
+		} catch (Exception e) {
+			log.error("토큰 갱신 실패", e);
+			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+				.body(ApiResponseDto.error("토큰 갱신 중 오류가 발생했습니다."));
+		}
+	}
+
+	@PostMapping("/logout")
+	public ResponseEntity<ApiResponseDto<String>> logout(
+		@RequestHeader("Authorization") String authorization) {
+
+		log.info("로그아웃 요청");
+
+		try {
+			// JWT 필터에서 이미 검증됨 - 토큰에서 사용자 ID 추출
+			String accessToken = authorization.substring(7);
+			String userId = jwtService.getUserIdFromToken(accessToken);
+
+			// 해당 사용자의 모든 토큰 삭제
+			jwtTokenRepository.deleteToken(userId, "access");
+			jwtTokenRepository.deleteToken(userId, "refresh");
+
+			log.info("로그아웃 완료: {}", userId);
+
+			return ResponseEntity.ok()
+				.body(ApiResponseDto.success("로그아웃이 완료되었습니다.", null));
+
+		} catch (Exception e) {
+			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+				.body(ApiResponseDto.error("로그아웃 처리 중 오류가 발생했습니다."));
+		}
+	}
 }
