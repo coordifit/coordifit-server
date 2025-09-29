@@ -23,8 +23,7 @@ public class NanobananaServiceImpl implements NanobananaService {
 	private final String apiKey;
 
 	public NanobananaServiceImpl(@Qualifier("geminiWebClient") WebClient webClient,
-		@Value("${app.google.gemini.api-key}")
-		String apiKey) {
+		@Value("${app.google.gemini.api-key}") String apiKey) {
 		this.webClient = webClient;
 		this.apiKey = apiKey;
 	}

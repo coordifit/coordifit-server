@@ -24,13 +24,16 @@ public class S3Service {
 	public String uploadFile(MultipartFile file) throws IOException {
 		String key = UUID.randomUUID() + "_" + file.getOriginalFilename();
 
+		//@formatter:off
 		s3.putObject(
 			PutObjectRequest.builder()
 				.bucket(bucket)
 				.key(key)
 				.contentType(file.getContentType())
 				.build(),
-			RequestBody.fromBytes(file.getBytes()));
+			RequestBody.fromBytes(file.getBytes())
+		);
+		//@formatter:on
 
 		return "https://" + bucket + ".s3." + region + ".amazonaws.com/" + key;
 	}

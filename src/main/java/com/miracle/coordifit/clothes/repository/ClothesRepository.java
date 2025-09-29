@@ -11,35 +11,25 @@ import com.miracle.coordifit.common.model.FileInfo;
 
 @Mapper
 public interface ClothesRepository {
-
 	int insertClothes(Clothes clothes);
 
 	int updateClothes(Clothes clothes);
 
-	int deleteClothes(@Param("clothesId")
-	String clothesId);
+	int deleteClothes(@Param("clothesId") String clothesId);
 
-	Clothes findById(@Param("clothesId")
-	String clothesId);
+	Clothes findById(@Param("clothesId") String clothesId);
 
-	List<Clothes> findAllByUser(@Param("userId")
-	String userId);
+	List<Clothes> findAllByUser(@Param("userId") String userId);
 
 	int insertImageLink(ClothesImageLink link);
 
-	int deleteAllImageLinks(@Param("clothesId")
-	String clothesId);
+	int deleteAllImageLinks(@Param("clothesId") String clothesId);
 
-	int deleteImageLink(@Param("clothesId")
-	String clothesId, @Param("fileId")
-	Long fileId);
+	int deleteImageLink(@Param("clothesId") String clothesId, @Param("fileId") Long fileId);
 
-	List<ClothesImageLink> findImageLinks(@Param("clothesId")
-	String clothesId);
+	List<ClothesImageLink> findImageLinks(@Param("clothesId") String clothesId);
 
-	int countImageLinks(@Param("clothesId")
-	String clothesId);
+	int countImageLinks(@Param("clothesId") String clothesId);
 
-	List<FileInfo> findImageFiles(@Param("clothesId")
-	String clothesId);
+	List<FileInfo> findImageFiles(@Param("clothesId") String clothesId);
 }

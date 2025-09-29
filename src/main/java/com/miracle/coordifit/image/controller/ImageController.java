@@ -23,8 +23,7 @@ public class ImageController {
 	private final ImageService imageService;
 
 	@PostMapping
-	public ResponseEntity<String> uploadImage(@RequestParam("file")
-	MultipartFile file) {
+	public ResponseEntity<String> uploadImage(@RequestParam("file") MultipartFile file) {
 		try {
 			imageService.uploadImage(file);
 			return ResponseEntity.ok("Image uploaded successfully");

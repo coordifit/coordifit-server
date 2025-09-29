@@ -23,8 +23,7 @@ public class FileController {
 	private final FileService fileService;
 
 	@PostMapping
-	public ResponseEntity<FileInfo> uploadFile(@RequestParam("file")
-	MultipartFile file) {
+	public ResponseEntity<FileInfo> uploadFile(@RequestParam("file") MultipartFile file) {
 		return ResponseEntity.ok(fileService.uploadFile(file));
 	}
 
@@ -35,8 +34,7 @@ public class FileController {
 	}
 
 	@GetMapping("/{fileId}")
-	public ResponseEntity<FileInfo> getFileById(@PathVariable("fileId")
-	Integer fileId) {
+	public ResponseEntity<FileInfo> getFileById(@PathVariable("fileId") Integer fileId) {
 		FileInfo fileInfo = fileService.getFileById(fileId);
 		if (fileInfo == null) {
 			return ResponseEntity.notFound().build();

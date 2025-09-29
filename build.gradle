@@ -23,7 +23,6 @@ compileJava {
 spotless {
     java {
         eclipse().configFile("$rootDir/config/checkstyle/naver-eclipse-formatter.xml")
-
         importOrderFile("$rootDir/config/checkstyle/naver.importorder")
 
         removeUnusedImports()

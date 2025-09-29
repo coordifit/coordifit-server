@@ -29,22 +29,18 @@ public class CommonCodeController {
 	}
 
 	@PostMapping
-	public CommonCode createCommonCode(@RequestBody
-	CommonCode commonCode) {
+	public CommonCode createCommonCode(@RequestBody CommonCode commonCode) {
 		return commonCodeService.createCommonCode(commonCode);
 	}
 
 	@PutMapping("/{codeId}")
-	public CommonCode updateCommonCode(@PathVariable("codeId")
-	String codeId, @RequestBody
-	CommonCode commonCode) {
+	public CommonCode updateCommonCode(@PathVariable("codeId") String codeId, @RequestBody CommonCode commonCode) {
 		commonCode.setCodeId(codeId);
 		return commonCodeService.updateCommonCode(commonCode);
 	}
 
 	@DeleteMapping("/{codeId}")
-	public ResponseEntity<Void> deleteCommonCode(@PathVariable("codeId")
-	String codeId) {
+	public ResponseEntity<Void> deleteCommonCode(@PathVariable("codeId") String codeId) {
 		commonCodeService.deleteCommonCode(codeId);
 		return ResponseEntity.ok().build();
 	}

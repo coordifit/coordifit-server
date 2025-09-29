@@ -11,8 +11,7 @@ import com.miracle.coordifit.common.model.CommonCode;
 public interface CommonCodeRepository {
 	String selectLastCodeId();
 
-	String selectLastCodeIdByHeader(@Param("header")
-	String header);
+	String selectLastCodeIdByHeader(@Param("header") String header);
 
 	List<CommonCode> selectCommonCodes();
 
