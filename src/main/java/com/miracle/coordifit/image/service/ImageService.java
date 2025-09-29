@@ -16,20 +16,20 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class ImageService {
 
-    private final ImageMapper imageMapper;
-    private final S3Service s3Service;
+	private final ImageMapper imageMapper;
+	private final S3Service s3Service;
 
-    public void uploadImage(MultipartFile file) throws IOException {
-        String url = s3Service.uploadFile(file);
+	public void uploadImage(MultipartFile file) throws IOException {
+		String url = s3Service.uploadFile(file);
 
-        Image image = new Image();
-        image.setFileName(file.getOriginalFilename());
-        image.setUrl(url);
+		Image image = new Image();
+		image.setFileName(file.getOriginalFilename());
+		image.setUrl(url);
 
-        imageMapper.insertImage(image);
-    }
+		imageMapper.insertImage(image);
+	}
 
-    public List<Image> getAllImages() {
-        return imageMapper.selectAllImages();
-    }
+	public List<Image> getAllImages() {
+		return imageMapper.selectAllImages();
+	}
 }

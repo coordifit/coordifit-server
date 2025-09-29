@@ -2,7 +2,11 @@ package com.miracle.coordifit.common.model;
 
 import java.time.LocalDateTime;
 
-import lombok.*;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
 
 @Getter
 @Setter
@@ -10,13 +14,13 @@ import lombok.*;
 @AllArgsConstructor
 @Builder
 public class FileInfo {
-    private Integer fileId;
-    private String originalName;
-    private String s3Key;
-    private String s3Url;
-    private String bucketName;
-    private Long fileSize;
-    private String fileType;
-    private String uploadBy;
-    private LocalDateTime uploadDate;
+	private Integer fileId;
+	private String originalName;
+	private String s3Key;
+	private String s3Url;
+	private String bucketName;
+	private Long fileSize;
+	private String fileType;
+	private String uploadBy;
+	private LocalDateTime uploadDate;
 }
