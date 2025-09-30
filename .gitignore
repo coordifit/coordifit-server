@@ -38,8 +38,5 @@ out/
 
 .env
 
-*/application.properties
-application.properties
-
 src/main/resources/application-*.properties
 src/main/resources/static/static
