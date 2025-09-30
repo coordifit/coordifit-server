@@ -10,6 +10,9 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.miracle.coordifit.clothes.dto.ClothesBulkCreateRequest;
+import com.miracle.coordifit.clothes.dto.ClothesCreateRequest;
+import com.miracle.coordifit.clothes.dto.ClothesUpdateRequest;
 import com.miracle.coordifit.clothes.model.Clothes;
 import com.miracle.coordifit.clothes.service.IClothesService;
 import com.miracle.coordifit.common.model.CommonCode;
@@ -22,6 +25,7 @@ import io.swagger.v3.oas.annotations.media.ArraySchema;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 
 @Tag(name = "Clothes", description = "옷 등록/수정/조회 API")
@@ -150,7 +154,33 @@ public class ClothesController {
 		}
 		return null;
 	}
+	  @PostMapping("/bulk")
+	    public ResponseEntity<List<String>> bulkCreate(@Valid @RequestBody ClothesBulkCreateRequest req,
+	                                                   @RequestHeader("X-Actor") String actor) {
+	        return ResponseEntity.ok(clothesService.bulkCreate(req, actor));
+	    }
 
+	    @PostMapping
+	    public ResponseEntity<String> createOne(@Valid @RequestBody ClothesCreateRequest req,
+	                                            @RequestHeader("X-Actor") String actor) {
+	        return ResponseEntity.ok(clothesService.createOne(req, actor));
+	    }
+
+	    @PutMapping("/{clothesId}")
+	    public ResponseEntity<Void> update(@PathVariable String clothesId,
+	                                       @Valid @RequestBody ClothesUpdateRequest req,
+	                                       @RequestParam(defaultValue = "true") boolean replaceFiles,
+	                                       @RequestHeader("X-Actor") String actor) {
+	        req.setClothesId(clothesId);
+	        clothesService.update(req, replaceFiles, actor);
+	        return ResponseEntity.noContent().build();
+	    }
+
+	    @DeleteMapping("/bulk")
+	    public ResponseEntity<Void> bulkDelete(@RequestBody List<String> clothesIds) {
+	        clothesService.bulkDelete(clothesIds);
+	        return ResponseEntity.noContent().build();
+	    }
 	private boolean isBlank(String s) {
 		return s == null || s.isBlank();
 	}

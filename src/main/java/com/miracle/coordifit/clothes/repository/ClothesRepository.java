@@ -34,4 +34,10 @@ public interface ClothesRepository {
 	List<FileInfo> findImageFiles(@Param("clothesId") String clothesId);
 
 	int getNextClothesDailySeq();
+	
+	
+    int insertBulkClothes(@Param("list") List<Clothes> clothesList);
+    int insertBulkImageLinks(@Param("links") List<ClothesImageLink> links);
+    int deleteClothesByIds(@Param("ids") List<String> clothesIds);
+    int deleteImagesByClothesIds(@Param("ids") List<String> clothesIds);
 }
