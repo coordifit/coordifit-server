@@ -154,33 +154,35 @@ public class ClothesController {
 		}
 		return null;
 	}
-	  @PostMapping("/bulk")
-	    public ResponseEntity<List<String>> bulkCreate(@Valid @RequestBody ClothesBulkCreateRequest req,
-	                                                   @RequestHeader("X-Actor") String actor) {
-	        return ResponseEntity.ok(clothesService.bulkCreate(req, actor));
-	    }
 
-	    @PostMapping
-	    public ResponseEntity<String> createOne(@Valid @RequestBody ClothesCreateRequest req,
-	                                            @RequestHeader("X-Actor") String actor) {
-	        return ResponseEntity.ok(clothesService.createOne(req, actor));
-	    }
+	@PostMapping("/bulk")
+	public ResponseEntity<List<String>> bulkCreate(@Valid @RequestBody ClothesBulkCreateRequest req,
+		@RequestHeader("X-Actor") String actor) {
+		return ResponseEntity.ok(clothesService.bulkCreate(req, actor));
+	}
 
-	    @PutMapping("/{clothesId}")
-	    public ResponseEntity<Void> update(@PathVariable String clothesId,
-	                                       @Valid @RequestBody ClothesUpdateRequest req,
-	                                       @RequestParam(defaultValue = "true") boolean replaceFiles,
-	                                       @RequestHeader("X-Actor") String actor) {
-	        req.setClothesId(clothesId);
-	        clothesService.update(req, replaceFiles, actor);
-	        return ResponseEntity.noContent().build();
-	    }
+	@PostMapping
+	public ResponseEntity<String> createOne(@Valid @RequestBody ClothesCreateRequest req,
+		@RequestHeader("X-Actor") String actor) {
+		return ResponseEntity.ok(clothesService.createOne(req, actor));
+	}
 
-	    @DeleteMapping("/bulk")
-	    public ResponseEntity<Void> bulkDelete(@RequestBody List<String> clothesIds) {
-	        clothesService.bulkDelete(clothesIds);
-	        return ResponseEntity.noContent().build();
-	    }
+	@PutMapping("/{clothesId}")
+	public ResponseEntity<Void> update(@PathVariable String clothesId,
+		@Valid @RequestBody ClothesUpdateRequest req,
+		@RequestParam(defaultValue = "true") boolean replaceFiles,
+		@RequestHeader("X-Actor") String actor) {
+		req.setClothesId(clothesId);
+		clothesService.update(req, replaceFiles, actor);
+		return ResponseEntity.noContent().build();
+	}
+
+	@DeleteMapping("/bulk")
+	public ResponseEntity<Void> bulkDelete(@RequestBody List<String> clothesIds) {
+		clothesService.bulkDelete(clothesIds);
+		return ResponseEntity.noContent().build();
+	}
+
 	private boolean isBlank(String s) {
 		return s == null || s.isBlank();
 	}
