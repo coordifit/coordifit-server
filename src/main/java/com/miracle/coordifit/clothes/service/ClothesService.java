@@ -1,6 +1,8 @@
 // src/main/java/com/miracle/coordifit/clothes/service/ClothesService.java
 package com.miracle.coordifit.clothes.service;
 
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
 
 import org.springframework.stereotype.Service;
@@ -25,9 +27,11 @@ public class ClothesService implements IClothesService {
 	@Override
 	@Transactional
 	public String register(Clothes clothes, List<MultipartFile> images, String userId) {
-		int cnt = images == null ? 0 : images.size();
-		if (cnt < 1 || cnt > 5)
+
+		int cnt = (images == null) ? 0 : images.size();
+		if (cnt < 1 || cnt > 5) {
 			throw new IllegalArgumentException("이미지는 1~5장 업로드해야 합니다.");
+		}
 
 		clothes.setUserId(userId);
 		clothes.setCreatedBy(userId);
@@ -35,29 +39,29 @@ public class ClothesService implements IClothesService {
 		if (clothes.getWearCount() == null)
 			clothes.setWearCount(0);
 
-		clothesRepository.insertClothes(clothes);
+		Integer next = clothesRepository.getNextClothesDailySeq();
+		String date = LocalDate.now().format(DateTimeFormatter.ofPattern("yyMMdd"));
+	    String clothesId = String.format("C%s%03d", date, next);
 
-		if (clothes.getClothesId() == null || clothes.getClothesId().isBlank()) {
-			throw new IllegalStateException("CLOTHES_ID가 생성되지 않았습니다.");
-		}
+		clothes.setClothesId(clothesId);
+
+		clothesRepository.insertClothes(clothes);
 
 		for (MultipartFile file : images) {
 			if (file == null || file.isEmpty())
 				continue;
+
 			FileInfo saved = fileService.uploadFile(file);
 			if (saved != null && saved.getFileId() != null) {
-				// @formatter:off
 				clothesRepository.insertImageLink(
 					ClothesImageLink.builder()
-						.clothesId(clothes.getClothesId())
+						.clothesId(clothesId)
 						.fileId(saved.getFileId().longValue())
 						.createdBy(userId)
-						.build()
-				);
-				// @formatter:on
+						.build());
 			}
 		}
-		return clothes.getClothesId();
+		return clothesId;
 	}
 
 	@Override
@@ -77,17 +81,15 @@ public class ClothesService implements IClothesService {
 			for (MultipartFile file : addImages) {
 				if (file == null || file.isEmpty())
 					continue;
+
 				FileInfo saved = fileService.uploadFile(file);
 				if (saved != null && saved.getFileId() != null) {
-					//@formatter:off
 					clothesRepository.insertImageLink(
 						ClothesImageLink.builder()
 							.clothesId(clothes.getClothesId())
 							.fileId(saved.getFileId().longValue())
 							.createdBy(userId)
-							.build()
-					);
-					//@formatter:on
+							.build());
 				}
 			}
 		}
