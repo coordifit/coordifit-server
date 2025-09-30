@@ -4,6 +4,7 @@ networks:
 
 volumes:
   oracle-data: {}
+  redis-data: {}
   certbot-etc: {}
   certbot-www: {}
 
@@ -34,6 +35,19 @@ services:
       start_period: 120s
     volumes:
       - oracle-data:/opt/oracle/oradata
+
+  redis:
+    image: redis:7-alpine
+    container_name: redis
+    networks:
+      - app_network
+    ports:
+      - "6379:6379"
+    command: redis-server --appendonly yes
+    volumes:
+      - redis-data:/data
+    restart: unless-stopped
+
   spring-boot:
     image: rhrudwnszoq/coordifit-spring:dev-latest
     networks:

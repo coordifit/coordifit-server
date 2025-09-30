@@ -65,6 +65,7 @@ jobs:
           file: ./Dockerfile
           platforms: linux/amd64,linux/arm64
           push: true
+          no-cache: true
           tags: |
             ${{ secrets.DOCKERHUB_USERNAME }}/coordifit-spring:dev-latest
             ${{ secrets.DOCKERHUB_USERNAME }}/coordifit-spring:${{ steps.meta.outputs.SHA_TAG }}
