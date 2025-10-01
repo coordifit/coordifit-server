@@ -12,7 +12,7 @@ import javax.crypto.SecretKey;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
-import com.miracle.coordifit.auth.model.User;
+import com.miracle.coordifit.user.model.User;
 
 import io.jsonwebtoken.*;
 import io.jsonwebtoken.security.Keys;
@@ -49,6 +49,11 @@ public class JwtService implements IJwtService {
 		claims.put("userId", user.getUserId());
 		claims.put("email", user.getEmail());
 		claims.put("nickname", user.getNickname());
+		claims.put("fileId", user.getFileId());
+		claims.put("loginTypeCode", user.getLoginTypeCode());
+		claims.put("kakaoId", user.getKakaoId());
+		claims.put("genderCode", user.getGenderCode());
+		claims.put("birthDate", user.getBirthDate().toString());
 		claims.put("type", tokenType);
 
 		Date now = new Date();

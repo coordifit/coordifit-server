@@ -9,12 +9,12 @@ import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
 
 import com.miracle.coordifit.auth.dto.*;
-import com.miracle.coordifit.auth.model.User;
 import com.miracle.coordifit.auth.repository.JwtTokenRepository;
 import com.miracle.coordifit.auth.service.IEmailService;
 import com.miracle.coordifit.auth.service.IJwtService;
-import com.miracle.coordifit.auth.service.IUserService;
 import com.miracle.coordifit.common.dto.ApiResponseDto;
+import com.miracle.coordifit.user.model.User;
+import com.miracle.coordifit.user.service.IUserService;
 
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;

@@ -1,5 +1,6 @@
 package com.miracle.coordifit.common.controller;
 
+import java.util.List;
 import java.util.Map;
 
 import org.springframework.http.ResponseEntity;
@@ -26,6 +27,11 @@ public class CommonCodeController {
 	@GetMapping
 	public Map<String, CommonCode> getCommonCodes() {
 		return commonCodeService.getCommonCodes();
+	}
+
+	@GetMapping("/{parentCodeId}")
+	public List<CommonCode> getCommonCodesByParentCodeId(@PathVariable("parentCodeId") String parentCodeId) {
+		return commonCodeService.getCommonCodesByParentCodeId(parentCodeId);
 	}
 
 	@PostMapping
