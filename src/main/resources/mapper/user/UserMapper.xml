@@ -106,20 +106,14 @@
         FROM users
     </select>
 
-    <update id="updateUser" parameterType="com.miracle.coordifit.user.model.User">
+    <update id="updateUserProfile" parameterType="com.miracle.coordifit.user.model.User">
         UPDATE users 
-        SET email = #{email},
-            password = #{password},
-            nickname = #{nickname},
-            file_id = #{fileId},
-            login_type_code = #{loginTypeCode},
-
-            kakao_id = #{kakaoId},
+        SET nickname = #{nickname},
             gender_code = #{genderCode},
             birth_date = #{birthDate},
             is_active = #{isActive},
+            file_id = #{fileId},
             updated_at = CURRENT_TIMESTAMP,
-
             updated_by = #{updatedBy}
         WHERE user_id = #{userId}
     </update>

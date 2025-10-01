@@ -20,4 +20,6 @@ public interface UserRepository {
 	int getNextUserSequence();
 
 	int updateLastLoginTime(@Param("userId") String userId);
+
+	int updateUserProfile(User user);
 }
