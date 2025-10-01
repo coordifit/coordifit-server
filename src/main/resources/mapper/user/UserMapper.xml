@@ -5,13 +5,11 @@
 
     <insert id="insertUser" parameterType="com.miracle.coordifit.user.model.User">
         INSERT INTO users (
-            user_id, email, password, nickname, file_id,
-            login_type_code, kakao_id, gender_code, birth_date, is_active,
-            created_at, created_by, logined_at
+            user_id, email, password, nickname, login_type_code, 
+            is_active, created_at, created_by
         ) VALUES (
-            #{userId}, #{email}, #{password}, #{nickname}, #{fileId},
-            #{loginTypeCode}, #{kakaoId}, #{genderCode}, #{birthDate}, #{isActive},
-            CURRENT_TIMESTAMP, #{createdBy}, #{loginedAt}
+            #{userId}, #{email}, #{password}, #{nickname}, #{loginTypeCode},
+            #{isActive}, CURRENT_TIMESTAMP, #{createdBy}
         )
     </insert>
 
