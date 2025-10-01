@@ -24,14 +24,13 @@ public interface IClothesService {
 	List<FileInfo> findImages(String clothesId);
 
 	void removeImage(String clothesId, Long fileId);
-	
-	
+
 	List<String> bulkCreate(ClothesBulkCreateRequest req, String actor);
-	
+
 	String createOne(ClothesCreateRequest req, String actor);
-	
+
 	void update(ClothesUpdateRequest req, boolean replaceFiles, String actor);
-	
+
 	void bulkDelete(List<String> clothesIds);
-	
+
 }

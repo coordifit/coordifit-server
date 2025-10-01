@@ -3,22 +3,21 @@ package com.miracle.coordifit.clothes.service;
 
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
-import java.util.ArrayList; // [ADD]
+import java.util.ArrayList;
 import java.util.List;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
+import com.miracle.coordifit.clothes.dto.ClothesBulkCreateRequest;
+import com.miracle.coordifit.clothes.dto.ClothesCreateRequest;
+import com.miracle.coordifit.clothes.dto.ClothesUpdateRequest;
 import com.miracle.coordifit.clothes.model.Clothes;
 import com.miracle.coordifit.clothes.model.ClothesImageLink;
 import com.miracle.coordifit.clothes.repository.ClothesRepository;
 import com.miracle.coordifit.common.model.FileInfo;
 import com.miracle.coordifit.common.service.IFileService;
-
-import com.miracle.coordifit.clothes.dto.ClothesBulkCreateRequest;
-import com.miracle.coordifit.clothes.dto.ClothesCreateRequest;
-import com.miracle.coordifit.clothes.dto.ClothesUpdateRequest;
 
 import lombok.RequiredArgsConstructor;
 
@@ -126,7 +125,7 @@ public class ClothesService implements IClothesService {
 	public List<Clothes> findMine(String userId) {
 		return clothesRepository.findAllByUser(userId);
 	}
-	
+
 	// [ADD] 공통: 오늘 기준 "CyyMMdd###" ID 생성
 	private String nextClothesId() {
 		String ymd = LocalDate.now().format(DateTimeFormatter.ofPattern("yyMMdd"));
@@ -138,58 +137,61 @@ public class ClothesService implements IClothesService {
 	@Transactional
 	@Override
 	public List<String> bulkCreate(ClothesBulkCreateRequest req, String actor) {
-	    List<Clothes> clothesList = new ArrayList<>();
-	    List<ClothesImageLink> links = new ArrayList<>();
-	    List<String> createdIds = new ArrayList<>();
+		List<Clothes> clothesList = new ArrayList<>();
+		List<ClothesImageLink> links = new ArrayList<>();
+		List<String> createdIds = new ArrayList<>();
 
-	    if (req == null || req.getItems() == null || req.getItems().isEmpty()) {
-	        return createdIds;
-	    }
+		if (req == null || req.getItems() == null || req.getItems().isEmpty()) {
+			return createdIds;
+		}
 
-	    final String ymd = LocalDate.now().format(DateTimeFormatter.ofPattern("yyMMdd"));
-	    // ✅ 하루 시퀀스 “한 번만” 읽기
-	    int base = clothesRepository.getNextClothesDailySeq();
+		final String ymd = LocalDate.now().format(DateTimeFormatter.ofPattern("yyMMdd"));
+		// ✅ 하루 시퀀스 “한 번만” 읽기
+		int base = clothesRepository.getNextClothesDailySeq();
 
-	    int i = 0;
-	    for (ClothesCreateRequest item : req.getItems()) {
-	        String clothesId = String.format("C%s%03d", ymd, base + i++); // ✅ 각 항목마다 +i
-	        createdIds.add(clothesId);
+		int i = 0;
+		for (ClothesCreateRequest item : req.getItems()) {
+			String clothesId = String.format("C%s%03d", ymd, base + i++); // ✅ 각 항목마다 +i
+			createdIds.add(clothesId);
 
-	        Clothes c = new Clothes();
-	        c.setClothesId(clothesId);
-	        c.setUserId(item.getUserId());
-	        c.setName(item.getName());
-	        c.setBrand(item.getBrand());
-	        c.setCategoryCode(item.getCategoryCode());
-	        c.setClothesSize(item.getClothesSize());
-	        c.setPrice(item.getPrice());
-	        c.setPurchaseDate(item.getPurchaseDate());
-	        c.setPurchaseUrl(item.getPurchaseUrl());
-	        c.setDescription(item.getDescription());
-	        if (c.getWearCount() == null) c.setWearCount(0);
-	        c.setIsActive("Y");
-	        c.setCreatedBy(actor);
-	        c.setUpdatedBy(actor);
-	        clothesList.add(c);
+			Clothes c = new Clothes();
+			c.setClothesId(clothesId);
+			c.setUserId(item.getUserId());
+			c.setName(item.getName());
+			c.setBrand(item.getBrand());
+			c.setCategoryCode(item.getCategoryCode());
+			c.setClothesSize(item.getClothesSize());
+			c.setPrice(item.getPrice());
+			c.setPurchaseDate(item.getPurchaseDate());
+			c.setPurchaseUrl(item.getPurchaseUrl());
+			c.setDescription(item.getDescription());
+			if (c.getWearCount() == null)
+				c.setWearCount(0);
+			c.setIsActive("Y");
+			c.setCreatedBy(actor);
+			c.setUpdatedBy(actor);
+			clothesList.add(c);
 
-	        if (item.getFileIds() != null) {
-	            for (Long fid : item.getFileIds()) {
-	                if (fid == null) continue;
-	                links.add(ClothesImageLink.builder()
-	                    .clothesId(clothesId)
-	                    .fileId(fid)
-	                    .createdBy(actor)
-	                    .build());
-	            }
-	        }
-	    }
+			if (item.getFileIds() != null) {
+				for (Long fid : item.getFileIds()) {
+					if (fid == null)
+						continue;
+					links.add(ClothesImageLink.builder()
+						.clothesId(clothesId)
+						.fileId(fid)
+						.createdBy(actor)
+						.build());
+				}
+			}
+		}
 
-	    if (!clothesList.isEmpty()) clothesRepository.insertBulkClothes(clothesList);
-	    if (!links.isEmpty())       clothesRepository.insertBulkImageLinks(links);
+		if (!clothesList.isEmpty())
+			clothesRepository.insertBulkClothes(clothesList);
+		if (!links.isEmpty())
+			clothesRepository.insertBulkImageLinks(links);
 
-	    return createdIds;
+		return createdIds;
 	}
-
 
 	// [ADD] 단건 DTO 등록(내부적으로 bulkCreate 재사용)
 	@Transactional
@@ -227,14 +229,14 @@ public class ClothesService implements IClothesService {
 			if (!req.getFileIds().isEmpty()) {
 				List<ClothesImageLink> links = new ArrayList<>();
 				for (Long fid : req.getFileIds()) {
-					if (fid == null) continue;
+					if (fid == null)
+						continue;
 					links.add(
 						ClothesImageLink.builder()
 							.clothesId(req.getClothesId())
 							.fileId(fid)
 							.createdBy(actor)
-							.build()
-					);
+							.build());
 				}
 				clothesRepository.insertBulkImageLinks(links);
 			}
@@ -245,7 +247,8 @@ public class ClothesService implements IClothesService {
 	@Transactional
 	@Override
 	public void bulkDelete(List<String> clothesIds) {
-		if (clothesIds == null || clothesIds.isEmpty()) return;
+		if (clothesIds == null || clothesIds.isEmpty())
+			return;
 		clothesRepository.deleteImagesByClothesIds(clothesIds);
 		clothesRepository.deleteClothesByIds(clothesIds);
 	}
