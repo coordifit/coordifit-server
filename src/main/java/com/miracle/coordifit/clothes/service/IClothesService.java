@@ -4,6 +4,9 @@ import java.util.List;
 
 import org.springframework.web.multipart.MultipartFile;
 
+import com.miracle.coordifit.clothes.dto.ClothesBulkCreateRequest;
+import com.miracle.coordifit.clothes.dto.ClothesCreateRequest;
+import com.miracle.coordifit.clothes.dto.ClothesUpdateRequest;
 import com.miracle.coordifit.clothes.model.Clothes;
 import com.miracle.coordifit.common.model.FileInfo;
 
@@ -21,4 +24,13 @@ public interface IClothesService {
 	List<FileInfo> findImages(String clothesId);
 
 	void removeImage(String clothesId, Long fileId);
+
+	List<String> bulkCreate(ClothesBulkCreateRequest req, String actor);
+
+	String createOne(ClothesCreateRequest req, String actor);
+
+	void update(ClothesUpdateRequest req, boolean replaceFiles, String actor);
+
+	void bulkDelete(List<String> clothesIds);
+
 }

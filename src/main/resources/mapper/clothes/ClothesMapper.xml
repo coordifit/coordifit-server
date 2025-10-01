@@ -138,5 +138,50 @@
      WHERE ci.CLOTHES_ID = #{clothesId}
      ORDER BY f.FILE_ID ASC
   </select>
+  
+  
+  <insert id="insertBulkClothes">
+  INSERT INTO CLOTHES
+  (CLOTHES_ID, USER_ID, NAME, BRAND, CATEGORY_CODE, CLOTHES_SIZE, PRICE,
+   PURCHASE_DATE, PURCHASE_URL, DESCRIPTION, WEAR_COUNT, LAST_WORN_DATE,
+   IS_ACTIVE, CREATED_BY, CREATED_AT, UPDATED_BY, UPDATED_AT)
+  <foreach collection="list" item="c" separator=" UNION ALL ">
+    SELECT
+      #{c.clothesId}, #{c.userId}, #{c.name}, #{c.brand}, #{c.categoryCode}, #{c.clothesSize},
+      #{c.price,jdbcType=NUMERIC},
+      #{c.purchaseDate}, #{c.purchaseUrl}, #{c.description},
+      NVL(#{c.wearCount,jdbcType=NUMERIC}, 0),
+      #{c.lastWornDate},
+      NVL(#{c.isActive}, 'Y'),
+      #{c.createdBy}, CURRENT_TIMESTAMP,
+      #{c.updatedBy}, CURRENT_TIMESTAMP
+    FROM DUAL
+  </foreach>
+</insert>
+
+<insert id="insertBulkImageLinks">
+  INSERT INTO CLOTHES_IMAGES (CLOTHES_ID, FILE_ID, CREATED_AT, CREATED_BY)
+  <foreach collection="links" item="l" separator=" UNION ALL ">
+    SELECT #{l.clothesId}, #{l.fileId,jdbcType=NUMERIC}, CURRENT_TIMESTAMP, #{l.createdBy}
+    FROM DUAL
+  </foreach>
+</insert>
+
+<delete id="deleteClothesByIds">
+  DELETE FROM CLOTHES
+  WHERE CLOTHES_ID IN
+  <foreach collection="ids" item="id" open="(" close=")" separator=",">
+    #{id}
+  </foreach>
+</delete>
+
+<delete id="deleteImagesByClothesIds">
+  DELETE FROM CLOTHES_IMAGES
+  WHERE CLOTHES_ID IN
+  <foreach collection="ids" item="id" open="(" close=")" separator=",">
+    #{id}
+  </foreach>
+</delete>
+  
 
 </mapper>
