@@ -48,7 +48,8 @@ public class SecurityConfig {
 			// 인증이 필요한 요청과 허용할 요청 설정
 			.authorizeHttpRequests(auth -> auth
 				// 인증 관련 API는 허용
-				.requestMatchers("/api/auth/**").permitAll()
+				.requestMatchers("/swagger-ui/**", "/v3/api-docs/**", "/swagger-resources/**").permitAll()
+				.requestMatchers("/api/**").permitAll()
 				// 나머지 모든 API는 인증 필요
 				.anyRequest().authenticated());
 

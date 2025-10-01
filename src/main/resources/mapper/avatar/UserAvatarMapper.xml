@@ -1,0 +1,89 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.miracle.coordifit.avatar.repository.UserAvatarMapper">
+
+    <resultMap id="AvatarResponseMap" type="com.miracle.coordifit.avatar.dto.AvatarResponse">
+        <id     property="avatarId"        column="AVATAR_ID" />
+        <result property="userId"          column="USER_ID" />
+        <result property="avatarName"      column="AVATAR_NAME" />
+        <result property="fileId"          column="FILE_ID" />
+        <result property="isActive"        column="IS_ACTIVE" />
+        <result property="createdAt"       column="CREATED_AT" />
+        <result property="createdBy"       column="CREATED_BY" />
+        <result property="updatedAt"       column="UPDATED_AT" />
+        <result property="updatedBy"       column="UPDATED_BY" />
+        <result property="originalFileName" column="ORIGINAL_NAME" />
+        <result property="fileUrl"         column="S3_URL" />
+    </resultMap>
+
+    <select id="getNextAvatarSequence" resultType="int">
+        SELECT NVL(MAX(TO_NUMBER(REGEXP_SUBSTR(UA.AVATAR_ID, '[0-9]+'))), 0) + 1
+        FROM USER_AVATARS UA
+    </select>
+
+    <insert id="insertAvatar" parameterType="com.miracle.coordifit.avatar.model.UserAvatar">
+        INSERT INTO USER_AVATARS (
+        AVATAR_ID,
+        USER_ID,
+        AVATAR_NAME,
+        FILE_ID,
+        IS_ACTIVE,
+        CREATED_AT,
+        CREATED_BY,
+        UPDATED_AT,
+        UPDATED_BY
+        ) VALUES (
+        #{avatarId},
+        #{userId},
+        #{avatarName},
+        #{fileId,jdbcType=NUMERIC},
+        NVL(#{isActive}, 'Y'),
+        CURRENT_TIMESTAMP,
+        #{createdBy},
+        CURRENT_TIMESTAMP,
+        #{updatedBy}
+        )
+    </insert>
+
+    <select id="selectAvatarById" resultMap="AvatarResponseMap">
+        SELECT
+        UA.AVATAR_ID,
+        UA.USER_ID,
+        UA.AVATAR_NAME,
+        UA.FILE_ID,
+        UA.IS_ACTIVE,
+        UA.CREATED_AT,
+        UA.CREATED_BY,
+        UA.UPDATED_AT,
+        UA.UPDATED_BY,
+        F.ORIGINAL_NAME,
+        F.S3_URL
+        FROM USER_AVATARS UA
+        LEFT JOIN FILE_INFO F ON UA.FILE_ID = F.FILE_ID
+        WHERE UA.AVATAR_ID = #{avatarId}
+    </select>
+
+    <select id="selectAvatarsByUser" resultMap="AvatarResponseMap">
+        SELECT
+        UA.AVATAR_ID,
+        UA.USER_ID,
+        UA.AVATAR_NAME,
+        UA.FILE_ID,
+        UA.IS_ACTIVE,
+        UA.CREATED_AT,
+        UA.CREATED_BY,
+        UA.UPDATED_AT,
+        UA.UPDATED_BY,
+        F.ORIGINAL_NAME,
+        F.S3_URL
+        FROM USER_AVATARS UA
+        LEFT JOIN FILE_INFO F ON UA.FILE_ID = F.FILE_ID
+        WHERE UA.USER_ID = #{userId}
+        AND NVL(UA.IS_ACTIVE, 'Y') = 'Y'
+        ORDER BY UA.CREATED_AT DESC
+    </select>
+
+</mapper>
