@@ -1,9 +1,9 @@
-package com.miracle.coordifit.auth.repository;
+package com.miracle.coordifit.user.repository;
 
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 
-import com.miracle.coordifit.auth.model.User;
+import com.miracle.coordifit.user.model.User;
 
 @Mapper
 public interface UserRepository {

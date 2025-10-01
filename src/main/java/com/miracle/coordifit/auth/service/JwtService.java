@@ -12,7 +12,7 @@ import javax.crypto.SecretKey;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
-import com.miracle.coordifit.auth.model.User;
+import com.miracle.coordifit.user.model.User;
 
 import io.jsonwebtoken.*;
 import io.jsonwebtoken.security.Keys;

@@ -1,4 +1,4 @@
-package com.miracle.coordifit.auth.model;
+package com.miracle.coordifit.user.model;
 
 import java.time.LocalDateTime;
 

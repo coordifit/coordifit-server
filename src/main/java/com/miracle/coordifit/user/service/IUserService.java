@@ -1,7 +1,7 @@
-package com.miracle.coordifit.auth.service;
+package com.miracle.coordifit.user.service;
 
 import com.miracle.coordifit.auth.dto.SignUpRequestDto;
-import com.miracle.coordifit.auth.model.User;
+import com.miracle.coordifit.user.model.User;
 
 public interface IUserService {
 	User signUp(SignUpRequestDto signUpRequestDto);

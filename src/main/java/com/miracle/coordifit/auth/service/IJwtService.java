@@ -2,7 +2,7 @@ package com.miracle.coordifit.auth.service;
 
 import java.time.LocalDateTime;
 
-import com.miracle.coordifit.auth.model.User;
+import com.miracle.coordifit.user.model.User;
 
 public interface IJwtService {
 	String generateToken(User user, String tokenType);

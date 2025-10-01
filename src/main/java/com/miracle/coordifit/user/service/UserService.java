@@ -1,12 +1,13 @@
-package com.miracle.coordifit.auth.service;
+package com.miracle.coordifit.user.service;
 
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.miracle.coordifit.auth.dto.SignUpRequestDto;
-import com.miracle.coordifit.auth.model.User;
-import com.miracle.coordifit.auth.repository.UserRepository;
+import com.miracle.coordifit.auth.service.IEmailService;
+import com.miracle.coordifit.user.model.User;
+import com.miracle.coordifit.user.repository.UserRepository;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
