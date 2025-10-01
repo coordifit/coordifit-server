@@ -56,4 +56,14 @@
         CONNECT BY PRIOR code_id = parent_code_id
         ORDER SIBLINGS BY code_id
     </select>
+
+
+    <select id="selectCommonCodesByParentCodeId" resultType="com.miracle.coordifit.common.model.CommonCode">
+        SELECT 
+            code_id, 
+            code_name
+        FROM common_codes
+        WHERE parent_code_id = #{parentCodeId}
+        AND is_active = 'Y'
+    </select>
 </mapper>
