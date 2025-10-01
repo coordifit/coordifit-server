@@ -63,4 +63,3 @@ public class NanobananaService implements INanobananaService {
 			.doOnError(e -> System.err.println("Error calling Gemini API: " + e.getMessage()));
 	}
 }
-

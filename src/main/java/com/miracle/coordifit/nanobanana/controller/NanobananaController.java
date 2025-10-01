@@ -15,8 +15,8 @@ import org.springframework.web.multipart.MultipartFile;
 import com.miracle.coordifit.nanobanana.dto.FittingRequestDTO;
 import com.miracle.coordifit.nanobanana.dto.PromptRequestDTO;
 import com.miracle.coordifit.nanobanana.service.INanobananaService;
-import lombok.RequiredArgsConstructor;
 
+import lombok.RequiredArgsConstructor;
 import reactor.core.publisher.Mono;
 
 /**
@@ -29,7 +29,6 @@ import reactor.core.publisher.Mono;
 public class NanobananaController {
 
 	private final INanobananaService nanobananaService;
-
 
 	/**
 	 * 단순 프롬프트 기반 이미지 생성

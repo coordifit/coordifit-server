@@ -41,7 +41,7 @@ public class ClothesService implements IClothesService {
 
 		Integer next = clothesRepository.getNextClothesDailySeq();
 		String date = LocalDate.now().format(DateTimeFormatter.ofPattern("yyMMdd"));
-	    String clothesId = String.format("C%s%03d", date, next);
+		String clothesId = String.format("C%s%03d", date, next);
 
 		clothes.setClothesId(clothesId);
 
