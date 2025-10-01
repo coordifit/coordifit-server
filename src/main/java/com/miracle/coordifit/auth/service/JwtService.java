@@ -53,7 +53,7 @@ public class JwtService implements IJwtService {
 		claims.put("loginTypeCode", user.getLoginTypeCode());
 		claims.put("kakaoId", user.getKakaoId());
 		claims.put("genderCode", user.getGenderCode());
-		claims.put("birthDate", user.getBirthDate().toString());
+		claims.put("birthDate", user.getBirthDate() != null ? user.getBirthDate().toString() : null);
 		claims.put("type", tokenType);
 
 		Date now = new Date();
