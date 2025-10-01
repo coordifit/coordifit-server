@@ -38,6 +38,10 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Verify prod properties exists
+        run: |
+          test -f src/main/resources/application-prod.properties && echo "✅ Prod properties found" || (echo "❌ Missing prod properties" && exit 1)
+
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v3
 
@@ -61,6 +65,7 @@ jobs:
           file: ./Dockerfile
           platforms: linux/amd64,linux/arm64
           push: true
+          no-cache: true
           tags: |
             ${{ secrets.DOCKERHUB_USERNAME }}/coordifit-spring:dev-latest
             ${{ secrets.DOCKERHUB_USERNAME }}/coordifit-spring:${{ steps.meta.outputs.SHA_TAG }}
