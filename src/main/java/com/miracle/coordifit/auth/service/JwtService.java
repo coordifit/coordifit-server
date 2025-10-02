@@ -12,14 +12,17 @@ import javax.crypto.SecretKey;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
+import com.miracle.coordifit.auth.repository.JwtTokenRepository;
 import com.miracle.coordifit.user.model.User;
 
 import io.jsonwebtoken.*;
 import io.jsonwebtoken.security.Keys;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 @Service
+@RequiredArgsConstructor
 public class JwtService implements IJwtService {
 
 	@Value("${jwt.secret}")
@@ -34,6 +37,7 @@ public class JwtService implements IJwtService {
 	@Value("${jwt.issuer:coordifit}")
 	private String issuer;
 
+	private final JwtTokenRepository jwtTokenRepository;
 	private SecretKey secretKey;
 
 	private SecretKey getSecretKey() {
@@ -43,8 +47,7 @@ public class JwtService implements IJwtService {
 		return secretKey;
 	}
 
-	@Override
-	public String generateToken(User user, String tokenType) {
+	private String generateToken(User user, String tokenType) {
 		Map<String, Object> claims = new HashMap<>();
 		claims.put("userId", user.getUserId());
 		claims.put("email", user.getEmail());
@@ -96,6 +99,62 @@ public class JwtService implements IJwtService {
 			log.debug("JWT 토큰 검증 실패: {}", e.getMessage());
 			return false;
 		}
+	}
+
+	@Override
+	public Map<String, Object> createTokens(User user) {
+		log.info("사용자 로그인 토큰 생성: {}", user.getUserId());
+
+		// JWT 토큰 생성
+		String accessToken = generateToken(user, "ACCESS");
+		String refreshToken = generateToken(user, "REFRESH");
+
+		// 기존 토큰 삭제 (보안을 위해)
+		jwtTokenRepository.deleteToken(user.getUserId(), "access");
+		jwtTokenRepository.deleteToken(user.getUserId(), "refresh");
+
+		// 새 토큰들을 Redis에 저장
+		jwtTokenRepository.saveToken(user.getUserId(), accessToken, getExpirationFromToken(accessToken), "access");
+		jwtTokenRepository.saveToken(user.getUserId(), refreshToken, getExpirationFromToken(refreshToken), "refresh");
+
+		// 응답 데이터 준비
+		Map<String, Object> responseData = new HashMap<>();
+		responseData.put("accessToken", accessToken);
+		responseData.put("refreshToken", refreshToken);
+		responseData.put("tokenType", "Bearer");
+
+		return responseData;
+	}
+
+	@Override
+	public Map<String, Object> refreshAccessToken(User user) {
+		log.info("액세스 토큰 갱신: {}", user.getUserId());
+
+		// 새 액세스 토큰 생성
+		String newAccessToken = generateToken(user, "ACCESS");
+
+		// 기존 액세스 토큰 삭제
+		jwtTokenRepository.deleteToken(user.getUserId(), "access");
+
+		// 새 액세스 토큰 저장
+		jwtTokenRepository.saveToken(user.getUserId(), newAccessToken, getExpirationFromToken(newAccessToken),
+			"access");
+
+		// 응답 데이터 준비
+		Map<String, Object> responseData = new HashMap<>();
+		responseData.put("accessToken", newAccessToken);
+		responseData.put("tokenType", "Bearer");
+
+		return responseData;
+	}
+
+	@Override
+	public void deleteAllUserTokens(String userId) {
+		log.info("사용자 모든 토큰 삭제: {}", userId);
+
+		// 해당 사용자의 모든 토큰 삭제
+		jwtTokenRepository.deleteToken(userId, "access");
+		jwtTokenRepository.deleteToken(userId, "refresh");
 	}
 
 	private Claims getAllClaimsFromToken(String token) {
