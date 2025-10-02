@@ -17,5 +17,7 @@ public interface IUserService {
 
 	User getUserById(String userId);
 
-	void updateUserProfile(String userId, ProfileUpdateRequestDto requestDto);
+	User updateUserProfile(String userId, ProfileUpdateRequestDto requestDto);
+
+	void toggleUserActive(String userId);
 }

@@ -22,4 +22,6 @@ public interface UserRepository {
 	int updateLastLoginTime(@Param("userId") String userId);
 
 	int updateUserProfile(User user);
+
+	int updateIsActive(User user);
 }
