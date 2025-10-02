@@ -182,6 +182,54 @@
     #{id}
   </foreach>
 </delete>
-  
+
+<!-- 전체 조회 -->
+    <select id="findAllClothes" resultType="com.miracle.coordifit.clothes.dto.ClothesResponse">
+        SELECT c.CLOTHES_ID      AS clothesId,
+               c.NAME            AS name,
+               c.CATEGORY_CODE   AS categoryCode,
+               cc.CODE_NAME      AS categoryName,
+               fi.S3_URL         AS imageUrl
+        FROM CLOTHES c
+        LEFT JOIN CLOTHES_IMAGES ci ON c.CLOTHES_ID = ci.CLOTHES_ID
+        LEFT JOIN FILE_INFO fi ON ci.FILE_ID = fi.FILE_ID
+        LEFT JOIN COMMON_CODES cc ON c.CATEGORY_CODE = cc.CODE_ID
+        ORDER BY c.CREATED_AT DESC
+    </select>
+
+    <!-- 상위 카테고리 전체 조회 (ex. 상의 = B20001 → 셔츠, 반팔티 ... 다 포함) -->
+    <select id="findByCategory" resultType="com.miracle.coordifit.clothes.dto.ClothesResponse">
+        SELECT c.CLOTHES_ID      AS clothesId,
+               c.NAME            AS name,
+               c.CATEGORY_CODE   AS categoryCode,
+               cc.CODE_NAME      AS categoryName,
+               fi.S3_URL         AS imageUrl
+        FROM CLOTHES c
+        LEFT JOIN CLOTHES_IMAGES ci ON c.CLOTHES_ID = ci.CLOTHES_ID
+        LEFT JOIN FILE_INFO fi ON ci.FILE_ID = fi.FILE_ID
+        LEFT JOIN COMMON_CODES cc ON c.CATEGORY_CODE = cc.CODE_ID
+        WHERE EXISTS (
+            SELECT 1
+            FROM COMMON_CODES sub
+            WHERE sub.CODE_ID = c.CATEGORY_CODE
+              AND sub.PARENT_CODE_ID = #{categoryId}
+        )
+        ORDER BY c.CREATED_AT DESC
+    </select>
+
+    <!-- 하위 카테고리 조회 (ex. 셔츠 = B30001) -->
+    <select id="findBySubCategory" resultType="com.miracle.coordifit.clothes.dto.ClothesResponse">
+        SELECT c.CLOTHES_ID      AS clothesId,
+               c.NAME            AS name,
+               c.CATEGORY_CODE   AS categoryCode,
+               cc.CODE_NAME      AS categoryName,
+               fi.S3_URL         AS imageUrl
+        FROM CLOTHES c
+        LEFT JOIN CLOTHES_IMAGES ci ON c.CLOTHES_ID = ci.CLOTHES_ID
+        LEFT JOIN FILE_INFO fi ON ci.FILE_ID = fi.FILE_ID
+        LEFT JOIN COMMON_CODES cc ON c.CATEGORY_CODE = cc.CODE_ID
+        WHERE c.CATEGORY_CODE = #{subCategoryId}
+        ORDER BY c.CREATED_AT DESC
+    </select>
 
 </mapper>
