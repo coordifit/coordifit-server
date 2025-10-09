@@ -9,6 +9,8 @@ import com.miracle.coordifit.common.model.FileInfo;
 public interface IFileService {
 	FileInfo uploadFile(MultipartFile file);
 
+	FileInfo uploadThumbnail(MultipartFile file);
+
 	FileInfo getFileById(Integer fileId);
 
 	List<FileInfo> getFiles();
