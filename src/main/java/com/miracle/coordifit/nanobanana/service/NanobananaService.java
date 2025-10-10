@@ -1,5 +1,6 @@
 package com.miracle.coordifit.nanobanana.service;
 
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
@@ -7,21 +8,26 @@ import org.springframework.web.reactive.function.client.WebClient;
 import com.miracle.coordifit.nanobanana.dto.ImageGenerationRequestDTO;
 import com.miracle.coordifit.nanobanana.dto.ImageGenerationResponseDTO;
 
-import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import reactor.core.publisher.Mono;
 
 /**
  * Google Gemini API 호출 서비스
  * - URL 또는 Base64 이미지를 포함한 ImageGenerationRequestDTO 기반 요청
  */
+@Slf4j
 @Service
-@RequiredArgsConstructor
 public class NanobananaService implements INanobananaService {
 
-	private final WebClient webClient;
+	private final WebClient geminiWebClient;
 
 	@Value("${app.google.gemini.api-key}")
 	private String apiKey;
+
+	// ✅ 생성자 주입 시 @Qualifier로 명시
+	public NanobananaService(@Qualifier("geminiWebClient") WebClient geminiWebClient) {
+		this.geminiWebClient = geminiWebClient;
+	}
 
 	/**
 	 * Gemini 이미지 생성 API 호출
@@ -30,7 +36,7 @@ public class NanobananaService implements INanobananaService {
 	 */
 	@Override
 	public Mono<String> generateImage(ImageGenerationRequestDTO requestDTO) {
-		return webClient.post()
+		return geminiWebClient.post()
 			.uri(uriBuilder -> uriBuilder
 				.path("/v1beta/models/gemini-2.5-flash-image-preview:generateContent")
 				.queryParam("key", apiKey)
@@ -63,7 +69,7 @@ public class NanobananaService implements INanobananaService {
 					throw new RuntimeException("Gemini response has no usable content.");
 				}
 			})
-			.doOnNext(data -> System.out.println("✅ Gemini Image generation success (base64 length): " + data.length()))
-			.doOnError(e -> System.err.println("❌ Error calling Gemini API: " + e.getMessage()));
+			.doOnNext(data -> log.info("✅ Gemini Image generation success (base64 length: {})", data.length()))
+			.doOnError(e -> log.error("❌ Error calling Gemini API: {}", e.getMessage()));
 	}
 }

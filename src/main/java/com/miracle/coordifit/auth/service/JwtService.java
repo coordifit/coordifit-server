@@ -17,6 +17,7 @@ import com.miracle.coordifit.user.model.User;
 
 import io.jsonwebtoken.*;
 import io.jsonwebtoken.security.Keys;
+import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
@@ -39,6 +40,19 @@ public class JwtService implements IJwtService {
 
 	private final JwtTokenRepository jwtTokenRepository;
 	private SecretKey secretKey;
+
+	@PostConstruct
+	public void init() {
+		log.info("=== JWT 설정 확인 ===");
+		log.info("Secret Key: {}", secret != null ? "설정됨 (길이: " + secret.length() + ")" : "❌ NULL!!");
+		log.info("Access Token Expiration: {} ms ({} 시간)", accessTokenExpiration, accessTokenExpiration / 3600000.0);
+		log.info("Refresh Token Expiration: {} ms ({} 일)", refreshTokenExpiration, refreshTokenExpiration / 86400000.0);
+		log.info("Issuer: {}", issuer);
+
+		if (secret == null || secret.isEmpty()) {
+			log.error("❌❌❌ JWT Secret Key가 설정되지 않았습니다! application.properties 또는 application-local.properties를 확인하세요!");
+		}
+	}
 
 	private SecretKey getSecretKey() {
 		if (secretKey == null) {

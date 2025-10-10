@@ -7,11 +7,12 @@ import lombok.Setter;
 
 @Data
 @AllArgsConstructor
-@Getter @Setter
+@Getter
+@Setter
 public class ClothesResponse {
-    private String clothesId;
-    private String name;
-    private String categoryCode;
-    private String categoryName; // 조인해서 내려줄 경우
-    private String imageUrl;
+	private String clothesId;
+	private String name;
+	private String categoryCode;
+	private String categoryName; // 조인해서 내려줄 경우
+	private String imageUrl;
 }
