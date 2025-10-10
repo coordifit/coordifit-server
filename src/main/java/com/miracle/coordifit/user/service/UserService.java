@@ -127,7 +127,7 @@ public class UserService implements IUserService {
 	}
 
 	@Override
-	public void updateUserProfile(String userId, ProfileUpdateRequestDto requestDto) {
+	public User updateUserProfile(String userId, ProfileUpdateRequestDto requestDto) {
 		try {
 			User existingUser = userRepository.selectUserByUserId(userId);
 			if (existingUser == null) {
@@ -142,6 +142,7 @@ public class UserService implements IUserService {
 
 			User updatedUser = User.builder()
 				.userId(userId)
+				.email(existingUser.getEmail())
 				.nickname(requestDto.getNickname() != null ? requestDto.getNickname() : existingUser.getNickname())
 				.genderCode(
 					requestDto.getGenderCode() != null ? requestDto.getGenderCode() : existingUser.getGenderCode())
@@ -150,6 +151,8 @@ public class UserService implements IUserService {
 					: existingUser.getBirthDate())
 				.isActive(requestDto.getIsActive() != null ? requestDto.getIsActive() : existingUser.getIsActive())
 				.fileId(requestDto.getFileId() != null ? requestDto.getFileId() : existingUser.getFileId())
+				.loginTypeCode(existingUser.getLoginTypeCode())
+				.kakaoId(existingUser.getKakaoId())
 				.updatedBy(userId)
 				.build();
 
@@ -157,8 +160,36 @@ public class UserService implements IUserService {
 			if (result <= 0) {
 				throw new RuntimeException("프로필 업데이트 처리 중 오류가 발생했습니다.");
 			}
+
+			return updatedUser;
 		} catch (Exception e) {
 			log.error("프로필 업데이트 중 오류 발생: userId={}", userId, e);
+			throw e;
+		}
+	}
+
+	@Override
+	public void toggleUserActive(String userId) {
+		try {
+			User existingUser = userRepository.selectUserByUserId(userId);
+			if (existingUser == null) {
+				throw new IllegalArgumentException("사용자를 찾을 수 없습니다.");
+			}
+
+			User toggledUser = User.builder()
+				.userId(userId)
+				.isActive(existingUser.getIsActive().equals("Y") ? "N" : "Y")
+				.updatedBy(userId)
+				.build();
+
+			int result = userRepository.updateIsActive(toggledUser);
+			if (result <= 0) {
+				throw new RuntimeException("계정 활성/비활성 처리 중 오류가 발생했습니다.");
+			}
+
+			log.info("계정 활성/비활성 완료: userId={}", userId);
+		} catch (Exception e) {
+			log.error("계정 활성/비활성 중 오류 발생: userId={}", userId, e);
 			throw e;
 		}
 	}

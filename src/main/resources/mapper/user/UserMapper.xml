@@ -34,7 +34,6 @@
             logined_at          AS loginedAt
         FROM users 
         WHERE email = #{email} 
-        AND is_active = 'Y'
     </select>
 
     <select id="selectUserByUserId" parameterType="string" resultType="com.miracle.coordifit.user.model.User">
@@ -58,7 +57,6 @@
             logined_at          AS loginedAt
         FROM users 
         WHERE user_id = #{userId} 
-        AND is_active = 'Y'
     </select>
 
     <select id="selectUserByNickname" parameterType="string" resultType="com.miracle.coordifit.user.model.User">
@@ -121,6 +119,14 @@
         SET logined_at = CURRENT_TIMESTAMP
         WHERE user_id = #{userId}
         AND is_active = 'Y'
+    </update>
+
+    <update id="updateIsActive" parameterType="com.miracle.coordifit.user.model.User">
+        UPDATE users 
+        SET is_active = #{isActive},
+            updated_at = CURRENT_TIMESTAMP,
+            updated_by = #{updatedBy}
+        WHERE user_id = #{userId}
     </update>
 
 </mapper>

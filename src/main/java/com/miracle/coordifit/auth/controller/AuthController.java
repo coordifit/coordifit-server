@@ -16,7 +16,6 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.miracle.coordifit.auth.dto.EmailVerificationRequestDto;
 import com.miracle.coordifit.auth.dto.SignUpRequestDto;
-import com.miracle.coordifit.auth.repository.JwtTokenRepository;
 import com.miracle.coordifit.auth.service.IEmailService;
 import com.miracle.coordifit.auth.service.IJwtService;
 import com.miracle.coordifit.common.dto.ApiResponseDto;
@@ -35,7 +34,6 @@ public class AuthController {
 	private final IUserService userService;
 	private final IEmailService emailService;
 	private final IJwtService jwtService;
-	private final JwtTokenRepository jwtTokenRepository;
 
 	@PostMapping("/signup")
 	public ResponseEntity<ApiResponseDto<User>> signUp(
@@ -44,7 +42,6 @@ public class AuthController {
 
 		log.info("회원가입 요청: {}", signUpRequestDto.getEmail());
 
-		// 유효성 검사 오류 확인
 		if (bindingResult.hasErrors()) {
 			String errorMessage = bindingResult.getFieldErrors().get(0).getDefaultMessage();
 			return ResponseEntity.badRequest()
@@ -53,8 +50,6 @@ public class AuthController {
 
 		try {
 			User user = userService.signUp(signUpRequestDto);
-
-			// 비밀번호 정보는 응답에서 제거
 			user.setPassword(null);
 
 			return ResponseEntity.status(HttpStatus.CREATED)
@@ -79,7 +74,6 @@ public class AuthController {
 
 		log.info("이메일 인증 코드 발송 요청: {}", requestDto.getEmail());
 
-		// 유효성 검사 오류 확인
 		if (bindingResult.hasErrors()) {
 			String errorMessage = bindingResult.getFieldErrors().get(0).getDefaultMessage();
 			return ResponseEntity.badRequest()
@@ -87,13 +81,12 @@ public class AuthController {
 		}
 
 		try {
-			// 이메일 중복 검사
 			if (!userService.isEmailAvailable(requestDto.getEmail())) {
 				return ResponseEntity.badRequest()
 					.body(ApiResponseDto.error("이미 사용 중인 이메일입니다."));
 			}
-			String verificationCode = emailService.sendVerificationCode(requestDto.getEmail());
 
+			String verificationCode = emailService.sendVerificationCode(requestDto.getEmail());
 			if (verificationCode != null) {
 				return ResponseEntity.ok()
 					.body(ApiResponseDto.success("인증 코드가 발송되었습니다.", verificationCode));
@@ -159,7 +152,6 @@ public class AuthController {
 			String email = (String)loginRequest.get("email");
 			String password = (String)loginRequest.get("password");
 
-			// 입력 값 검증
 			if (email == null || email.trim().isEmpty()) {
 				return ResponseEntity.badRequest()
 					.body(ApiResponseDto.error("이메일을 입력해주세요."));
@@ -170,7 +162,6 @@ public class AuthController {
 					.body(ApiResponseDto.error("비밀번호를 입력해주세요."));
 			}
 
-			// 사용자 인증 (userService에 메소드 추가 필요)
 			User user = userService.authenticate(email, password);
 
 			if (user == null) {
@@ -178,25 +169,17 @@ public class AuthController {
 					.body(ApiResponseDto.error("이메일 또는 비밀번호가 올바르지 않습니다."));
 			}
 
-			// JWT 토큰 생성
-			String accessToken = jwtService.generateToken(user, "ACCESS");
-			String refreshToken = jwtService.generateToken(user, "REFRESH");
+			if ("N".equals(user.getIsActive())) {
+				Map<String, Object> responseData = new HashMap<>();
+				responseData.put("isActive", false);
+				responseData.put("message", "비활성화된 계정입니다. 계정을 다시 활성화하시겠습니까?");
+				responseData.put("userId", user.getUserId());
 
-			// 기존 토큰 삭제 (보안을 위해)
-			jwtTokenRepository.deleteToken(user.getUserId(), "access");
-			jwtTokenRepository.deleteToken(user.getUserId(), "refresh");
+				return ResponseEntity.status(HttpStatus.FORBIDDEN)
+					.body(ApiResponseDto.error("비활성화된 계정입니다.", responseData));
+			}
 
-			// 새 토큰들을 Redis에 저장
-			jwtTokenRepository.saveToken(user.getUserId(), accessToken, jwtService.getExpirationFromToken(accessToken),
-				"access");
-			jwtTokenRepository.saveToken(user.getUserId(), refreshToken,
-				jwtService.getExpirationFromToken(refreshToken), "refresh");
-
-			// 로그인 성공 응답 데이터 준비 (중복 사용자 정보 제거: JWT에 포함됨)
-			Map<String, Object> responseData = new HashMap<>();
-			responseData.put("accessToken", accessToken);
-			responseData.put("refreshToken", refreshToken);
-			responseData.put("tokenType", "Bearer");
+			Map<String, Object> responseData = jwtService.createTokens(user);
 
 			return ResponseEntity.ok()
 				.body(ApiResponseDto.success("로그인이 완료되었습니다.", responseData));
@@ -222,7 +205,6 @@ public class AuthController {
 					.body(ApiResponseDto.error("리프레시 토큰을 입력해주세요."));
 			}
 
-			// 리프레시 토큰 검증
 			if (!jwtService.validateToken(refreshToken)) {
 				log.warn("리프레시 토큰 JWT 검증 실패");
 				return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
@@ -231,7 +213,6 @@ public class AuthController {
 
 			log.info("리프레시 토큰 검증 성공");
 
-			// 사용자 정보 조회
 			String userId = jwtService.getUserIdFromToken(refreshToken);
 			User user = userService.getUserById(userId);
 
@@ -240,20 +221,7 @@ public class AuthController {
 					.body(ApiResponseDto.error("사용자를 찾을 수 없습니다."));
 			}
 
-			// 새 액세스 토큰 생성
-			String newAccessToken = jwtService.generateToken(user, "ACCESS");
-
-			// 기존 액세스 토큰 삭제
-			jwtTokenRepository.deleteToken(userId, "access");
-
-			// 새 액세스 토큰 저장
-			jwtTokenRepository.saveToken(userId, newAccessToken, jwtService.getExpirationFromToken(newAccessToken),
-				"access");
-
-			// 응답 데이터 준비
-			Map<String, Object> responseData = new HashMap<>();
-			responseData.put("accessToken", newAccessToken);
-			responseData.put("tokenType", "Bearer");
+			Map<String, Object> responseData = jwtService.refreshAccessToken(user);
 
 			return ResponseEntity.ok()
 				.body(ApiResponseDto.success("토큰이 갱신되었습니다.", responseData));
@@ -272,13 +240,10 @@ public class AuthController {
 		log.info("로그아웃 요청");
 
 		try {
-			// JWT 필터에서 이미 검증됨 - 토큰에서 사용자 ID 추출
 			String accessToken = authorization.substring(7);
 			String userId = jwtService.getUserIdFromToken(accessToken);
 
-			// 해당 사용자의 모든 토큰 삭제
-			jwtTokenRepository.deleteToken(userId, "access");
-			jwtTokenRepository.deleteToken(userId, "refresh");
+			jwtService.deleteAllUserTokens(userId);
 
 			log.info("로그아웃 완료: {}", userId);
 
