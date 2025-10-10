@@ -35,17 +35,18 @@ public interface ClothesRepository {
 	List<FileInfo> findImageFiles(@Param("clothesId") String clothesId);
 
 	int getNextClothesDailySeq();
-	
-	
-    int insertBulkClothes(@Param("list") List<Clothes> clothesList);
-    int insertBulkImageLinks(@Param("links") List<ClothesImageLink> links);
-    int deleteClothesByIds(@Param("ids") List<String> clothesIds);
-    int deleteImagesByClothesIds(@Param("ids") List<String> clothesIds);
-    
-    
-    List<ClothesResponse> findAllClothes();
 
-    List<ClothesResponse> findByCategory(@Param("categoryId") String categoryId);
+	int insertBulkClothes(@Param("list") List<Clothes> clothesList);
 
-    List<ClothesResponse> findBySubCategory(@Param("subCategoryId") String subCategoryId);
+	int insertBulkImageLinks(@Param("links") List<ClothesImageLink> links);
+
+	int deleteClothesByIds(@Param("ids") List<String> clothesIds);
+
+	int deleteImagesByClothesIds(@Param("ids") List<String> clothesIds);
+
+	List<ClothesResponse> findAllClothes();
+
+	List<ClothesResponse> findByCategory(@Param("categoryId") String categoryId);
+
+	List<ClothesResponse> findBySubCategory(@Param("subCategoryId") String subCategoryId);
 }
