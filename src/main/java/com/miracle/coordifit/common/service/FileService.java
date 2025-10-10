@@ -3,7 +3,10 @@ package com.miracle.coordifit.common.service;
 import java.awt.image.BufferedImage;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.util.Collections;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 import javax.imageio.ImageIO;
 
@@ -95,6 +98,18 @@ public class FileService implements IFileService {
 	@Override
 	public FileInfo getFileById(Integer fileId) {
 		return fileRepository.selectFileInfoById(fileId);
+	}
+
+	@Override
+	public Map<Integer, FileInfo> getFilesByIds(List<Integer> fileIds) {
+		if (fileIds == null || fileIds.isEmpty()) {
+			return Collections.emptyMap();
+		}
+
+		List<FileInfo> fileInfos = fileRepository.selectFileInfosByIds(fileIds);
+
+		return fileInfos.stream()
+			.collect(Collectors.toMap(FileInfo::getFileId, fileInfo -> fileInfo));
 	}
 
 	@Override

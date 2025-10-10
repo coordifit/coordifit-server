@@ -1,6 +1,7 @@
 package com.miracle.coordifit.common.service;
 
 import java.util.List;
+import java.util.Map;
 
 import org.springframework.web.multipart.MultipartFile;
 
@@ -12,6 +13,8 @@ public interface IFileService {
 	FileInfo uploadThumbnail(MultipartFile file);
 
 	FileInfo getFileById(Integer fileId);
+
+	Map<Integer, FileInfo> getFilesByIds(List<Integer> fileIds);
 
 	List<FileInfo> getFiles();
 }

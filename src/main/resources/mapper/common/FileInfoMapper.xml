@@ -20,6 +20,18 @@
         FROM file_info 
         WHERE file_id = #{fileId}
     </select>
+    
+    <select id="selectFileInfosByIds" parameterType="list" resultType="com.miracle.coordifit.common.model.FileInfo">
+    	SELECT
+		 	file_id, original_name, s3_key, s3_url, bucket_name, 
+            file_size, file_type, upload_by, upload_date
+    	FROM file_info
+    	WHERE file_id IN
+    	<foreach collection="fileIds" item="id" open="(" separator="," close=")">
+      		#{id}
+    	</foreach>
+  	</select>
+
 
     <select id="selectFileInfos" resultType="com.miracle.coordifit.common.model.FileInfo">
         SELECT 
