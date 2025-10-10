@@ -17,4 +17,6 @@ public interface UserAvatarMapper {
 	List<AvatarResponse> selectAvatarsByUser(@Param("userId") String userId);
 
 	int getNextAvatarSequence();
+
+	int deleteAvatar(@Param("avatarId") String avatarId, @Param("userId") String userId);
 }

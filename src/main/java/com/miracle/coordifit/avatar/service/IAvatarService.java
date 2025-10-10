@@ -9,4 +9,6 @@ public interface IAvatarService {
 	AvatarResponse createAvatar(String userId, AvatarCreateRequest request);
 
 	List<AvatarResponse> getAvatars(String userId);
+
+	void deleteAvatar(String userId, String avatarId);
 }

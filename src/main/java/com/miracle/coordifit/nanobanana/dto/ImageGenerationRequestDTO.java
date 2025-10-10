@@ -28,6 +28,7 @@ public class ImageGenerationRequestDTO {
 	@AllArgsConstructor
 	public static class Part {
 		private String text;
+		private InlineData inlineData; //
 	}
 
 	@Data
@@ -35,5 +36,13 @@ public class ImageGenerationRequestDTO {
 	@AllArgsConstructor
 	public static class GenerationConfig {
 		private List<String> responseModalities;
+	}
+
+	@Data
+	@NoArgsConstructor
+	@AllArgsConstructor
+	public static class InlineData {
+		private String mimeType;
+		private String data;
 	}
 }

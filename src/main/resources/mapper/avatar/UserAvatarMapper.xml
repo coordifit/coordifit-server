@@ -86,4 +86,9 @@
         ORDER BY UA.CREATED_AT DESC
     </select>
 
+    <delete id="deleteAvatar">
+        DELETE FROM USER_AVATARS
+        WHERE AVATAR_ID = #{avatarId}
+        AND USER_ID = #{userId}
+    </delete>
 </mapper>

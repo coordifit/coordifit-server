@@ -80,4 +80,20 @@ public class AvatarService implements IAvatarService {
 		}
 		return userAvatarMapper.selectAvatarsByUser(userId);
 	}
+
+	@Override
+	@Transactional
+	public void deleteAvatar(String userId, String avatarId) {
+		if (userId == null || userId.isBlank()) {
+			throw new IllegalArgumentException("사용자 정보가 올바르지 않습니다.");
+		}
+		if (avatarId == null || avatarId.isBlank()) {
+			throw new IllegalArgumentException("삭제할 아바타 정보를 입력해주세요.");
+		}
+
+		int updated = userAvatarMapper.deleteAvatar(avatarId, userId);
+		if (updated == 0) {
+			throw new IllegalArgumentException("아바타 정보를 찾을 수 없습니다.");
+		}
+	}
 }

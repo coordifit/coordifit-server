@@ -5,7 +5,9 @@ import java.util.Map;
 
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -48,6 +50,20 @@ public class AvatarController {
 	public ResponseEntity<?> getAvatars(@RequestHeader("X-User-Id") String userId) {
 		List<AvatarResponse> avatars = avatarService.getAvatars(userId);
 		return ResponseEntity.ok(success(avatars));
+	}
+
+	@DeleteMapping("/{avatarId}")
+	public ResponseEntity<?> deleteAvatar(
+		@PathVariable String avatarId,
+		@RequestHeader("X-User-Id") String userId) {
+		try {
+			avatarService.deleteAvatar(userId, avatarId);
+			return ResponseEntity.ok(success(Map.of("deleted", true)));
+		} catch (IllegalArgumentException e) {
+			return ResponseEntity.badRequest().body(error(e.getMessage()));
+		} catch (Exception e) {
+			return ResponseEntity.internalServerError().body(error("아바타 삭제에 실패했습니다."));
+		}
 	}
 
 	private Map<String, Object> success(Object data) {
