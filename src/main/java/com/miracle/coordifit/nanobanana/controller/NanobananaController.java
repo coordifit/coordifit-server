@@ -1,178 +1,102 @@
 package com.miracle.coordifit.nanobanana.controller;
 
-import java.util.Base64;
-import java.util.Map;
+import java.util.*;
 
-import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestPart;
-import org.springframework.web.bind.annotation.RestController;
-import org.springframework.web.multipart.MultipartFile;
+import org.springframework.web.bind.annotation.*;
 
 import com.miracle.coordifit.nanobanana.dto.FittingRequestDTO;
-import com.miracle.coordifit.nanobanana.dto.PromptRequestDTO;
-import com.miracle.coordifit.nanobanana.service.NanobananaService;
+import com.miracle.coordifit.nanobanana.dto.ImageGenerationRequestDTO;
+import com.miracle.coordifit.nanobanana.service.INanobananaService;
+import com.miracle.coordifit.nanobanana.util.ImageUtil;
 
+import lombok.RequiredArgsConstructor;
 import reactor.core.publisher.Mono;
 
 /**
- * 이미지 생성 및 가상 피팅 요청을 처리하는 REST API 컨트롤러
+ * 아바타 + 의류 기반 가상 피팅 API 컨트롤러
+ * 프론트는 URL만 전달하면 됨. 서버에서 Base64로 변환 후 Gemini로 요청.
  */
 @RestController
 @RequestMapping("/api/nanobanana")
+@RequiredArgsConstructor
 public class NanobananaController {
 
-	private final NanobananaService nanobananaService;
-
-	public NanobananaController(NanobananaService nanobananaService) {
-		this.nanobananaService = nanobananaService;
-	}
+	private final INanobananaService nanobananaService;
 
 	/**
-	 * 단순 프롬프트 기반 이미지 생성
-	 */
-	@PostMapping("/generate")
-	public Mono<ResponseEntity<String>> generateImage(@RequestBody PromptRequestDTO request) {
-		return nanobananaService.generateImage(request.getPrompt())
-			.map(base64Image -> ResponseEntity.ok().body(base64Image))
-			.onErrorResume(e -> {
-				System.err.println("Error during image generation: " + e.getMessage());
-				return Mono.just(ResponseEntity.internalServerError().body("Image generation failed."));
-			});
-	}
-
-	/**
-	 * 아바타 + 의류 기반 가상 피팅 이미지 생성 (JSON 버전)
+	 *  아바타 + 의류 URL 기반 가상 피팅 요청
+	 * 요청 JSON 예시:
+	 * {
+	 *   "avatarImage": "https://s3.../avatar.jpg",
+	 *   "topImage": "https://s3.../top.png",
+	 *   "bottomImage": "https://s3.../bottom.png",
+	 *   "shoesImage": "https://s3.../shoes.png"
+	 * }
 	 */
 	@PostMapping("/fitting")
 	public Mono<ResponseEntity<Map<String, Object>>> fitting(@RequestBody FittingRequestDTO request) {
-		String prompt = buildPrompt(request);
-
-		long start = System.currentTimeMillis();
-		return nanobananaService.generateImage(prompt)
-			.map(base64 -> {
-				long duration = System.currentTimeMillis() - start;
-			//@formatter:off
-				Map<String, Object> response = Map.of(
-					"status", "success",
-					"data", Map.of(
-						"imageBase64", base64,
-						"durationMs", duration)
-					);
-				//@formatter:on
-				return ResponseEntity.ok(response);
-			})
-			.onErrorResume(e -> {
-				System.err.println("Error during fitting: " + e.getMessage());
-
-			//@formatter:off
-				return Mono.just(ResponseEntity.internalServerError().body(Map.of(
-					"status", "error",
-					"message", "Fitting failed"))
-				);
-				//@formatter:on
-			});
-	}
-
-	/**
-	 * 아바타 + 의류 기반 가상 피팅 이미지 생성 (파일 업로드 버전)
-	 */
-	@PostMapping(value = "/fitting/upload", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-	public Mono<ResponseEntity<Map<String, Object>>> fittingUpload(@RequestPart("avatar") MultipartFile avatar,
-		@RequestPart(value = "top", required = false) MultipartFile top,
-		@RequestPart(value = "bottom", required = false) MultipartFile bottom,
-		@RequestPart(value = "shoes", required = false) MultipartFile shoes) {
 		try {
-			String avatarBase64 = Base64.getEncoder().encodeToString(avatar.getBytes());
-			String topBase64 = top != null ? Base64.getEncoder().encodeToString(top.getBytes()) : null;
-			String bottomBase64 = bottom != null ? Base64.getEncoder().encodeToString(bottom.getBytes()) : null;
-			String shoesBase64 = shoes != null ? Base64.getEncoder().encodeToString(shoes.getBytes()) : null;
-
-			String prompt = buildPromptWithFiles(avatarBase64, topBase64, bottomBase64, shoesBase64);
+			ImageGenerationRequestDTO geminiRequest = buildGeminiRequest(request);
 
 			long start = System.currentTimeMillis();
-			return nanobananaService.generateImage(prompt)
+			return nanobananaService.generateImage(geminiRequest)
 				.map(base64 -> {
 					long duration = System.currentTimeMillis() - start;
-				//@formatter:off
+
 					Map<String, Object> response = Map.of(
 						"status", "success",
 						"data", Map.of(
 							"imageBase64", base64,
-							"durationMs", duration)
-						);
+							"durationMs", duration));
+
 					return ResponseEntity.ok(response);
-					//@formatter:on
 				})
-				//@formatter:off
 				.onErrorResume(e -> {
-					System.err.println("Error during fitting upload: " + e.getMessage());
-
-					return Mono.just(ResponseEntity.internalServerError().body(
-
-						Map.of(
-							"status", "error",
-							"message", "Fitting upload failed"
-						)
-					)
-					);
-					//@formatter:on
+					e.printStackTrace();
+					return Mono.just(ResponseEntity.internalServerError().body(Map.of(
+						"status", "error",
+						"message", "Fitting failed: " + e.getMessage())));
 				});
-
 		} catch (Exception e) {
+			e.printStackTrace();
 			return Mono.just(ResponseEntity.internalServerError().body(Map.of(
 				"status", "error",
-				"message", "File processing failed: " + e.getMessage())));
+				"message", "Error building request: " + e.getMessage())));
 		}
 	}
 
-	/**
-	 * 프롬프트 빌더 (멀티 버전 지원: URL/Base64 or ID 기반)
-	 */
-	private String buildPrompt(FittingRequestDTO request) {
-		StringBuilder sb = new StringBuilder();
-		sb.append("아바타 이미지를 기반으로 선택된 의류를 입힌 가상 피팅 이미지를 생성해주세요.\n");
-
-		if (request.getAvatarImage() != null) {
-			sb.append("아바타 이미지: ").append(request.getAvatarImage()).append("\n");
-		} else if (request.getAvatarId() != null) {
-			sb.append("아바타 ID: ").append(request.getAvatarId()).append("\n");
-		}
-
-		if (request.getClothesImages() != null && !request.getClothesImages().isEmpty()) {
-			sb.append("의류 이미지들:\n");
-			for (int i = 0; i < request.getClothesImages().size(); i++) {
-				sb.append("- 의류 ").append(i + 1).append(": ").append(request.getClothesImages().get(i)).append("\n");
-			}
-		} else if (request.getClothesIds() != null && !request.getClothesIds().isEmpty()) {
-			sb.append("의류 ID들: ").append(String.join(", ", request.getClothesIds())).append("\n");
-		} else {
-			sb.append("선택된 의류 없음\n");
-		}
-
-		sb.append("상의는 상체, 하의는 하체, 신발은 발 위치에 자연스럽게 배치해서 합성해주세요.");
-		return sb.toString();
-	}
+	/* ------------------------------------------------------------------
+	 * 내부 헬퍼 메서드
+	 * ------------------------------------------------------------------ */
 
 	/**
-	 * 파일 업로드 버전 프롬프트 빌더
+	 * URL 기반 요청 → Gemini용 DTO 변환
 	 */
-	private String buildPromptWithFiles(String avatar, String top, String bottom, String shoes) {
-		StringBuilder sb = new StringBuilder();
-		sb.append("아바타 이미지를 기반으로 선택된 의류를 입힌 가상 피팅 이미지를 생성해주세요.\n");
-		sb.append("아바타: [Base64 인코딩된 이미지 포함]\n");
+	private ImageGenerationRequestDTO buildGeminiRequest(FittingRequestDTO request) throws Exception {
+		List<ImageGenerationRequestDTO.Part> parts = new ArrayList<>();
 
-		if (top != null)
-			sb.append("상의 이미지를 합성해주세요.\n");
-		if (bottom != null)
-			sb.append("하의 이미지를 합성해주세요.\n");
-		if (shoes != null)
-			sb.append("신발 이미지를 합성해주세요.\n");
+		// ✅ (1) 설명 프롬프트를 가장 먼저 추가
+		parts.add(new ImageGenerationRequestDTO.Part(
+			"Generate a realistic virtual fitting image of the avatar wearing the provided clothes.\n" +
+				"The output should be vertically oriented (portrait), approximately 220x240 pixels in size.\n" +
+				"Ensure the person is centered in the frame with minimal background.\n" +
+				"Maintain realistic lighting, proportions, and seamless clothing alignment.",
+			null));
 
-		sb.append("상의는 상체, 하의는 하체, 신발은 발 위치에 자연스럽게 배치해서 합성해주세요.");
-		return sb.toString();
+		// ✅ (2) 이미지 데이터를 함께 전달
+		if (request.getAvatarImage() != null)
+			parts.add(new ImageGenerationRequestDTO.Part(null, ImageUtil.urlToInlineData(request.getAvatarImage())));
+		if (request.getTopImage() != null)
+			parts.add(new ImageGenerationRequestDTO.Part(null, ImageUtil.urlToInlineData(request.getTopImage())));
+		if (request.getBottomImage() != null)
+			parts.add(new ImageGenerationRequestDTO.Part(null, ImageUtil.urlToInlineData(request.getBottomImage())));
+		if (request.getShoesImage() != null)
+			parts.add(new ImageGenerationRequestDTO.Part(null, ImageUtil.urlToInlineData(request.getShoesImage())));
+
+		ImageGenerationRequestDTO dto = new ImageGenerationRequestDTO();
+		dto.setContents(List.of(new ImageGenerationRequestDTO.Contents(parts)));
+		dto.setGenerationConfig(new ImageGenerationRequestDTO.GenerationConfig(List.of("image")));
+		return dto;
 	}
 }

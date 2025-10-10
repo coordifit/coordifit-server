@@ -26,11 +26,11 @@ public class WebClientConfig {
 	public WebClient geminiWebClient(WebClient.Builder builder) {
 		HttpClient httpClient = HttpClient.create()
 			.option(ChannelOption.CONNECT_TIMEOUT_MILLIS, timeoutMs)
-			.responseTimeout(Duration.ofMillis(timeoutMs))
+			.responseTimeout(Duration.ofMinutes(5)) // ✅ 응답 대기 5분
 			// @formatter:off
 			.doOnConnected(c -> c
-				.addHandlerLast(new ReadTimeoutHandler(timeoutMs, TimeUnit.MILLISECONDS))
-				.addHandlerLast(new WriteTimeoutHandler(timeoutMs, TimeUnit.MILLISECONDS))
+				.addHandlerLast(new ReadTimeoutHandler(300, TimeUnit.SECONDS))  // 읽기 5분
+				.addHandlerLast(new WriteTimeoutHandler(300, TimeUnit.SECONDS)) // 쓰기 5분
 			);
 			// @formatter:on
 		return builder
