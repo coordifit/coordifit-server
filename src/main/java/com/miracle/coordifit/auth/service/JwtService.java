@@ -15,7 +15,12 @@ import org.springframework.stereotype.Service;
 import com.miracle.coordifit.auth.repository.JwtTokenRepository;
 import com.miracle.coordifit.user.model.User;
 
-import io.jsonwebtoken.*;
+import io.jsonwebtoken.Claims;
+import io.jsonwebtoken.ExpiredJwtException;
+import io.jsonwebtoken.JwtBuilder;
+import io.jsonwebtoken.Jwts;
+import io.jsonwebtoken.MalformedJwtException;
+import io.jsonwebtoken.UnsupportedJwtException;
 import io.jsonwebtoken.security.Keys;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -158,6 +163,7 @@ public class JwtService implements IJwtService {
 	}
 
 	private Claims getAllClaimsFromToken(String token) {
+		log.info("getAllClaimsFromToken : {}", token);
 		try {
 			return Jwts.parser()
 				.verifyWith(secretKey)

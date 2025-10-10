@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.miracle.coordifit.calender.repository.CalenderRepository">
+    <insert id="insertDailyLook" parameterType="com.miracle.coordifit.calender.model.DailyLook">
+	    <selectKey keyProperty="dailylookId" resultType="string" order="BEFORE">
+        	SELECT TO_CHAR(DAILYLOOKS_SEQ.NEXTVAL) FROM DUAL
+    	</selectKey>
+        INSERT INTO DAILYLOOKS
+            (dailylook_id, user_id, wear_date, description, origin_image_id, thumb_image_id, canvas_json, created_at, updated_at)
+        VALUES
+            (#{dailylookId}, #{userId}, #{wearDate}, #{description}, #{originImageId}, #{thumbImageId}, #{canvasJson}, SYSTIMESTAMP, SYSTIMESTAMP)
+    </insert>   
+
+	<insert id="insertDailyLookItem"
+	        parameterType="com.miracle.coordifit.calender.model.DailyLookItem">
+	  INSERT INTO DAILYLOOK_ITEMS
+	    (ITEM_ID, CLOTHES_ID, USER_ID, DAILYLOOK_ID, WEAR_DATE, CREATED_AT)
+	  VALUES
+	    (DAILYLOOK_ITEMS_SEQ.NEXTVAL,
+	     #{clothesId},
+	     #{userId},
+	     #{dailylookId},
+	     TO_DATE(#{wearDate}, 'YYYY-MM-DD'),
+	     SYSTIMESTAMP)
+	</insert>
+
+    <!-- 특정 월의 데일리룩 조회 -->
+    <select id="getDailyLooksByMonth" resultType="com.miracle.coordifit.calender.model.DailyLook">
+        SELECT *
+        FROM DAILYLOOKS
+        WHERE user_id = #{userId}
+          AND TO_CHAR(wear_date, 'YYYY-MM') = #{yearMonth}
+        ORDER BY wear_date ASC
+    </select>
+
+    <!-- 날짜별 데일리룩 조회 -->
+    <select id="getDailyLookByDate" resultType="com.miracle.coordifit.calender.model.DailyLook">
+        SELECT
+        	dailylook_id AS dailylookId,
+        	user_id AS userId,
+        	wear_date AS wearDate,
+        	description AS description,
+        	origin_image_id AS originImageId,
+        	thumb_image_id AS thumbImageId,
+        	canvas_json AS canvasJson
+        FROM DAILYLOOKS
+        WHERE user_id = #{userId}
+          AND wear_date = TO_DATE(#{wearDate}, 'YYYY-MM-DD')
+    </select>
+
+    <update id="updateDailyLook" parameterType="com.miracle.coordifit.calender.model.DailyLook">
+        UPDATE DAILYLOOKS
+        SET description = #{description},
+            origin_image_id = #{originImageId},
+            thumb_image_id = #{thumbImageId},
+            canvas_json = #{canvasJson},
+            updated_at = SYSTIMESTAMP
+        WHERE dailylook_id = #{dailylookId}
+          AND user_id = #{userId}
+    </update>
+</mapper>

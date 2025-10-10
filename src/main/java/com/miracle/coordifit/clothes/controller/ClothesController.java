@@ -206,13 +206,11 @@ public class ClothesController {
 			r = r.getCause();
 		return r.getClass().getSimpleName() + ": " + String.valueOf(r.getMessage());
 	}
-	
 
-    @GetMapping
-    public List<ClothesResponse> getClothes(
-            @RequestParam(required = false) String categoryId,
-            @RequestParam(required = false) String subCategoryId
-    ) {
-        return clothesService.getClothes(categoryId, subCategoryId);
-    }
+	@GetMapping
+	public List<ClothesResponse> getClothes(
+		@RequestParam(required = false) String categoryId,
+		@RequestParam(required = false) String subCategoryId) {
+		return clothesService.getClothes(categoryId, subCategoryId);
+	}
 }
