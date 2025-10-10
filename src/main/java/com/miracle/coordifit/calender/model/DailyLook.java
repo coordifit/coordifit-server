@@ -4,7 +4,7 @@ import lombok.Data;
 
 @Data
 public class DailyLook {
-	private String dailyLookId;
+	private String dailylookId;
 	private String userId;
 	private String wearDate;
 	private String description;

@@ -1,6 +1,7 @@
 package com.miracle.coordifit.calender.repository;
 
 import java.util.List;
+import java.util.Optional;
 
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
@@ -21,7 +22,7 @@ public interface CalenderRepository {
 		@Param("yearMonth") String yearMonth);
 
 	// 특정 날짜 데일리룩 조회
-	DailyLook getDailyLookByDate(
+	Optional<DailyLook> getDailyLookByDate(
 		@Param("userId") String userId,
 		@Param("wearDate") String wearDate);
 

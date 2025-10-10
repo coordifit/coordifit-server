@@ -8,7 +8,7 @@ import lombok.Data;
 public class DailyLookItem {
 	private String clothesId;
 	private String userId;
-	private String dailyLookId;
+	private String dailylookId;
 	private Date wearDate;
 	private Date createdAt;
 }

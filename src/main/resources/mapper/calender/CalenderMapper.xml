@@ -5,13 +5,13 @@
 
 <mapper namespace="com.miracle.coordifit.calender.repository.CalenderRepository">
     <insert id="insertDailyLook" parameterType="com.miracle.coordifit.calender.model.DailyLook">
-	    <selectKey keyProperty="dailyLookId" resultType="string" order="BEFORE">
+	    <selectKey keyProperty="dailylookId" resultType="string" order="BEFORE">
         	SELECT TO_CHAR(DAILYLOOKS_SEQ.NEXTVAL) FROM DUAL
     	</selectKey>
         INSERT INTO DAILYLOOKS
             (dailylook_id, user_id, wear_date, description, origin_image_id, thumb_image_id, canvas_json, created_at, updated_at)
         VALUES
-            (#{dailyLookId}, #{userId}, #{wearDate}, #{description}, #{originImageId}, #{thumbImageId}, #{canvasJson}, SYSTIMESTAMP, SYSTIMESTAMP)
+            (#{dailylookId}, #{userId}, #{wearDate}, #{description}, #{originImageId}, #{thumbImageId}, #{canvasJson}, SYSTIMESTAMP, SYSTIMESTAMP)
     </insert>   
 
 	<insert id="insertDailyLookItem"
@@ -22,7 +22,7 @@
 	    (DAILYLOOK_ITEMS_SEQ.NEXTVAL,
 	     #{clothesId},
 	     #{userId},
-	     #{dailyLookId},
+	     #{dailylookId},
 	     TO_DATE(#{wearDate}, 'YYYY-MM-DD'),
 	     SYSTIMESTAMP)
 	</insert>
@@ -38,13 +38,20 @@
 
     <!-- 날짜별 데일리룩 조회 -->
     <select id="getDailyLookByDate" resultType="com.miracle.coordifit.calender.model.DailyLook">
-        SELECT *
+        SELECT
+        	dailylook_id AS dailylookId,
+        	user_id AS userId,
+        	wear_date AS wearDate,
+        	description AS description,
+        	origin_image_id AS originImageId,
+        	thumb_image_id AS thumbImageId,
+        	canvas_json AS canvasJson
         FROM DAILYLOOKS
         WHERE user_id = #{userId}
           AND wear_date = TO_DATE(#{wearDate}, 'YYYY-MM-DD')
     </select>
 
-    <update id="updateDailyLook">
+    <update id="updateDailyLook" parameterType="com.miracle.coordifit.calender.model.DailyLook">
         UPDATE DAILYLOOKS
         SET description = #{description},
             origin_image_id = #{originImageId},
