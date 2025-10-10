@@ -14,12 +14,13 @@ import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
+import com.miracle.coordifit.calender.dto.DailyLookResponse;
 import com.miracle.coordifit.calender.model.DailyLook;
 import com.miracle.coordifit.calender.service.ICalenderService;
+import com.miracle.coordifit.common.dto.ApiResponseDto;
 import com.miracle.coordifit.common.model.FileInfo;
 import com.miracle.coordifit.common.service.FileService;
 
-import jakarta.servlet.http.HttpSession;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
@@ -31,27 +32,30 @@ public class CalenderController {
 	private final ICalenderService calenderService;
 	private final FileService fileService;
 
+	@Transactional
 	@GetMapping("/date")
-	public ResponseEntity<?> getDailyLooks(
-		@RequestParam(required = false) String yearMonth,
-		@RequestParam(required = false) String wearDate,
-		HttpSession session, Authentication authentication) {
-		log.info("authentication: {}", authentication.toString());
-		log.info("session: {}", session.getAttribute("userId"));
-
-		String userId = (String)session.getAttribute("userId");
+	public ResponseEntity<ApiResponseDto<?>> getDailyLooks(
+		@RequestParam(value = "yearMonth", required = false) String yearMonth,
+		@RequestParam(value = "wearDate", required = false) String wearDate,
+		Authentication authentication) {
+		String userId = (String)authentication.getPrincipal();
 
 		if (wearDate != null) {
 			// 특정 날짜 조회
-			DailyLook dailyLook = calenderService.getDailyLookByDate(userId, wearDate);
-			return ResponseEntity.ok(dailyLook);
+			DailyLookResponse dailyLook = calenderService.getDailyLookByDate(userId, wearDate);
+
+			return ResponseEntity.ok()
+				.body(ApiResponseDto.success(String.format("%s 날짜의 데일리룩 데이터 조회 성공", wearDate), dailyLook));
 		} else if (yearMonth != null) {
 			// 월별 조회
-			List<DailyLook> monthlyDailyLooks = calenderService.getDailyLooksByMonth(userId, yearMonth);
-			return ResponseEntity.ok(monthlyDailyLooks);
+			List<DailyLookResponse> monthlyDailyLooks = calenderService.getDailyLooksByMonth(userId, yearMonth);
+
+			return ResponseEntity.ok()
+				.body(ApiResponseDto.success(String.format("%s 월별 데일리룩 데이터 조회 성공", yearMonth), monthlyDailyLooks));
 		}
 
-		return ResponseEntity.badRequest().body("yearMonth 또는 wearDate 파라미터를 제공해야 합니다.");
+		return ResponseEntity.badRequest()
+			.body(ApiResponseDto.error("yearMonth 또는 wearDate 파라미터를 제공해야 합니다."));
 	}
 
 	@Transactional
@@ -77,7 +81,7 @@ public class CalenderController {
 
 		log.info("dailyLook info: {}", dailyLook.toString());
 
-		int result = calenderService.insertDailyLook(dailyLook);
+		int result = calenderService.upsertDailyLook(dailyLook);
 
 		calenderService.insertDailyLookItem(itemsJson, dailyLook);
 

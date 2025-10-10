@@ -3,15 +3,21 @@ package com.miracle.coordifit.calender.service;
 import java.sql.Date;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.miracle.coordifit.calender.dto.DailyLookResponse;
+import com.miracle.coordifit.calender.mapper.DailyLookMapper;
 import com.miracle.coordifit.calender.model.DailyLook;
 import com.miracle.coordifit.calender.model.DailyLookItem;
 import com.miracle.coordifit.calender.repository.CalenderRepository;
+import com.miracle.coordifit.common.model.FileInfo;
+import com.miracle.coordifit.common.service.IFileService;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -21,12 +27,28 @@ import lombok.extern.slf4j.Slf4j;
 @RequiredArgsConstructor
 public class CalenderService implements ICalenderService {
 	private final CalenderRepository calenderRepository;
+	private final DailyLookMapper dailyLookMapper;
+	private final IFileService fileservice;
 	private final ObjectMapper objectMapper;
 
 	@Override
 	@Transactional
-	public int insertDailyLook(DailyLook dailyLook) {
-		return calenderRepository.insertDailyLook(dailyLook);
+	public int upsertDailyLook(DailyLook dailyLook) {
+
+		Optional<DailyLook> existing = calenderRepository.getDailyLookByDate(dailyLook.getUserId(),
+			dailyLook.getWearDate());
+
+		if (existing.isPresent()) {
+			DailyLook exist = existing.get();
+
+			dailyLook.setDailylookId(exist.getDailylookId());
+
+			log.info(">>>>> dailyLook in update {}", dailyLook.toString());
+			return calenderRepository.updateDailyLook(dailyLook);
+		} else {
+			log.info(">>>>> dailyLook in insert {}", dailyLook.toString());
+			return calenderRepository.insertDailyLook(dailyLook);
+		}
 	}
 
 	@Override
@@ -41,18 +63,38 @@ public class CalenderService implements ICalenderService {
 	}
 
 	@Override
-	public List<DailyLook> getDailyLooksByMonth(String userId, String yearMonth) {
-		return calenderRepository.getDailyLooksByMonth(userId, yearMonth);
+	public List<DailyLookResponse> getDailyLooksByMonth(String userId, String yearMonth) {
+		List<DailyLook> dailyLooks = calenderRepository.getDailyLooksByMonth(userId, yearMonth);
+
+		List<Integer> thumbIds = dailyLooks.stream()
+			.map(DailyLook::getThumbImageId)
+			.filter(Objects::nonNull)
+			.toList();
+
+		Map<Integer, FileInfo> thumbMap = fileservice.getFilesByIds(thumbIds);
+
+		return dailyLookMapper.toResponseList(dailyLooks, thumbMap);
 	}
 
 	@Override
-	public DailyLook getDailyLookByDate(String userId, String wearDate) {
-		return calenderRepository.getDailyLookByDate(userId, wearDate);
-	}
+	public DailyLookResponse getDailyLookByDate(String userId, String wearDate) {
+		Optional<DailyLook> optional = calenderRepository.getDailyLookByDate(userId, wearDate);
 
-	@Override
-	public int updateDailyLook(DailyLook dailyLook) {
-		return calenderRepository.updateDailyLook(dailyLook);
+		if (optional.isEmpty()) {
+			return DailyLookResponse.empty();
+		}
+
+		DailyLook dailyLook = optional.get();
+
+		log.info("dailyLook : {}", dailyLook.toString());
+		Integer originImageId = dailyLook.getOriginImageId();
+
+		FileInfo fileInfo = fileservice.getFileById(originImageId);
+		String originImageUrl = fileInfo.getS3Url();
+
+		DailyLookResponse response = dailyLookMapper.toResponse(dailyLook, originImageUrl, null);
+
+		return response;
 	}
 
 	private List<DailyLookItem> parseItemsJson(String itemsJson, DailyLook dailyLook) {
@@ -63,7 +105,7 @@ public class CalenderService implements ICalenderService {
 			return rawList.stream().map(obj -> {
 				DailyLookItem item = new DailyLookItem();
 				item.setUserId(dailyLook.getUserId());
-				item.setDailyLookId(dailyLook.getDailyLookId());
+				item.setDailylookId(dailyLook.getDailylookId());
 				item.setWearDate(Date.valueOf(dailyLook.getWearDate()));
 				item.setClothesId((String)obj.get("id"));
 
