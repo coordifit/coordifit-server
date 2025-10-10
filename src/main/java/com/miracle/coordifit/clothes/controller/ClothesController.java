@@ -12,6 +12,7 @@ import org.springframework.web.multipart.MultipartFile;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.miracle.coordifit.clothes.dto.ClothesBulkCreateRequest;
 import com.miracle.coordifit.clothes.dto.ClothesCreateRequest;
+import com.miracle.coordifit.clothes.dto.ClothesResponse;
 import com.miracle.coordifit.clothes.dto.ClothesUpdateRequest;
 import com.miracle.coordifit.clothes.model.Clothes;
 import com.miracle.coordifit.clothes.service.IClothesService;
@@ -205,4 +206,13 @@ public class ClothesController {
 			r = r.getCause();
 		return r.getClass().getSimpleName() + ": " + String.valueOf(r.getMessage());
 	}
+	
+
+    @GetMapping
+    public List<ClothesResponse> getClothes(
+            @RequestParam(required = false) String categoryId,
+            @RequestParam(required = false) String subCategoryId
+    ) {
+        return clothesService.getClothes(categoryId, subCategoryId);
+    }
 }

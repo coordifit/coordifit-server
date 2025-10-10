@@ -1,21 +1,19 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 
-<mapper namespace="com.miracle.coordifit.auth.repository.UserRepository">
+<mapper namespace="com.miracle.coordifit.user.repository.UserRepository">
 
-    <insert id="insertUser" parameterType="com.miracle.coordifit.auth.model.User">
+    <insert id="insertUser" parameterType="com.miracle.coordifit.user.model.User">
         INSERT INTO users (
-            user_id, email, password, nickname, file_id,
-            login_type_code, kakao_id, gender_code, birth_date, is_active,
-            created_at, created_by, logined_at
+            user_id, email, password, nickname, login_type_code, 
+            is_active, created_at, created_by
         ) VALUES (
-            #{userId}, #{email}, #{password}, #{nickname}, #{fileId},
-            #{loginTypeCode}, #{kakaoId}, #{genderCode}, #{birthDate}, #{isActive},
-            CURRENT_TIMESTAMP, #{createdBy}, #{loginedAt}
+            #{userId}, #{email}, #{password}, #{nickname}, #{loginTypeCode},
+            #{isActive}, CURRENT_TIMESTAMP, #{createdBy}
         )
     </insert>
 
-    <select id="selectUserByEmail" parameterType="string" resultType="com.miracle.coordifit.auth.model.User">
+    <select id="selectUserByEmail" parameterType="string" resultType="com.miracle.coordifit.user.model.User">
         SELECT 
             user_id             AS userId,
             email,
@@ -36,10 +34,9 @@
             logined_at          AS loginedAt
         FROM users 
         WHERE email = #{email} 
-        AND is_active = 'Y'
     </select>
 
-    <select id="selectUserByUserId" parameterType="string" resultType="com.miracle.coordifit.auth.model.User">
+    <select id="selectUserByUserId" parameterType="string" resultType="com.miracle.coordifit.user.model.User">
         SELECT 
             user_id             AS userId,
             email,
@@ -60,10 +57,9 @@
             logined_at          AS loginedAt
         FROM users 
         WHERE user_id = #{userId} 
-        AND is_active = 'Y'
     </select>
 
-    <select id="selectUserByNickname" parameterType="string" resultType="com.miracle.coordifit.auth.model.User">
+    <select id="selectUserByNickname" parameterType="string" resultType="com.miracle.coordifit.user.model.User">
         SELECT 
             user_id             AS userId,
             email,
@@ -106,20 +102,14 @@
         FROM users
     </select>
 
-    <update id="updateUser" parameterType="com.miracle.coordifit.auth.model.User">
+    <update id="updateUserProfile" parameterType="com.miracle.coordifit.user.model.User">
         UPDATE users 
-        SET email = #{email},
-            password = #{password},
-            nickname = #{nickname},
-            file_id = #{fileId},
-            login_type_code = #{loginTypeCode},
-
-            kakao_id = #{kakaoId},
+        SET nickname = #{nickname},
             gender_code = #{genderCode},
             birth_date = #{birthDate},
             is_active = #{isActive},
+            file_id = #{fileId},
             updated_at = CURRENT_TIMESTAMP,
-
             updated_by = #{updatedBy}
         WHERE user_id = #{userId}
     </update>
@@ -129,6 +119,14 @@
         SET logined_at = CURRENT_TIMESTAMP
         WHERE user_id = #{userId}
         AND is_active = 'Y'
+    </update>
+
+    <update id="updateIsActive" parameterType="com.miracle.coordifit.user.model.User">
+        UPDATE users 
+        SET is_active = #{isActive},
+            updated_at = CURRENT_TIMESTAMP,
+            updated_by = #{updatedBy}
+        WHERE user_id = #{userId}
     </update>
 
 </mapper>

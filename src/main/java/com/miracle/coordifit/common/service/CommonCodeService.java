@@ -113,4 +113,9 @@ public class CommonCodeService implements ICommonCodeService {
 			}
 		}
 	}
+
+	@Override
+	public List<CommonCode> getCommonCodesByParentCodeId(String parentCodeId) {
+		return commonCodeRepository.selectCommonCodesByParentCodeId(parentCodeId);
+	}
 }

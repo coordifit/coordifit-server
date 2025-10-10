@@ -1,12 +1,17 @@
-package com.miracle.coordifit.auth.service;
+package com.miracle.coordifit.user.service;
+
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
 
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.miracle.coordifit.auth.dto.SignUpRequestDto;
-import com.miracle.coordifit.auth.model.User;
-import com.miracle.coordifit.auth.repository.UserRepository;
+import com.miracle.coordifit.auth.service.IEmailService;
+import com.miracle.coordifit.user.dto.ProfileUpdateRequestDto;
+import com.miracle.coordifit.user.model.User;
+import com.miracle.coordifit.user.repository.UserRepository;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -118,6 +123,74 @@ public class UserService implements IUserService {
 		} catch (Exception e) {
 			log.error("사용자 조회 중 오류 발생: userId={}", userId, e);
 			throw new RuntimeException("사용자 조회 중 오류가 발생했습니다.", e);
+		}
+	}
+
+	@Override
+	public User updateUserProfile(String userId, ProfileUpdateRequestDto requestDto) {
+		try {
+			User existingUser = userRepository.selectUserByUserId(userId);
+			if (existingUser == null) {
+				throw new IllegalArgumentException("사용자를 찾을 수 없습니다.");
+			}
+
+			if (requestDto.getNickname() != null &&
+				!requestDto.getNickname().equals(existingUser.getNickname()) &&
+				!isNicknameAvailable(requestDto.getNickname())) {
+				throw new IllegalArgumentException("이미 사용 중인 닉네임입니다.");
+			}
+
+			User updatedUser = User.builder()
+				.userId(userId)
+				.email(existingUser.getEmail())
+				.nickname(requestDto.getNickname() != null ? requestDto.getNickname() : existingUser.getNickname())
+				.genderCode(
+					requestDto.getGenderCode() != null ? requestDto.getGenderCode() : existingUser.getGenderCode())
+				.birthDate(requestDto.getBirthDate() != null ? LocalDate
+					.parse(requestDto.getBirthDate(), DateTimeFormatter.ofPattern("yyyy-MM-dd")).atStartOfDay()
+					: existingUser.getBirthDate())
+				.isActive(requestDto.getIsActive() != null ? requestDto.getIsActive() : existingUser.getIsActive())
+				.fileId(requestDto.getFileId() != null ? requestDto.getFileId() : existingUser.getFileId())
+				.loginTypeCode(existingUser.getLoginTypeCode())
+				.kakaoId(existingUser.getKakaoId())
+				.updatedBy(userId)
+				.build();
+
+			int result = userRepository.updateUserProfile(updatedUser);
+			if (result <= 0) {
+				throw new RuntimeException("프로필 업데이트 처리 중 오류가 발생했습니다.");
+			}
+
+			return updatedUser;
+		} catch (Exception e) {
+			log.error("프로필 업데이트 중 오류 발생: userId={}", userId, e);
+			throw e;
+		}
+	}
+
+	@Override
+	public void toggleUserActive(String userId) {
+		try {
+			User existingUser = userRepository.selectUserByUserId(userId);
+			if (existingUser == null) {
+				throw new IllegalArgumentException("사용자를 찾을 수 없습니다.");
+			}
+
+			User toggledUser = User.builder()
+				.userId(userId)
+				.isActive(existingUser.getIsActive().equals("Y") ? "N" : "Y")
+				.updatedBy(userId)
+				.build();
+
+			int result = userRepository.updateIsActive(toggledUser);
+			if (result <= 0) {
+				throw new RuntimeException("계정 활성/비활성 처리 중 오류가 발생했습니다.");
+			}
+
+			log.info("계정 활성/비활성 완료: userId={}", userId);
+		} catch (Exception e) {
+			log.error("계정 활성/비활성 중 오류 발생: userId={}", userId, e);
+			throw e;
 		}
 	}
 

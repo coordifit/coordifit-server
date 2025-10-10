@@ -20,4 +20,6 @@ public interface CommonCodeRepository {
 	int updateCommonCode(CommonCode commonCode);
 
 	int deleteCommonCode(String codeId);
+
+	List<CommonCode> selectCommonCodesByParentCodeId(String parentCodeId);
 }
