@@ -38,7 +38,7 @@ public class ClothesService implements IClothesService {
 		}
 		validateCategoryOrThrow(req.getCategoryCode());
 
-        final String id = clothesRepository.selectNextClothesId();
+		final String id = clothesRepository.selectNextClothesId();
 
 		Clothes c = new Clothes();
 		c.setClothesId(id);
