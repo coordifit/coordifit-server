@@ -172,9 +172,14 @@ public class JwtService implements IJwtService {
 	}
 
 	private Claims getAllClaimsFromToken(String token) {
+		if (log.isDebugEnabled()) {
+			String maskedToken = token == null ? null
+				: token.substring(0, Math.min(10, token.length())) + "...";
+			log.debug("getAllClaimsFromToken : {}", maskedToken);
+		}
 		try {
 			return Jwts.parser()
-				.verifyWith(secretKey)
+				.verifyWith(getSecretKey())
 				.build()
 				.parseSignedClaims(token)
 				.getPayload();
