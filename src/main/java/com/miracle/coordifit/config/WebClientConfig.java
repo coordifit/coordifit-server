@@ -22,25 +22,46 @@ public class WebClientConfig {
 	@Value("${app.google.gemini.timeout-ms}")
 	private int timeoutMs;
 
+	@Value("${app.openai.base-url}")
+	private String openAiBaseUrl;
+
+	@Value("${app.openai.timeout-ms}")
+	private int openAiTimeoutMs;
+
 	@Bean(name = "geminiWebClient")
 	public WebClient geminiWebClient(WebClient.Builder builder) {
-		HttpClient httpClient = HttpClient.create()
-			.option(ChannelOption.CONNECT_TIMEOUT_MILLIS, timeoutMs)
-			.responseTimeout(Duration.ofMinutes(5)) // ✅ 응답 대기 5분
-			// @formatter:off
-			.doOnConnected(c -> c
-				.addHandlerLast(new ReadTimeoutHandler(300, TimeUnit.SECONDS))  // 읽기 5분
-				.addHandlerLast(new WriteTimeoutHandler(300, TimeUnit.SECONDS)) // 쓰기 5분
-			);
-			// @formatter:on
-		return builder
+		HttpClient httpClient = createHttpClient(timeoutMs);
+		return builder.clone()
 			.baseUrl(baseUrl)
 			.clientConnector(new ReactorClientHttpConnector(httpClient))
-			.exchangeStrategies(ExchangeStrategies.builder()
-				.codecs(cfg -> cfg
-					.defaultCodecs()
-					.maxInMemorySize(16 * 1024 * 1024))
-				.build())
+			.exchangeStrategies(defaultExchangeStrategies())
+			.build();
+	}
+
+	@Bean(name = "openAIWebClient")
+	public WebClient openAIWebClient(WebClient.Builder builder) {
+		HttpClient httpClient = createHttpClient(openAiTimeoutMs);
+		return builder.clone()
+			.baseUrl(openAiBaseUrl)
+			.clientConnector(new ReactorClientHttpConnector(httpClient))
+			.exchangeStrategies(defaultExchangeStrategies())
+			.build();
+	}
+
+	private HttpClient createHttpClient(int timeoutMillis) {
+		return HttpClient.create()
+			.option(ChannelOption.CONNECT_TIMEOUT_MILLIS, timeoutMillis)
+			.responseTimeout(Duration.ofMinutes(5))
+			.doOnConnected(c -> c
+				.addHandlerLast(new ReadTimeoutHandler(300, TimeUnit.SECONDS))
+				.addHandlerLast(new WriteTimeoutHandler(300, TimeUnit.SECONDS)));
+	}
+
+	private ExchangeStrategies defaultExchangeStrategies() {
+		return ExchangeStrategies.builder()
+			.codecs(cfg -> cfg
+				.defaultCodecs()
+				.maxInMemorySize(16 * 1024 * 1024))
 			.build();
 	}
 }

@@ -9,7 +9,7 @@ import com.miracle.coordifit.avatar.dto.AvatarResponse;
 import com.miracle.coordifit.avatar.model.UserAvatar;
 
 @Mapper
-public interface UserAvatarMapper {
+public interface UserAvatarRepository {
 	int insertAvatar(UserAvatar avatar);
 
 	AvatarResponse selectAvatarById(@Param("avatarId") String avatarId);
