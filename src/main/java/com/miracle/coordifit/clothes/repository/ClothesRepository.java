@@ -48,7 +48,7 @@ public interface ClothesRepository {
 	Clothes findById(@Param("clothesId") String clothesId);
 
 	List<Clothes> findAllByUser(@Param("userId") String userId);
-	
+
 	// ===== 벌크 =====
 	//int insertBulkClothes(@Param("list") List<Clothes> clothesList);//
 
@@ -64,7 +64,7 @@ public interface ClothesRepository {
 	List<ClothesListItemDto> findAllListByUser(@Param("userId") String userId);
 
 	int existsActiveCategoryCount(@Param("categoryCode") String categoryCode);
-	
+
 	String selectNextClothesId();
 
 }
