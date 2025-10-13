@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.miracle.coordifit.post.repository.PostRepository">
+
+  <select id="getNextPostSequence" resultType="int">
+    SELECT NVL(MAX(TO_NUMBER(SUBSTR(post_id, 8))), 0) + 1
+      FROM posts
+     WHERE SUBSTR(post_id, 2, 6) = TO_CHAR(SYSDATE, 'YYMMDD')
+  </select>
+
+  <insert id="insertPost" parameterType="com.miracle.coordifit.post.model.Post">
+    INSERT INTO posts (
+      post_id, user_id, content, is_public, view_count,
+      like_count, comment_count, is_active, created_at, created_by
+    ) VALUES (
+      #{postId}, #{userId}, #{content}, #{isPublic}, 0,
+      0, 0, #{isActive}, CURRENT_TIMESTAMP, #{createdBy}
+    )
+  </insert>
+
+  <insert id="insertPostImage" parameterType="com.miracle.coordifit.post.model.PostImage">
+    INSERT INTO post_images (
+      post_id, file_id, created_at, created_by
+    ) VALUES (
+      #{postId}, #{fileId}, CURRENT_TIMESTAMP, #{createdBy}
+    )
+  </insert>
+
+  <insert id="insertPostClothes" parameterType="com.miracle.coordifit.post.model.PostClothes">
+    INSERT INTO post_clothes (
+      post_id, clothes_id, created_at, created_by
+    ) VALUES (
+      #{postId}, #{clothesId}, CURRENT_TIMESTAMP, #{createdBy}
+    )
+  </insert>
+
+</mapper>
+
