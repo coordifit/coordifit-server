@@ -28,7 +28,7 @@ import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 @Service
-public class FittingAnalysisService {
+public class FittingAnalysisService implements IFittingAnalysisService {
 
 	private static final String MODEL = "gpt-4o-mini";
 	private static final int MAX_TOKENS = 240;
@@ -63,6 +63,7 @@ public class FittingAnalysisService {
 	}
 
 	/** 메인 분석 로직 */
+	@Override
 	public FittingAnalysisResponse analyze(FittingAnalysisRequest request) {
 		String imageSource = prepareImageSource(request.getImageBase64());
 		String hint = StringUtils.hasText(request.getHint()) ? request.getHint().trim() : "(없음)";
@@ -268,23 +269,5 @@ public class FittingAnalysisService {
 	}
 
 	private record OpenAIResult(String content, int promptTokens, int completionTokens) {
-	}
-
-	public static class FittingAnalysisFailure extends RuntimeException {
-		private final FittingAnalysisErrorCode errorCode;
-
-		public FittingAnalysisFailure(FittingAnalysisErrorCode errorCode, String message) {
-			super(message);
-			this.errorCode = errorCode;
-		}
-
-		public FittingAnalysisFailure(FittingAnalysisErrorCode errorCode, String message, Throwable cause) {
-			super(message, cause);
-			this.errorCode = errorCode;
-		}
-
-		public FittingAnalysisErrorCode getErrorCode() {
-			return errorCode;
-		}
 	}
 }

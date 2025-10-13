@@ -1,14 +1,14 @@
-package com.miracle.coordifit.nanobanana.controller;
+package com.miracle.coordifit.fitting.controller;
 
 import java.util.*;
 
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import com.miracle.coordifit.nanobanana.dto.FittingRequestDTO;
-import com.miracle.coordifit.nanobanana.dto.ImageGenerationRequestDTO;
-import com.miracle.coordifit.nanobanana.service.INanobananaService;
-import com.miracle.coordifit.nanobanana.util.ImageUtil;
+import com.miracle.coordifit.fitting.dto.FittingRequestDTO;
+import com.miracle.coordifit.fitting.dto.ImageGenerationRequestDTO;
+import com.miracle.coordifit.fitting.service.INanobananaService;
+import com.miracle.coordifit.fitting.util.ImageUtil;
 
 import lombok.RequiredArgsConstructor;
 

@@ -1,4 +1,4 @@
-package com.miracle.coordifit.nanobanana.util;
+package com.miracle.coordifit.fitting.util;
 
 import java.io.InputStream;
 import java.net.URL;
@@ -6,7 +6,7 @@ import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.util.Base64;
 
-import com.miracle.coordifit.nanobanana.dto.ImageGenerationRequestDTO;
+import com.miracle.coordifit.fitting.dto.ImageGenerationRequestDTO;
 
 /**
  * URL → Base64 변환 유틸
