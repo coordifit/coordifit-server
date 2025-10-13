@@ -5,31 +5,22 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 import org.springframework.http.MediaType;
-import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.multipart.MultipartFile;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.miracle.coordifit.clothes.dto.ClothesBulkCreateRequest;
-import com.miracle.coordifit.clothes.dto.ClothesCreateRequest;
-import com.miracle.coordifit.clothes.dto.ClothesResponse;
-import com.miracle.coordifit.clothes.dto.ClothesUpdateRequest;
-import com.miracle.coordifit.clothes.model.Clothes;
+import com.miracle.coordifit.clothes.dto.*;
+import com.miracle.coordifit.clothes.repository.ClothesRepository;
 import com.miracle.coordifit.clothes.service.IClothesService;
+import com.miracle.coordifit.common.dto.ApiResponseDto;
 import com.miracle.coordifit.common.model.CommonCode;
 import com.miracle.coordifit.common.model.FileInfo;
 import com.miracle.coordifit.common.service.ICommonCodeService;
 
 import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.Parameter;
-import io.swagger.v3.oas.annotations.media.ArraySchema;
-import io.swagger.v3.oas.annotations.media.Content;
-import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 
-@Tag(name = "Clothes", description = "옷 등록/수정/조회 API")
+@Tag(name = "Clothes", description = "옷 등록/수정/조회 API (Base64 이미지)")
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/api/clothes")
@@ -37,167 +28,198 @@ public class ClothesController {
 
 	private final IClothesService clothesService;
 	private final ICommonCodeService commonCodeService;
-	private final ObjectMapper objectMapper;
+	private final ClothesRepository clothesRepository;
 
-	@Operation(summary = "상위 카테고리 목록")
-	@GetMapping("/categories/roots")
-	public ResponseEntity<?> categoryRoots() {
-		Map<String, CommonCode> roots = commonCodeService.getCommonCodes();
-		CommonCode designatedRoot = roots.get("B10001");
-		if (designatedRoot != null) {
-			return ResponseEntity.ok(new ArrayList<>(designatedRoot.getChildren().values()));
-		}
-		List<CommonCode> rootList = roots.values().stream()
-			.filter(cc -> cc.getLevel() == 1 || cc.getParentCodeId() == null)
-			.collect(Collectors.toList());
-		return ResponseEntity.ok(rootList);
+	@Operation(summary = "등록/수정 폼 데이터")
+	@GetMapping("/form")
+	public ApiResponseDto<Map<String, Object>> form() {
+		Map<String, Object> res = new HashMap<>();
+		Map<String, CommonCode> all = commonCodeService.getCommonCodes();
+		res.put("categories", all.get("B10001"));
+		res.put("uploadPolicy", Map.of("min", 1, "max", 5, "maxSizeMB", 10));
+		return ApiResponseDto.success("OK", res);
 	}
 
-	@Operation(summary = "하위 카테고리 목록")
-	@GetMapping("/categories/{parentCodeId}/children")
-	public ResponseEntity<?> categoryChildren(@PathVariable String parentCodeId) {
-		Map<String, CommonCode> roots = commonCodeService.getCommonCodes();
-		CommonCode parent = findCodeById(roots, parentCodeId);
-		if (parent == null)
-			return ResponseEntity.ok(Collections.emptyList());
-		return ResponseEntity.ok(new ArrayList<>(parent.getChildren().values()));
-	}
-
-	@Operation(summary = "옷 등록 (이미지 1~5장 필수)", requestBody = @io.swagger.v3.oas.annotations.parameters.RequestBody(content = @Content(mediaType = MediaType.MULTIPART_FORM_DATA_VALUE)))
-	@PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-	public ResponseEntity<?> register(
-		@Parameter(name = "clothes", description = "옷 정보(JSON 문자열). 예: {\"name\":\"셔츠\",\"categoryCode\":\"B30001\"}", required = true, content = @Content(schema = @Schema(type = "string"))) @RequestPart("clothes") String clothesJson,
-		@Parameter(name = "images", description = "이미지 파일(1~5장)", required = true, content = @Content(array = @ArraySchema(schema = @Schema(type = "string", format = "binary")))) @RequestPart("images") List<MultipartFile> images,
-		@Parameter(description = "로그인한 사용자 ID", required = true) @RequestHeader("X-User-Id") String userId) {
+	// ================== Base64 단건 등록 ==================
+	@Operation(summary = "옷 등록 (Base64 이미지)")
+	@PostMapping(path = "/base64", consumes = MediaType.APPLICATION_JSON_VALUE)
+	public ApiResponseDto<Map<String, Object>> createOne(
+		@Valid @RequestBody ClothesCreateWithImagesRequest req,
+		@RequestHeader("X-Actor") String actor) {
 		try {
-			if (images == null || images.size() < 1 || images.size() > 5) {
-				return ResponseEntity.badRequest().body(error("이미지는 1~5장 업로드해야 합니다."));
+			// 🔎 사전검증: 어디서 깨지는지 imageIndex로 즉시 표시
+			int j = 0;
+			for (var img : req.getImages()) {
+				j++;
+				// FileService의 프리플라이트 디코더 호출 (로그에 head/tail/len/mod 찍힘)
+				com.miracle.coordifit.common.service.FileService.decodeBase64SafeForPreflight(img.getDataUrl());
 			}
-			Clothes clothes = objectMapper.readValue(clothesJson, Clothes.class);
-			if (isBlank(clothes.getName()))
-				return ResponseEntity.badRequest().body(error("name은 필수입니다."));
-			if (isBlank(clothes.getCategoryCode()))
-				return ResponseEntity.badRequest().body(error("categoryCode는 필수입니다."));
-			String id = clothesService.register(clothes, images, userId);
-			return ResponseEntity.ok(success(Map.of("clothesId", id)));
+
+			validateCategoryCode(req.getCategoryCode());
+			String id = clothesService.createOneBase64(req, actor);
+			return ApiResponseDto.success("등록 성공", Map.of("clothesId", id));
 		} catch (Exception e) {
-			return ResponseEntity.status(500).body(error(root(e)));
+			return ApiResponseDto.error("등록 실패: " + root(e));
 		}
 	}
 
-	@Operation(summary = "옷 수정 (같은 폼 재사용)", requestBody = @io.swagger.v3.oas.annotations.parameters.RequestBody(content = @Content(mediaType = MediaType.MULTIPART_FORM_DATA_VALUE)))
-	@PutMapping(path = "/{clothesId}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-	public ResponseEntity<?> modify(@Parameter(description = "옷 ID", required = true) @PathVariable String clothesId,
-		@Parameter(name = "clothes", description = "수정할 옷 정보(JSON 문자열)", required = true, content = @Content(schema = @Schema(type = "string"))) @RequestPart("clothes") String clothesJson,
-		@Parameter(name = "addImages", description = "추가 이미지 파일(0~5장, 총합 5장 이하 유지)", required = false, content = @Content(array = @ArraySchema(schema = @Schema(type = "string", format = "binary")))) @RequestPart(value = "addImages", required = false) List<MultipartFile> addImages,
-		@Parameter(description = "true면 이미지 전체 교체", required = false) @RequestParam(defaultValue = "false") boolean replaceAllImages,
-		@Parameter(description = "로그인한 사용자 ID", required = true) @RequestHeader("X-User-Id") String userId) {
+	// ================== Base64 벌크 등록(병렬) ==================
+	@Operation(summary = "옷 일괄 등록 (Base64, 병렬)")
+	@PostMapping(path = "/base64/bulk", consumes = MediaType.APPLICATION_JSON_VALUE)
+	public ApiResponseDto<List<String>> bulkCreate(
+		@Valid @RequestBody ClothesBulkCreateWithImagesRequest req,
+		@RequestHeader("X-Actor") String actor) {
 		try {
-			Clothes clothes = objectMapper.readValue(clothesJson, Clothes.class);
-			clothes.setClothesId(clothesId);
-			clothes.setUserId(userId);
-			clothesService.modify(clothes, addImages, replaceAllImages, userId);
-			return ResponseEntity.ok(success());
+			if (req.getItems() != null && !req.getItems().isEmpty()) {
+				validateCategoryCodes(
+					req.getItems().stream().map(ClothesCreateWithImagesRequest::getCategoryCode)
+						.collect(Collectors.toList()));
+			}
+			return ApiResponseDto.success("일괄 등록 성공",
+				clothesService.bulkCreateBase64Parallel(req, actor));
 		} catch (Exception e) {
-			return ResponseEntity.status(500).body(error(root(e)));
+			return ApiResponseDto.error("일괄 등록 실패: " + root(e));
 		}
 	}
 
+	// ================== Base64 수정 ==================
+	@Operation(summary = "옷 수정 (Base64 이미지)")
+	@PutMapping(path = "/{clothesId}/base64", consumes = MediaType.APPLICATION_JSON_VALUE)
+	public ApiResponseDto<Void> update(
+		@PathVariable String clothesId,
+		@Valid @RequestBody ClothesUpdateWithImagesRequest req,
+		@RequestHeader("X-Actor") String actor) {
+		try {
+			if (req.getCategoryCode() != null)
+				validateCategoryCode(req.getCategoryCode());
+			clothesService.updateBase64(clothesId, req, actor);
+			return ApiResponseDto.success("수정 성공");
+		} catch (Exception e) {
+			return ApiResponseDto.error("수정 실패: " + root(e));
+		}
+	}
+
+	// ================== 이미지 개별 삭제 ==================
 	@Operation(summary = "이미지 개별 삭제")
 	@DeleteMapping("/{clothesId}/images/{fileId}")
-	public ResponseEntity<?> deleteImage(
-		@Parameter(description = "옷 ID", required = true) @PathVariable String clothesId,
-		@Parameter(description = "파일 ID", required = true) @PathVariable Long fileId) {
+	public ApiResponseDto<Void> deleteImage(@PathVariable String clothesId, @PathVariable Long fileId) {
 		try {
 			clothesService.removeImage(clothesId, fileId);
-			return ResponseEntity.noContent().build();
+			return ApiResponseDto.success("이미지 삭제 성공");
 		} catch (Exception e) {
-			return ResponseEntity.status(500).body(error(root(e)));
+			return ApiResponseDto.error("이미지 삭제 실패: " + root(e));
 		}
 	}
 
-	@Operation(summary = "옷 삭제")
+	// ================== 삭제/벌크 삭제 ==================
+	@Operation(summary = "옷 삭제(소프트삭제)")
 	@DeleteMapping("/{clothesId}")
-	public ResponseEntity<?> remove(@PathVariable String clothesId) {
+	public ApiResponseDto<Void> remove(@PathVariable String clothesId) {
 		try {
 			clothesService.remove(clothesId);
-			return ResponseEntity.noContent().build();
+			return ApiResponseDto.success("삭제 성공");
 		} catch (Exception e) {
-			return ResponseEntity.status(500).body(error(root(e)));
+			return ApiResponseDto.error("삭제 실패: " + root(e));
 		}
 	}
 
-	@Operation(summary = "옷 상세")
-	@GetMapping("/{clothesId}")
-	public ResponseEntity<Clothes> detail(@PathVariable String clothesId) {
-		return ResponseEntity.ok(clothesService.findOne(clothesId));
-	}
-
-	@Operation(summary = "옷 이미지 목록")
-	@GetMapping("/{clothesId}/images")
-	public ResponseEntity<List<FileInfo>> images(@PathVariable String clothesId) {
-		return ResponseEntity.ok(clothesService.findImages(clothesId));
-	}
-
-	@Operation(summary = "내 옷 전체 조회")
-	@GetMapping("/me")
-	public ResponseEntity<?> myClothes(@RequestHeader("X-User-Id") String userId) {
-		return ResponseEntity.ok(clothesService.findMine(userId));
-	}
-
-	private CommonCode findCodeById(Map<String, CommonCode> map, String targetId) {
-		if (map.containsKey(targetId))
-			return map.get(targetId);
-		for (CommonCode c : map.values()) {
-			CommonCode found = findCodeById(c.getChildren(), targetId);
-			if (found != null)
-				return found;
-		}
-		return null;
-	}
-
-	@PostMapping("/bulk")
-	public ResponseEntity<List<String>> bulkCreate(@Valid @RequestBody ClothesBulkCreateRequest req,
-		@RequestHeader("X-Actor") String actor) {
-		return ResponseEntity.ok(clothesService.bulkCreate(req, actor));
-	}
-
-	@PostMapping
-	public ResponseEntity<String> createOne(@Valid @RequestBody ClothesCreateRequest req,
-		@RequestHeader("X-Actor") String actor) {
-		return ResponseEntity.ok(clothesService.createOne(req, actor));
-	}
-
-	@PutMapping("/{clothesId}")
-	public ResponseEntity<Void> update(@PathVariable String clothesId,
-		@Valid @RequestBody ClothesUpdateRequest req,
-		@RequestParam(defaultValue = "true") boolean replaceFiles,
-		@RequestHeader("X-Actor") String actor) {
-		req.setClothesId(clothesId);
-		clothesService.update(req, replaceFiles, actor);
-		return ResponseEntity.noContent().build();
-	}
-
+	@Operation(summary = "옷 일괄 삭제")
 	@DeleteMapping("/bulk")
-	public ResponseEntity<Void> bulkDelete(@RequestBody List<String> clothesIds) {
-		clothesService.bulkDelete(clothesIds);
-		return ResponseEntity.noContent().build();
+	public ApiResponseDto<Void> bulkDelete(@RequestBody List<String> clothesIds) {
+		try {
+			clothesService.bulkDelete(clothesIds);
+			return ApiResponseDto.success("일괄 삭제 성공");
+		} catch (Exception e) {
+			return ApiResponseDto.error("일괄 삭제 실패: " + root(e));
+		}
 	}
 
-	private boolean isBlank(String s) {
-		return s == null || s.isBlank();
+	// ================== 조회 ==================
+	@Operation(summary = "옷 상세 조회 (images[] + thumbnailUrl 포함)")
+	@GetMapping("/{clothesId}")
+	public ApiResponseDto<ClothesDetailDto> detail(@PathVariable String clothesId) {
+		try {
+			return ApiResponseDto.success("조회 성공", clothesService.findDetail(clothesId));
+		} catch (Exception e) {
+			return ApiResponseDto.error("조회 실패: " + root(e));
+		}
 	}
 
-	private Map<String, Object> success() {
-		return Map.of("success", true);
+	@Operation(summary = "내 옷 전체(썸네일 목록)")
+	@GetMapping("/me")
+	public ApiResponseDto<List<ClothesListItemDto>> myClothes(@RequestHeader("X-User-Id") String userId) {
+		return ApiResponseDto.success("OK", clothesService.findAllByUser(userId));
 	}
 
-	private Map<String, Object> success(Object data) {
-		return Map.of("success", true, "data", data);
+	@Operation(summary = "옷 이미지 목록 (파일 상세)")
+	@GetMapping("/{clothesId}/images")
+	public ApiResponseDto<List<FileInfo>> images(@PathVariable String clothesId) {
+		return ApiResponseDto.success("OK", clothesService.findImages(clothesId));
 	}
 
-	private Map<String, Object> error(String message) {
-		return Map.of("success", false, "message", message);
+	@Operation(summary = "옷 전체 조회(정렬/필터/페이징)")
+	@GetMapping
+	public ApiResponseDto<Map<String, Object>> getClothes(
+		@RequestParam(required = false) String categoryCode,
+		@RequestParam(defaultValue = "purchaseDate") String sort,
+		@RequestParam(defaultValue = "desc") String dir,
+		@RequestParam(defaultValue = "0") int page,
+		@RequestParam(defaultValue = "20") int size) {
+
+		List<ClothesDetailDto> all = clothesService.getClothes(categoryCode, null);
+
+		Comparator<ClothesDetailDto> comp;
+		if ("price".equalsIgnoreCase(sort)) {
+			comp = Comparator.comparing(dto -> dto.getPrice() == null ? Integer.MIN_VALUE : dto.getPrice());
+		} else if ("name".equalsIgnoreCase(sort)) {
+			comp = Comparator.comparing(dto -> dto.getName() == null ? "" : dto.getName(),
+				String.CASE_INSENSITIVE_ORDER);
+		} else {
+			comp = Comparator.comparing(ClothesDetailDto::getPurchaseDate,
+				Comparator.nullsLast(Comparator.naturalOrder()));
+		}
+		if ("desc".equalsIgnoreCase(dir))
+			comp = comp.reversed();
+
+		List<ClothesDetailDto> sorted = all.stream().sorted(comp).toList();
+		int safeSize = Math.max(size, 1);
+		int from = Math.max(page, 0) * safeSize;
+		int to = Math.min(from + safeSize, sorted.size());
+		List<ClothesDetailDto> content = from >= to ? List.of() : sorted.subList(from, to);
+
+		Map<String, Object> body = new HashMap<>();
+		body.put("content", content);
+		body.put("totalElements", sorted.size());
+		body.put("page", page);
+		body.put("size", safeSize);
+		return ApiResponseDto.success("OK", body);
+	}
+
+	// ================== 유틸 ==================
+	private void validateCategoryCode(String categoryCode) {
+		if (categoryCode == null)
+			return;
+		String code = categoryCode.trim();
+		if (code.isEmpty())
+			throw new IllegalArgumentException("유효하지 않은 categoryCode(공백)");
+		int n = clothesRepository.existsActiveCategoryCount(code);
+		if (n == 0)
+			throw new IllegalArgumentException("유효하지 않은 categoryCode: " + code);
+	}
+
+	private void validateCategoryCodes(List<String> codes) {
+		if (codes == null)
+			return;
+		for (String c : codes) {
+			if (c == null)
+				continue;
+			String code = c.trim();
+			if (code.isEmpty())
+				throw new IllegalArgumentException("유효하지 않은 categoryCode(공백)");
+			int n = clothesRepository.existsActiveCategoryCount(code);
+			if (n == 0)
+				throw new IllegalArgumentException("유효하지 않은 categoryCode: " + code);
+		}
 	}
 
 	private String root(Throwable t) {
@@ -205,12 +227,5 @@ public class ClothesController {
 		while (r.getCause() != null)
 			r = r.getCause();
 		return r.getClass().getSimpleName() + ": " + String.valueOf(r.getMessage());
-	}
-
-	@GetMapping
-	public List<ClothesResponse> getClothes(
-		@RequestParam(required = false) String categoryId,
-		@RequestParam(required = false) String subCategoryId) {
-		return clothesService.getClothes(categoryId, subCategoryId);
 	}
 }
