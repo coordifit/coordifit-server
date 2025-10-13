@@ -27,6 +27,11 @@ public class FileController {
 		return ResponseEntity.ok(fileService.uploadFile(file));
 	}
 
+	@PostMapping("/thumbnails")
+	public ResponseEntity<FileInfo> uploadThumbnail(@RequestParam("file") MultipartFile file) {
+		return ResponseEntity.ok(fileService.uploadThumbnail(file));
+	}
+
 	@GetMapping
 	public ResponseEntity<List<FileInfo>> getFiles() {
 		List<FileInfo> files = fileService.getFiles();

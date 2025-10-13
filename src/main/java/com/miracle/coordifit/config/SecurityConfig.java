@@ -51,8 +51,6 @@ public class SecurityConfig {
 				// 인증 관련 API는 허용
 				.requestMatchers("/api/auth/**").permitAll()
 				.requestMatchers(HttpMethod.DELETE, "/api/user/**").permitAll()
-				// AI 피팅은 서비스 특성상 공개 API로 유지
-				.requestMatchers("/api/nanobanana/**").permitAll()
 				// Swagger UI 관련 경로는 허용
 				.requestMatchers("/swagger-ui/**", "/v3/api-docs/**", "/swagger-resources/**").permitAll()
 				// 나머지 모든 API는 인증 필요

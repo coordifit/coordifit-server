@@ -15,9 +15,13 @@ import org.springframework.stereotype.Service;
 import com.miracle.coordifit.auth.repository.JwtTokenRepository;
 import com.miracle.coordifit.user.model.User;
 
-import io.jsonwebtoken.*;
+import io.jsonwebtoken.Claims;
+import io.jsonwebtoken.ExpiredJwtException;
+import io.jsonwebtoken.JwtBuilder;
+import io.jsonwebtoken.Jwts;
+import io.jsonwebtoken.MalformedJwtException;
+import io.jsonwebtoken.UnsupportedJwtException;
 import io.jsonwebtoken.security.Keys;
-import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
@@ -40,19 +44,6 @@ public class JwtService implements IJwtService {
 
 	private final JwtTokenRepository jwtTokenRepository;
 	private SecretKey secretKey;
-
-	@PostConstruct
-	public void init() {
-		log.info("=== JWT 설정 확인 ===");
-		log.info("Secret Key: {}", secret != null ? "설정됨 (길이: " + secret.length() + ")" : "❌ NULL!!");
-		log.info("Access Token Expiration: {} ms ({} 시간)", accessTokenExpiration, accessTokenExpiration / 3600000.0);
-		log.info("Refresh Token Expiration: {} ms ({} 일)", refreshTokenExpiration, refreshTokenExpiration / 86400000.0);
-		log.info("Issuer: {}", issuer);
-
-		if (secret == null || secret.isEmpty()) {
-			log.error("❌❌❌ JWT Secret Key가 설정되지 않았습니다! application.properties 또는 application-local.properties를 확인하세요!");
-		}
-	}
 
 	private SecretKey getSecretKey() {
 		if (secretKey == null) {
@@ -172,14 +163,10 @@ public class JwtService implements IJwtService {
 	}
 
 	private Claims getAllClaimsFromToken(String token) {
-		if (log.isDebugEnabled()) {
-			String maskedToken = token == null ? null
-				: token.substring(0, Math.min(10, token.length())) + "...";
-			log.debug("getAllClaimsFromToken : {}", maskedToken);
-		}
+		log.info("getAllClaimsFromToken : {}", token);
 		try {
 			return Jwts.parser()
-				.verifyWith(getSecretKey())
+				.verifyWith(secretKey)
 				.build()
 				.parseSignedClaims(token)
 				.getPayload();

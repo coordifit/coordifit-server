@@ -30,18 +30,18 @@ import lombok.extern.slf4j.Slf4j;
 @Service
 public class FittingAnalysisService {
 
-	private static final String MODEL = "gpt-5-mini";
-	private static final double TEMPERATURE = 0.4d;
+	private static final String MODEL = "gpt-4o-mini";
 	private static final int MAX_TOKENS = 240;
 
 	private static final String SYSTEM_PROMPT = "너는 패션 코디 분석가야. 반드시 아래 JSON 스키마로만 출력해.\n설명/접두사 없이 JSON만 응답해.";
 
 	private static final String USER_PROMPT_TEMPLATE = String.join("\n",
 		"규칙:",
-		"1) title 1줄(18~26자, 긍정/상황형)",
-		"2) contents 3줄(각 22~30자, 중복 없이 조언/효과/활용)",
-		"3) hashtags 2개(한글 3~6자, # 포함)",
-		"4) 과장 금지, 담백한 톤",
+		"1) title 1줄 (18~26자, 긍정적이고 감각적인 코디 평)",
+		"2) contents 3줄 (각 22~30자, 코디의 장점을 객관적으로 분석 — 색감, 실루엣, 분위기 등)",
+		"   - 추천/조언보다는 평가/칭찬 중심",
+		"   - '~보인다', '~느껴진다', '~연출했다'와 같은 서술어 사용",
+		"3) hashtags 2개 (3~6자, # 포함, 분위기나 스타일 표현)",
 		"",
 		"스키마:",
 		"{\"title\":\"string\",\"contents\":[\"string\",\"string\",\"string\"],\"hashtags\":[\"#a\",\"#b\"]}",
@@ -97,8 +97,7 @@ public class FittingAnalysisService {
 	private Map<String, Object> buildRequestBody(String imageSource, String hint) {
 		Map<String, Object> requestBody = new LinkedHashMap<>();
 		requestBody.put("model", MODEL);
-		requestBody.put("temperature", TEMPERATURE);
-		requestBody.put("max_tokens", MAX_TOKENS);
+		requestBody.put("max_completion_tokens", MAX_TOKENS);
 		requestBody.put("messages", buildMessages(imageSource, hint));
 		requestBody.put("response_format", buildResponseFormat());
 		return requestBody;

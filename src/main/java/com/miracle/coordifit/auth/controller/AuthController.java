@@ -6,9 +6,16 @@ import java.util.Map;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.BindingResult;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestHeader;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
 
-import com.miracle.coordifit.auth.dto.*;
+import com.miracle.coordifit.auth.dto.EmailVerificationRequestDto;
+import com.miracle.coordifit.auth.dto.SignUpRequestDto;
 import com.miracle.coordifit.auth.service.IEmailService;
 import com.miracle.coordifit.auth.service.IJwtService;
 import com.miracle.coordifit.common.dto.ApiResponseDto;
