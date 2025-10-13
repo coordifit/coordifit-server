@@ -45,7 +45,7 @@ public class AvatarService implements IAvatarService {
 		}
 
 		int sequence = userAvatarRepository.getNextAvatarSequence();
-		String avatarId = String.format("AVT%07d", sequence);
+		String avatarId = String.format("A%06d", sequence);
 
 		UserAvatar avatar = UserAvatar.builder()
 			.avatarId(avatarId)

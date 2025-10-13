@@ -1,6 +1,6 @@
-package com.miracle.coordifit.nanobanana.service;
+package com.miracle.coordifit.fitting.service;
 
-import com.miracle.coordifit.nanobanana.dto.ImageGenerationRequestDTO;
+import com.miracle.coordifit.fitting.dto.ImageGenerationRequestDTO;
 
 public interface INanobananaService {
 	/**

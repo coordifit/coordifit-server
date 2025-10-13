@@ -1,4 +1,4 @@
-package com.miracle.coordifit.nanobanana.dto;
+package com.miracle.coordifit.fitting.dto;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;
