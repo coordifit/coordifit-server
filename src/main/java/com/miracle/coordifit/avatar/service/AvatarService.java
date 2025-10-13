@@ -9,7 +9,7 @@ import org.springframework.web.multipart.MultipartFile;
 import com.miracle.coordifit.avatar.dto.AvatarCreateRequest;
 import com.miracle.coordifit.avatar.dto.AvatarResponse;
 import com.miracle.coordifit.avatar.model.UserAvatar;
-import com.miracle.coordifit.avatar.repository.UserAvatarMapper;
+import com.miracle.coordifit.avatar.repository.UserAvatarRepository;
 import com.miracle.coordifit.common.model.FileInfo;
 import com.miracle.coordifit.common.service.IFileService;
 
@@ -21,7 +21,7 @@ public class AvatarService implements IAvatarService {
 
 	private static final String DEFAULT_ACTIVE_FLAG = "Y";
 
-	private final UserAvatarMapper userAvatarMapper;
+	private final UserAvatarRepository userAvatarRepository;
 	private final IFileService fileService;
 
 	@Override
@@ -44,7 +44,7 @@ public class AvatarService implements IAvatarService {
 			throw new IllegalStateException("파일 저장에 실패했습니다.");
 		}
 
-		int sequence = userAvatarMapper.getNextAvatarSequence();
+		int sequence = userAvatarRepository.getNextAvatarSequence();
 		String avatarId = String.format("AVT%07d", sequence);
 
 		UserAvatar avatar = UserAvatar.builder()
@@ -57,8 +57,8 @@ public class AvatarService implements IAvatarService {
 			.updatedBy(userId)
 			.build();
 
-		userAvatarMapper.insertAvatar(avatar);
-		AvatarResponse response = userAvatarMapper.selectAvatarById(avatarId);
+		userAvatarRepository.insertAvatar(avatar);
+		AvatarResponse response = userAvatarRepository.selectAvatarById(avatarId);
 		if (response == null) {
 			return AvatarResponse.builder()
 				.avatarId(avatarId)
@@ -78,7 +78,7 @@ public class AvatarService implements IAvatarService {
 		if (userId == null || userId.isBlank()) {
 			return List.of();
 		}
-		return userAvatarMapper.selectAvatarsByUser(userId);
+		return userAvatarRepository.selectAvatarsByUser(userId);
 	}
 
 	@Override
@@ -91,7 +91,7 @@ public class AvatarService implements IAvatarService {
 			throw new IllegalArgumentException("삭제할 아바타 정보를 입력해주세요.");
 		}
 
-		int updated = userAvatarMapper.deleteAvatar(avatarId, userId);
+		int updated = userAvatarRepository.deleteAvatar(avatarId, userId);
 		if (updated == 0) {
 			throw new IllegalArgumentException("아바타 정보를 찾을 수 없습니다.");
 		}

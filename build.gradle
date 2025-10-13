@@ -101,6 +101,9 @@ dependencies {
 	// testImplementation 'me.paulschwarz:spring-dotenv:4.0.0'
 	testImplementation 'org.springframework.boot:spring-boot-starter-test'
 	testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+	
+	implementation 'net.coobird:thumbnailator:0.4.20'
+	implementation 'org.springframework:spring-test'
 }
 
 tasks.named('test') {

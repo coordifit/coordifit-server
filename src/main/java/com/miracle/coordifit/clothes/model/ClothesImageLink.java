@@ -8,6 +8,6 @@ import lombok.*;
 @Builder
 public class ClothesImageLink {
 	private String clothesId;
-	private Long fileId;
+	private long fileId;
 	private String createdBy;
 }

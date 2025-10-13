@@ -5,7 +5,9 @@
 
 <mapper namespace="com.miracle.coordifit.clothes.repository.ClothesRepository">
 
-  <!-- ========================= ResultMaps ========================= -->
+  <!-- ========================================================= -->
+  <!-- ResultMaps -->
+  <!-- ========================================================= -->
   <resultMap id="ClothesMap" type="com.miracle.coordifit.clothes.model.Clothes">
     <id     property="clothesId"    column="CLOTHES_ID"/>
     <result property="userId"       column="USER_ID"/>
@@ -21,9 +23,7 @@
     <result property="lastWornDate" column="LAST_WORN_DATE"/>
     <result property="isActive"     column="IS_ACTIVE"/>
     <result property="createdBy"    column="CREATED_BY"/>
-    <result property="createdAt"    column="CREATED_AT"/>
     <result property="updatedBy"    column="UPDATED_BY"/>
-    <result property="updatedAt"    column="UPDATED_AT"/>
   </resultMap>
 
   <resultMap id="FileInfoMap" type="com.miracle.coordifit.common.model.FileInfo">
@@ -38,17 +38,27 @@
     <result property="uploadDate"   column="UPLOAD_DATE"/>
   </resultMap>
 
-  <select id="getNextClothesDailySeq" resultType="int">
-    SELECT NVL(MAX(TO_NUMBER(SUBSTR(c.CLOTHES_ID, 8))), 0) + 1
-      FROM CLOTHES c
-     WHERE SUBSTR(c.CLOTHES_ID, 2, 6) = TO_CHAR(SYSDATE, 'YYMMDD')
-  </select>
+  <!-- ========================================================= -->
+  <!-- 공통/유틸 -->
+  <!-- ========================================================= -->
+<select id="selectNextClothesId" resultType="string">
+  SELECT 'C' ||
+         TO_CHAR(SYSDATE, 'YYMMDD') ||
+         LPAD(
+           NEXT_CLOTHES_NO,   <!-- ✅ 여기만 교체 -->
+           3, '0'
+         )
+  FROM DUAL
+</select>
 
+  <!-- ========================================================= -->
+  <!-- 등록/수정/삭제 -->
+  <!-- ========================================================= -->
   <insert id="insertClothes" parameterType="com.miracle.coordifit.clothes.model.Clothes">
     INSERT INTO CLOTHES (
       CLOTHES_ID, USER_ID, NAME, BRAND, CATEGORY_CODE, CLOTHES_SIZE, PRICE,
       PURCHASE_DATE, PURCHASE_URL, DESCRIPTION, WEAR_COUNT, LAST_WORN_DATE,
-      IS_ACTIVE, CREATED_BY, CREATED_AT, UPDATED_BY, UPDATED_AT
+      IS_ACTIVE, CREATED_BY, UPDATED_BY
     ) VALUES (
       #{clothesId}, #{userId}, #{name}, #{brand}, #{categoryCode}, #{clothesSize},
       #{price,jdbcType=NUMERIC},
@@ -56,8 +66,7 @@
       NVL(#{wearCount,jdbcType=NUMERIC}, 0),
       #{lastWornDate},
       NVL(#{isActive}, 'Y'),
-      #{createdBy}, CURRENT_TIMESTAMP,
-      #{updatedBy}, CURRENT_TIMESTAMP
+      #{createdBy}, #{updatedBy}
     )
   </insert>
 
@@ -76,12 +85,47 @@
            UPDATED_BY     = #{updatedBy},
            UPDATED_AT     = CURRENT_TIMESTAMP
      WHERE CLOTHES_ID     = #{clothesId}
+       AND NVL(IS_ACTIVE,'Y') = 'Y'
   </update>
 
-  <delete id="deleteClothes">
-    DELETE FROM CLOTHES
+  <update id="deleteClothes">
+    UPDATE CLOTHES
+       SET IS_ACTIVE = 'N',
+           UPDATED_AT = CURRENT_TIMESTAMP
      WHERE CLOTHES_ID = #{clothesId}
-  </delete>
+       AND NVL(IS_ACTIVE,'Y') = 'Y'
+  </update>
+
+  <update id="deleteClothesByIds">
+    UPDATE CLOTHES
+       SET IS_ACTIVE = 'N',
+           UPDATED_AT = CURRENT_TIMESTAMP
+     WHERE CLOTHES_ID IN
+     <foreach collection="ids" item="id" open="(" separator="," close=")">
+       #{id}
+     </foreach>
+       AND NVL(IS_ACTIVE,'Y') = 'Y'
+  </update>
+
+  <!-- ========================================================= -->
+  <!-- 이미지 링크 -->
+  <!-- ========================================================= -->
+  <insert id="insertImageLink" parameterType="com.miracle.coordifit.clothes.model.ClothesImageLink">
+    INSERT INTO CLOTHES_IMAGES (
+      CLOTHES_ID, FILE_ID, CREATED_AT, CREATED_BY
+    ) VALUES (
+      #{clothesId}, #{fileId,jdbcType=NUMERIC}, CURRENT_TIMESTAMP, #{createdBy}
+    )
+  </insert>
+
+  <insert id="insertBulkImageLinks">
+    INSERT ALL
+    <foreach collection="links" item="l">
+      INTO CLOTHES_IMAGES (CLOTHES_ID, FILE_ID, CREATED_AT, CREATED_BY)
+      VALUES (#{l.clothesId}, #{l.fileId,jdbcType=NUMERIC}, CURRENT_TIMESTAMP, #{l.createdBy})
+    </foreach>
+    SELECT 1 FROM DUAL
+  </insert>
 
   <delete id="deleteAllImageLinks">
     DELETE FROM CLOTHES_IMAGES
@@ -94,27 +138,13 @@
        AND FILE_ID    = #{fileId}
   </delete>
 
-  <select id="findById" resultMap="ClothesMap">
-    SELECT *
-      FROM CLOTHES
-     WHERE CLOTHES_ID = #{clothesId}
-  </select>
-
-  <select id="findAllByUser" resultMap="ClothesMap">
-    SELECT *
-      FROM CLOTHES
-     WHERE USER_ID = #{userId}
-       AND NVL(IS_ACTIVE,'Y') = 'Y'
-     ORDER BY CREATED_AT DESC
-  </select>
-
-  <insert id="insertImageLink" parameterType="com.miracle.coordifit.clothes.model.ClothesImageLink">
-    INSERT INTO CLOTHES_IMAGES (
-      CLOTHES_ID, FILE_ID, CREATED_AT, CREATED_BY
-    ) VALUES (
-      #{clothesId}, #{fileId,jdbcType=NUMERIC}, CURRENT_TIMESTAMP, #{createdBy}
-    )
-  </insert>
+  <delete id="deleteImagesByClothesIds">
+    DELETE FROM CLOTHES_IMAGES
+     WHERE CLOTHES_ID IN
+     <foreach collection="ids" item="id" open="(" separator="," close=")">
+       #{id}
+     </foreach>
+  </delete>
 
   <select id="findImageLinks" resultType="com.miracle.coordifit.clothes.model.ClothesImageLink">
     SELECT CLOTHES_ID AS clothesId,
@@ -126,9 +156,7 @@
   </select>
 
   <select id="countImageLinks" resultType="int">
-    SELECT COUNT(*)
-      FROM CLOTHES_IMAGES
-     WHERE CLOTHES_ID = #{clothesId}
+    SELECT COUNT(*) FROM CLOTHES_IMAGES WHERE CLOTHES_ID = #{clothesId}
   </select>
 
   <select id="findImageFiles" resultMap="FileInfoMap">
@@ -138,98 +166,164 @@
      WHERE ci.CLOTHES_ID = #{clothesId}
      ORDER BY f.FILE_ID ASC
   </select>
+
+  <!-- ========================================================= -->
+  <!-- 조회 (DTO) -->
+  <!-- ========================================================= -->
   
+  <select id="findAllByUser" parameterType="string" resultMap="ClothesMap">
+  SELECT
+    c.CLOTHES_ID, c.USER_ID, c.NAME, c.BRAND, c.CATEGORY_CODE, c.CLOTHES_SIZE,
+    c.PRICE, c.PURCHASE_DATE, c.PURCHASE_URL, c.DESCRIPTION,
+    c.WEAR_COUNT, c.LAST_WORN_DATE, c.IS_ACTIVE, c.CREATED_BY, c.UPDATED_BY
+  FROM CLOTHES c
+  WHERE c.USER_ID = #{userId}
+    AND NVL(c.IS_ACTIVE, 'Y') = 'Y'
+  ORDER BY c.PURCHASE_DATE DESC NULLS LAST, c.CLOTHES_ID DESC
+</select>
+
+  <select id="findAllListByUser"
+        parameterType="string"
+        resultType="com.miracle.coordifit.clothes.dto.ClothesListItemDto">
+  SELECT
+    c.CLOTHES_ID    AS clothesId,
+    c.NAME          AS name,
+    c.CATEGORY_CODE AS categoryCode,
+    c.PURCHASE_DATE AS purchaseDate,
+    f.S3_URL        AS thumbnailUrl
+  FROM CLOTHES c
+  LEFT JOIN (
+    SELECT ci.CLOTHES_ID, MIN(ci.FILE_ID) AS FILE_ID
+      FROM CLOTHES_IMAGES ci
+     GROUP BY ci.CLOTHES_ID
+  ) rep ON rep.CLOTHES_ID = c.CLOTHES_ID
+  LEFT JOIN FILE_INFO f ON f.FILE_ID = rep.FILE_ID
+  WHERE c.USER_ID = #{userId}
+    AND NVL(c.IS_ACTIVE,'Y') = 'Y'
+  ORDER BY c.PURCHASE_DATE DESC NULLS LAST, c.CLOTHES_ID DESC
+</select>
   
-  <insert id="insertBulkClothes">
-  INSERT INTO CLOTHES
-  (CLOTHES_ID, USER_ID, NAME, BRAND, CATEGORY_CODE, CLOTHES_SIZE, PRICE,
-   PURCHASE_DATE, PURCHASE_URL, DESCRIPTION, WEAR_COUNT, LAST_WORN_DATE,
-   IS_ACTIVE, CREATED_BY, CREATED_AT, UPDATED_BY, UPDATED_AT)
-  <foreach collection="list" item="c" separator=" UNION ALL ">
+  <select id="findThumbnailUrl" parameterType="string" resultType="string">
+  SELECT f.S3_URL
+  FROM CLOTHES_IMAGES ci
+  JOIN FILE_INFO f ON f.FILE_ID = ci.FILE_ID
+  WHERE ci.CLOTHES_ID = #{clothesId}
+  ORDER BY /* 대표 우선 규칙 없으면 FILE_ID 기준 */ ci.FILE_ID ASC
+  FETCH FIRST 1 ROWS ONLY
+</select>
+  
+
+  <select id="findDetailById" resultType="com.miracle.coordifit.clothes.dto.ClothesDetailDto">
     SELECT
-      #{c.clothesId}, #{c.userId}, #{c.name}, #{c.brand}, #{c.categoryCode}, #{c.clothesSize},
-      #{c.price,jdbcType=NUMERIC},
-      #{c.purchaseDate}, #{c.purchaseUrl}, #{c.description},
-      NVL(#{c.wearCount,jdbcType=NUMERIC}, 0),
-      #{c.lastWornDate},
-      NVL(#{c.isActive}, 'Y'),
-      #{c.createdBy}, CURRENT_TIMESTAMP,
-      #{c.updatedBy}, CURRENT_TIMESTAMP
-    FROM DUAL
-  </foreach>
-</insert>
+      c.CLOTHES_ID     AS clothesId,
+      c.NAME           AS name,
+      c.CATEGORY_CODE  AS categoryCode,
+      c.PURCHASE_DATE  AS purchaseDate,
+      c.DESCRIPTION    AS description,
+      c.BRAND          AS brand,
+      c.CLOTHES_SIZE   AS clothesSize,
+      c.PRICE          AS price,
+      c.PURCHASE_URL   AS purchaseUrl,
+      cc.CODE_NAME     AS categoryName,
+      f.S3_URL         AS thumbnailUrl
+    FROM CLOTHES c
+    LEFT JOIN (
+      SELECT ci.CLOTHES_ID, MIN(ci.FILE_ID) AS FILE_ID
+        FROM CLOTHES_IMAGES ci
+       GROUP BY ci.CLOTHES_ID
+    ) rep ON rep.CLOTHES_ID = c.CLOTHES_ID
+    LEFT JOIN FILE_INFO f     ON f.FILE_ID = rep.FILE_ID
+    LEFT JOIN COMMON_CODES cc ON cc.CODE_ID = c.CATEGORY_CODE
+   WHERE c.CLOTHES_ID = #{clothesId}
+     AND NVL(c.IS_ACTIVE,'Y') = 'Y'
+  </select>
 
-<insert id="insertBulkImageLinks">
-  INSERT INTO CLOTHES_IMAGES (CLOTHES_ID, FILE_ID, CREATED_AT, CREATED_BY)
-  <foreach collection="links" item="l" separator=" UNION ALL ">
-    SELECT #{l.clothesId}, #{l.fileId,jdbcType=NUMERIC}, CURRENT_TIMESTAMP, #{l.createdBy}
-    FROM DUAL
-  </foreach>
-</insert>
+  <select id="findAllClothes" resultType="com.miracle.coordifit.clothes.dto.ClothesDetailDto">
+    SELECT
+      c.CLOTHES_ID     AS clothesId,
+      c.NAME           AS name,
+      c.CATEGORY_CODE  AS categoryCode,
+      c.PURCHASE_DATE  AS purchaseDate,
+      c.DESCRIPTION    AS description,
+      c.BRAND          AS brand,
+      c.CLOTHES_SIZE   AS clothesSize,
+      c.PRICE          AS price,
+      c.PURCHASE_URL   AS purchaseUrl,
+      cc.CODE_NAME     AS categoryName,
+      f.S3_URL         AS thumbnailUrl
+    FROM CLOTHES c
+    LEFT JOIN (
+      SELECT ci.CLOTHES_ID, MIN(ci.FILE_ID) AS FILE_ID
+        FROM CLOTHES_IMAGES ci
+       GROUP BY ci.CLOTHES_ID
+    ) rep ON rep.CLOTHES_ID = c.CLOTHES_ID
+    LEFT JOIN FILE_INFO f     ON f.FILE_ID = rep.FILE_ID
+    LEFT JOIN COMMON_CODES cc ON cc.CODE_ID = c.CATEGORY_CODE
+   WHERE NVL(c.IS_ACTIVE,'Y') = 'Y'
+   ORDER BY c.PURCHASE_DATE DESC NULLS LAST, c.CLOTHES_ID DESC
+  </select>
 
-<delete id="deleteClothesByIds">
-  DELETE FROM CLOTHES
-  WHERE CLOTHES_ID IN
-  <foreach collection="ids" item="id" open="(" close=")" separator=",">
-    #{id}
-  </foreach>
-</delete>
+  <select id="findByCategory" resultType="com.miracle.coordifit.clothes.dto.ClothesDetailDto">
+    SELECT
+      c.CLOTHES_ID     AS clothesId,
+      c.NAME           AS name,
+      c.CATEGORY_CODE  AS categoryCode,
+      c.PURCHASE_DATE  AS purchaseDate,
+      c.DESCRIPTION    AS description,
+      c.BRAND          AS brand,
+      c.CLOTHES_SIZE   AS clothesSize,
+      c.PRICE          AS price,
+      c.PURCHASE_URL   AS purchaseUrl,
+      cc.CODE_NAME     AS categoryName,
+      f.S3_URL         AS thumbnailUrl
+    FROM CLOTHES c
+    LEFT JOIN (
+      SELECT ci.CLOTHES_ID, MIN(ci.FILE_ID) AS FILE_ID
+        FROM CLOTHES_IMAGES ci
+       GROUP BY ci.CLOTHES_ID
+    ) rep ON rep.CLOTHES_ID = c.CLOTHES_ID
+    LEFT JOIN FILE_INFO f     ON f.FILE_ID = rep.FILE_ID
+    LEFT JOIN COMMON_CODES cc ON cc.CODE_ID = c.CATEGORY_CODE
+   WHERE NVL(c.IS_ACTIVE,'Y') = 'Y'
+     AND EXISTS (
+       SELECT 1 FROM COMMON_CODES sub
+        WHERE sub.CODE_ID = c.CATEGORY_CODE
+          AND sub.PARENT_CODE_ID = #{categoryId}
+     )
+   ORDER BY c.PURCHASE_DATE DESC NULLS LAST, c.CLOTHES_ID DESC
+  </select>
 
-<delete id="deleteImagesByClothesIds">
-  DELETE FROM CLOTHES_IMAGES
-  WHERE CLOTHES_ID IN
-  <foreach collection="ids" item="id" open="(" close=")" separator=",">
-    #{id}
-  </foreach>
-</delete>
+  <select id="findBySubCategory" resultType="com.miracle.coordifit.clothes.dto.ClothesDetailDto">
+    SELECT
+      c.CLOTHES_ID     AS clothesId,
+      c.NAME           AS name,
+      c.CATEGORY_CODE  AS categoryCode,
+      c.PURCHASE_DATE  AS purchaseDate,
+      c.DESCRIPTION    AS description,
+      c.BRAND          AS brand,
+      c.CLOTHES_SIZE   AS clothesSize,
+      c.PRICE          AS price,
+      c.PURCHASE_URL   AS purchaseUrl,
+      cc.CODE_NAME     AS categoryName,
+      f.S3_URL         AS thumbnailUrl
+    FROM CLOTHES c
+    LEFT JOIN (
+      SELECT ci.CLOTHES_ID, MIN(ci.FILE_ID) AS FILE_ID
+        FROM CLOTHES_IMAGES ci
+       GROUP BY ci.CLOTHES_ID
+    ) rep ON rep.CLOTHES_ID = c.CLOTHES_ID
+    LEFT JOIN FILE_INFO f     ON f.FILE_ID = rep.FILE_ID
+    LEFT JOIN COMMON_CODES cc ON cc.CODE_ID = c.CATEGORY_CODE
+   WHERE c.CATEGORY_CODE = #{subCategoryId}
+     AND NVL(c.IS_ACTIVE,'Y') = 'Y'
+   ORDER BY c.PURCHASE_DATE DESC NULLS LAST, c.CLOTHES_ID DESC
+  </select>
 
-<!-- 전체 조회 -->
-    <select id="findAllClothes" resultType="com.miracle.coordifit.clothes.dto.ClothesResponse">
-        SELECT c.CLOTHES_ID      AS clothesId,
-               c.NAME            AS name,
-               c.CATEGORY_CODE   AS categoryCode,
-               cc.CODE_NAME      AS categoryName,
-               fi.S3_URL         AS imageUrl
-        FROM CLOTHES c
-        LEFT JOIN CLOTHES_IMAGES ci ON c.CLOTHES_ID = ci.CLOTHES_ID
-        LEFT JOIN FILE_INFO fi ON ci.FILE_ID = fi.FILE_ID
-        LEFT JOIN COMMON_CODES cc ON c.CATEGORY_CODE = cc.CODE_ID
-        ORDER BY c.CREATED_AT DESC
-    </select>
-
-    <!-- 상위 카테고리 전체 조회 (ex. 상의 = B20001 → 셔츠, 반팔티 ... 다 포함) -->
-    <select id="findByCategory" resultType="com.miracle.coordifit.clothes.dto.ClothesResponse">
-        SELECT c.CLOTHES_ID      AS clothesId,
-               c.NAME            AS name,
-               c.CATEGORY_CODE   AS categoryCode,
-               cc.CODE_NAME      AS categoryName,
-               fi.S3_URL         AS imageUrl
-        FROM CLOTHES c
-        LEFT JOIN CLOTHES_IMAGES ci ON c.CLOTHES_ID = ci.CLOTHES_ID
-        LEFT JOIN FILE_INFO fi ON ci.FILE_ID = fi.FILE_ID
-        LEFT JOIN COMMON_CODES cc ON c.CATEGORY_CODE = cc.CODE_ID
-        WHERE EXISTS (
-            SELECT 1
-            FROM COMMON_CODES sub
-            WHERE sub.CODE_ID = c.CATEGORY_CODE
-              AND sub.PARENT_CODE_ID = #{categoryId}
-        )
-        ORDER BY c.CREATED_AT DESC
-    </select>
-
-    <!-- 하위 카테고리 조회 (ex. 셔츠 = B30001) -->
-    <select id="findBySubCategory" resultType="com.miracle.coordifit.clothes.dto.ClothesResponse">
-        SELECT c.CLOTHES_ID      AS clothesId,
-               c.NAME            AS name,
-               c.CATEGORY_CODE   AS categoryCode,
-               cc.CODE_NAME      AS categoryName,
-               fi.S3_URL         AS imageUrl
-        FROM CLOTHES c
-        LEFT JOIN CLOTHES_IMAGES ci ON c.CLOTHES_ID = ci.CLOTHES_ID
-        LEFT JOIN FILE_INFO fi ON ci.FILE_ID = fi.FILE_ID
-        LEFT JOIN COMMON_CODES cc ON c.CATEGORY_CODE = cc.CODE_ID
-        WHERE c.CATEGORY_CODE = #{subCategoryId}
-        ORDER BY c.CREATED_AT DESC
-    </select>
+  <select id="existsActiveCategoryCount" parameterType="string" resultType="int">
+    SELECT COUNT(1)
+      FROM COMMON_CODES
+     WHERE CODE_ID = #{categoryCode}
+       AND NVL(IS_ACTIVE,'Y') = 'Y'
+  </select>
 
 </mapper>

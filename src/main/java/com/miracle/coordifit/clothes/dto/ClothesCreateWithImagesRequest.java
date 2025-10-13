@@ -3,19 +3,24 @@ package com.miracle.coordifit.clothes.dto;
 import java.time.LocalDate;
 import java.util.List;
 
+import com.miracle.coordifit.common.dto.Base64ImageDto;
+
 import jakarta.validation.constraints.NotBlank;
-import lombok.Getter;
-import lombok.Setter;
+import lombok.*;
 
 @Getter
 @Setter
-public class ClothesCreateRequest {
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
+public class ClothesCreateWithImagesRequest {
+	@NotBlank
+	private String userId;
 	@NotBlank
 	private String name;
 	@NotBlank
 	private String categoryCode;
-	@NotBlank
-	private String userId;
+
 	private String brand;
 	private String clothesSize;
 	private Integer price;
@@ -23,6 +28,6 @@ public class ClothesCreateRequest {
 	private String purchaseUrl;
 	private String description;
 
-	private List<Long> fileIds;
-
+	// 업로드할 이미지(Base64) 1~N
+	private List<Base64ImageDto> images;
 }

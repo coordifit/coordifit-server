@@ -3,13 +3,11 @@ package com.miracle.coordifit.clothes.dto;
 import java.util.List;
 
 import jakarta.validation.constraints.NotEmpty;
-import lombok.Getter;
-import lombok.Setter;
+import lombok.*;
 
 @Getter
 @Setter
-public class ClothesBulkCreateRequest {
-
+public class ClothesBulkCreateWithImagesRequest {
 	@NotEmpty
-	private List<ClothesCreateRequest> items;
+	private List<ClothesCreateWithImagesRequest> items;
 }

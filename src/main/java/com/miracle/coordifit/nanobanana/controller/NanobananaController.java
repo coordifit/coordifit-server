@@ -11,10 +11,9 @@ import com.miracle.coordifit.nanobanana.service.INanobananaService;
 import com.miracle.coordifit.nanobanana.util.ImageUtil;
 
 import lombok.RequiredArgsConstructor;
-import reactor.core.publisher.Mono;
 
 /**
- * 아바타 + 의류 기반 가상 피팅 API 컨트롤러
+ * 아바타 + 의류 기반 가상 피팅 API 컨트롤러 (MVC 버전)
  * 프론트는 URL만 전달하면 됨. 서버에서 Base64로 변환 후 Gemini로 요청.
  */
 @RestController
@@ -25,7 +24,7 @@ public class NanobananaController {
 	private final INanobananaService nanobananaService;
 
 	/**
-	 *  아바타 + 의류 URL 기반 가상 피팅 요청
+	 * 아바타 + 의류 URL 기반 가상 피팅 요청
 	 * 요청 JSON 예시:
 	 * {
 	 *   "avatarImage": "https://s3.../avatar.jpg",
@@ -35,34 +34,26 @@ public class NanobananaController {
 	 * }
 	 */
 	@PostMapping("/fitting")
-	public Mono<ResponseEntity<Map<String, Object>>> fitting(@RequestBody FittingRequestDTO request) {
+	public ResponseEntity<Map<String, Object>> fitting(@RequestBody FittingRequestDTO request) {
 		try {
 			ImageGenerationRequestDTO geminiRequest = buildGeminiRequest(request);
 
 			long start = System.currentTimeMillis();
-			return nanobananaService.generateImage(geminiRequest)
-				.map(base64 -> {
-					long duration = System.currentTimeMillis() - start;
+			String base64 = nanobananaService.generateImageSync(geminiRequest); // ✅ 동기식 서비스 메서드 호출
+			long duration = System.currentTimeMillis() - start;
 
-					Map<String, Object> response = Map.of(
-						"status", "success",
-						"data", Map.of(
-							"imageBase64", base64,
-							"durationMs", duration));
+			Map<String, Object> response = Map.of(
+				"status", "success",
+				"data", Map.of(
+					"imageBase64", base64,
+					"durationMs", duration));
+			return ResponseEntity.ok(response);
 
-					return ResponseEntity.ok(response);
-				})
-				.onErrorResume(e -> {
-					e.printStackTrace();
-					return Mono.just(ResponseEntity.internalServerError().body(Map.of(
-						"status", "error",
-						"message", "Fitting failed: " + e.getMessage())));
-				});
 		} catch (Exception e) {
 			e.printStackTrace();
-			return Mono.just(ResponseEntity.internalServerError().body(Map.of(
+			return ResponseEntity.internalServerError().body(Map.of(
 				"status", "error",
-				"message", "Error building request: " + e.getMessage())));
+				"message", "Fitting failed: " + e.getMessage()));
 		}
 	}
 
@@ -76,7 +67,7 @@ public class NanobananaController {
 	private ImageGenerationRequestDTO buildGeminiRequest(FittingRequestDTO request) throws Exception {
 		List<ImageGenerationRequestDTO.Part> parts = new ArrayList<>();
 
-		// ✅ (1) 설명 프롬프트를 가장 먼저 추가
+		// (1) 설명 프롬프트 추가
 		parts.add(new ImageGenerationRequestDTO.Part(
 			"Generate a realistic virtual fitting image of the avatar wearing the provided clothes.\n" +
 				"The output should be vertically oriented (portrait), approximately 220x240 pixels in size.\n" +
@@ -84,7 +75,7 @@ public class NanobananaController {
 				"Maintain realistic lighting, proportions, and seamless clothing alignment.",
 			null));
 
-		// ✅ (2) 이미지 데이터를 함께 전달
+		// (2) 이미지 데이터 추가
 		if (request.getAvatarImage() != null)
 			parts.add(new ImageGenerationRequestDTO.Part(null, ImageUtil.urlToInlineData(request.getAvatarImage())));
 		if (request.getTopImage() != null)
