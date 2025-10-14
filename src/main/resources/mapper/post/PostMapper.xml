@@ -35,5 +35,22 @@
     )
   </insert>
 
+  <select id="getAllPosts" resultType="com.miracle.coordifit.post.dto.PostDto">
+    SELECT 
+      p.post_id AS postId,
+      i.s3_url AS imageUrl
+    FROM posts p
+    INNER JOIN (
+      SELECT
+        pi.post_id,
+        fi.s3_url,
+        ROW_NUMBER() OVER (PARTITION BY pi.post_id ORDER BY pi.created_at) AS rowrum
+      FROM post_images pi
+      INNER JOIN file_info fi ON pi.file_id = fi.file_id
+    ) i ON p.post_id = i.post_id AND i.rowrum = 1
+    WHERE p.is_active = 'Y'
+    ORDER BY p.created_at DESC
+  </select>
+
 </mapper>
 
