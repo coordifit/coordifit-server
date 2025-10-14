@@ -6,6 +6,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -13,6 +14,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.miracle.coordifit.common.dto.ApiResponseDto;
 import com.miracle.coordifit.post.dto.PostCreateRequest;
+import com.miracle.coordifit.post.dto.PostDetailResponse;
 import com.miracle.coordifit.post.dto.PostDto;
 import com.miracle.coordifit.post.model.Post;
 import com.miracle.coordifit.post.service.IPostService;
@@ -56,4 +58,35 @@ public class PostController {
 				.body(ApiResponseDto.error("게시물 등록 실패: " + e.getMessage()));
 		}
 	}
+
+	@GetMapping("/{postId}")
+	public ResponseEntity<ApiResponseDto<PostDetailResponse>> getPostDetail(
+		@PathVariable String postId,
+		Authentication authentication) {
+		try {
+			String userId = authentication.getName();
+			PostDetailResponse postDetail = postService.getPostDetail(postId, userId);
+
+			log.info("게시물 상세 조회 완료: postId={}", postId);
+			return ResponseEntity.ok(ApiResponseDto.success("게시물 상세 조회 성공", postDetail));
+		} catch (Exception e) {
+			log.error("게시물 상세 조회 실패: postId={}", postId, e);
+			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+				.body(ApiResponseDto.error("게시물 상세 조회 실패: " + e.getMessage()));
+		}
+	}
+
+	@PostMapping("/{postId}/view")
+	public ResponseEntity<ApiResponseDto<Void>> incrementViewCount(@PathVariable String postId) {
+		try {
+			postService.incrementViewCount(postId);
+			log.info("게시물 조회수 증가: postId={}", postId);
+			return ResponseEntity.ok(ApiResponseDto.success("조회수 증가 성공", null));
+		} catch (Exception e) {
+			log.error("조회수 증가 실패: postId={}", postId, e);
+			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+				.body(ApiResponseDto.error("조회수 증가 실패: " + e.getMessage()));
+		}
+	}
+
 }

@@ -7,7 +7,9 @@ import java.util.List;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.miracle.coordifit.post.dto.PostClothesResponse;
 import com.miracle.coordifit.post.dto.PostCreateRequest;
+import com.miracle.coordifit.post.dto.PostDetailResponse;
 import com.miracle.coordifit.post.dto.PostDto;
 import com.miracle.coordifit.post.model.Post;
 import com.miracle.coordifit.post.model.PostClothes;
@@ -72,6 +74,33 @@ public class PostService implements IPostService {
 		}
 
 		return post;
+	}
+
+	@Override
+	@Transactional(readOnly = true)
+	public PostDetailResponse getPostDetail(String postId, String userId) {
+		PostDetailResponse postDetail = postRepository.getPostDetail(postId);
+		if (postDetail == null) {
+			throw new RuntimeException("게시물을 찾을 수 없습니다: " + postId);
+		}
+
+		List<String> imageUrls = postRepository.getPostImageUrls(postId);
+		postDetail.setImageUrls(imageUrls);
+
+		List<PostClothesResponse> clothes = postRepository.getPostClothes(postId);
+		postDetail.setClothes(clothes);
+
+		//TODO: 댓글 조회
+
+		//TODO: 좋아요 조회
+
+		return postDetail;
+	}
+
+	@Override
+	@Transactional
+	public void incrementViewCount(String postId) {
+		postRepository.incrementViewCount(postId);
 	}
 
 	@Override
