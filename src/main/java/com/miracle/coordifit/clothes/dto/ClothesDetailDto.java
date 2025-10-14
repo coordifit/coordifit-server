@@ -30,6 +30,7 @@ public class ClothesDetailDto {
 	private String clothesSize;
 	private Integer price;
 	private String purchaseUrl;
-
+	private LocalDate lastWornDate;
 	private List<ClothesImageDto> images;
+
 }

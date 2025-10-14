@@ -55,6 +55,7 @@ public class ClothesService implements IClothesService {
 		c.setIsActive("Y");
 		c.setCreatedBy(actor);
 		c.setUpdatedBy(actor);
+		c.setLastWornDate(req.getLastWornDate());
 
 		clothesRepository.insertClothes(c);
 
@@ -96,6 +97,7 @@ public class ClothesService implements IClothesService {
 					c.setIsActive("Y");
 					c.setCreatedBy(actor);
 					c.setUpdatedBy(actor);
+					c.setLastWornDate(item.getLastWornDate());
 
 					clothesRepository.insertClothes(c);
 					List<FileInfo> saved = fileService.uploadBase64Batch(item.getImages());
@@ -146,6 +148,7 @@ public class ClothesService implements IClothesService {
 					c.setIsActive("Y");
 					c.setCreatedBy(actor);
 					c.setUpdatedBy(actor);
+					c.setLastWornDate(item.getLastWornDate());
 
 					clothesRepository.insertClothes(c);
 					List<FileInfo> saved = fileService.uploadBase64Batch(item.getImages());
@@ -187,6 +190,7 @@ public class ClothesService implements IClothesService {
 		c.setPurchaseUrl(req.getPurchaseUrl());
 		c.setDescription(req.getDescription());
 		c.setUpdatedBy(actor);
+		c.setLastWornDate(req.getLastWornDate());
 
 		if (req.getCategoryCode() != null)
 			validateCategoryOrThrow(req.getCategoryCode());
