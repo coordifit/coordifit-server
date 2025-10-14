@@ -5,6 +5,8 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 import org.springframework.http.MediaType;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
 import com.miracle.coordifit.clothes.dto.*;
@@ -30,6 +32,14 @@ public class ClothesController {
 	private final ICommonCodeService commonCodeService;
 	private final ClothesRepository clothesRepository;
 
+	// ================== 현재 로그인한 사용자 ID 추출 ==================
+	private String currentUserId() {
+		Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+		if (auth == null || auth.getPrincipal() == null)
+			return null;
+		return auth.getPrincipal().toString();
+	}
+
 	@Operation(summary = "등록/수정 폼 데이터")
 	@GetMapping("/form")
 	public ApiResponseDto<Map<String, Object>> form() {
@@ -44,14 +54,13 @@ public class ClothesController {
 	@Operation(summary = "옷 등록 (Base64 이미지)")
 	@PostMapping(path = "/base64", consumes = MediaType.APPLICATION_JSON_VALUE)
 	public ApiResponseDto<Map<String, Object>> createOne(
-		@Valid @RequestBody ClothesCreateWithImagesRequest req,
-		@RequestHeader("X-Actor") String actor) {
+		@Valid @RequestBody ClothesCreateWithImagesRequest req) {
 		try {
-			// 🔎 사전검증: 어디서 깨지는지 imageIndex로 즉시 표시
-			int j = 0;
+			String actor = currentUserId();
+			if (actor == null)
+				return ApiResponseDto.error("인증 정보가 없습니다. 로그인 후 다시 시도하세요.");
+
 			for (var img : req.getImages()) {
-				j++;
-				// FileService의 프리플라이트 디코더 호출 (로그에 head/tail/len/mod 찍힘)
 				com.miracle.coordifit.common.service.FileService.decodeBase64SafeForPreflight(img.getDataUrl());
 			}
 
@@ -67,9 +76,12 @@ public class ClothesController {
 	@Operation(summary = "옷 일괄 등록 (Base64, 병렬)")
 	@PostMapping(path = "/base64/bulk", consumes = MediaType.APPLICATION_JSON_VALUE)
 	public ApiResponseDto<List<String>> bulkCreate(
-		@Valid @RequestBody ClothesBulkCreateWithImagesRequest req,
-		@RequestHeader("X-Actor") String actor) {
+		@Valid @RequestBody ClothesBulkCreateWithImagesRequest req) {
 		try {
+			String actor = currentUserId();
+			if (actor == null)
+				return ApiResponseDto.error("인증 정보가 없습니다.");
+
 			if (req.getItems() != null && !req.getItems().isEmpty()) {
 				validateCategoryCodes(
 					req.getItems().stream().map(ClothesCreateWithImagesRequest::getCategoryCode)
@@ -87,9 +99,12 @@ public class ClothesController {
 	@PutMapping(path = "/{clothesId}/base64", consumes = MediaType.APPLICATION_JSON_VALUE)
 	public ApiResponseDto<Void> update(
 		@PathVariable String clothesId,
-		@Valid @RequestBody ClothesUpdateWithImagesRequest req,
-		@RequestHeader("X-Actor") String actor) {
+		@Valid @RequestBody ClothesUpdateWithImagesRequest req) {
 		try {
+			String actor = currentUserId();
+			if (actor == null)
+				return ApiResponseDto.error("인증 정보가 없습니다.");
+
 			if (req.getCategoryCode() != null)
 				validateCategoryCode(req.getCategoryCode());
 			clothesService.updateBase64(clothesId, req, actor);
@@ -147,7 +162,10 @@ public class ClothesController {
 
 	@Operation(summary = "내 옷 전체(썸네일 목록)")
 	@GetMapping("/me")
-	public ApiResponseDto<List<ClothesListItemDto>> myClothes(@RequestHeader("X-User-Id") String userId) {
+	public ApiResponseDto<List<ClothesListItemDto>> myClothes() {
+		String userId = currentUserId();
+		if (userId == null)
+			return ApiResponseDto.error("인증 정보가 없습니다.");
 		return ApiResponseDto.success("OK", clothesService.findAllByUser(userId));
 	}
 

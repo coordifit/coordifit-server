@@ -27,7 +27,7 @@ public class ClothesCreateWithImagesRequest {
 	private LocalDate purchaseDate;
 	private String purchaseUrl;
 	private String description;
-
+	private LocalDate lastWornDate;
 	// 업로드할 이미지(Base64) 1~N
 	private List<Base64ImageDto> images;
 }
