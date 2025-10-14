@@ -2,11 +2,13 @@ package com.miracle.coordifit.post.service;
 
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.List;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.miracle.coordifit.post.dto.PostCreateRequest;
+import com.miracle.coordifit.post.dto.PostDto;
 import com.miracle.coordifit.post.model.Post;
 import com.miracle.coordifit.post.model.PostClothes;
 import com.miracle.coordifit.post.model.PostImage;
@@ -70,6 +72,12 @@ public class PostService implements IPostService {
 		}
 
 		return post;
+	}
+
+	@Override
+	@Transactional(readOnly = true)
+	public List<PostDto> getAllPosts() {
+		return postRepository.getAllPosts();
 	}
 
 	private String generatePostId() {
