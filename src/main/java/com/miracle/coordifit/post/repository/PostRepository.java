@@ -32,4 +32,6 @@ public interface PostRepository {
 	void incrementViewCount(@Param("postId") String postId);
 
 	List<PostDto> getAllPosts();
+
+	List<PostDto> getUserPosts(@Param("userId") String userId);
 }

@@ -129,4 +129,17 @@
         WHERE user_id = #{userId}
     </update>
 
+    <select id="getMyPageInfo" parameterType="String" resultType="com.miracle.coordifit.user.dto.MyPageResponseDto">
+        SELECT 
+            u.user_id AS userId,
+            u.nickname,
+            u.email,
+            f.s3_url AS profileImageUrl,
+            (SELECT COUNT(*) FROM follows WHERE following_id = #{userId}) AS followersCount,
+            (SELECT COUNT(*) FROM follows WHERE follower_id = #{userId}) AS followingsCount
+        FROM users u
+        LEFT OUTER JOIN file_info f ON u.file_id = f.file_id
+        WHERE u.user_id = #{userId} AND u.is_active = 'Y'
+    </select>
+
 </mapper>
