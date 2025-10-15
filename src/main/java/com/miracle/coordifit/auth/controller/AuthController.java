@@ -153,11 +153,13 @@ public class AuthController {
 			String password = (String)loginRequest.get("password");
 
 			if (email == null || email.trim().isEmpty()) {
+				log.warn("이메일을 입력해주세요.");
 				return ResponseEntity.badRequest()
 					.body(ApiResponseDto.error("이메일을 입력해주세요."));
 			}
 
 			if (password == null || password.trim().isEmpty()) {
+				log.warn("비밀번호를 입력해주세요.");
 				return ResponseEntity.badRequest()
 					.body(ApiResponseDto.error("비밀번호를 입력해주세요."));
 			}
@@ -165,6 +167,7 @@ public class AuthController {
 			User user = userService.authenticate(email, password);
 
 			if (user == null) {
+				log.warn("이메일 또는 비밀번호가 올바르지 않습니다.");
 				return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
 					.body(ApiResponseDto.error("이메일 또는 비밀번호가 올바르지 않습니다."));
 			}
@@ -175,12 +178,14 @@ public class AuthController {
 				responseData.put("message", "비활성화된 계정입니다. 계정을 다시 활성화하시겠습니까?");
 				responseData.put("userId", user.getUserId());
 
+				log.warn("비활성화된 계정입니다. 계정을 다시 활성화하시겠습니까?");
 				return ResponseEntity.status(HttpStatus.FORBIDDEN)
 					.body(ApiResponseDto.error("비활성화된 계정입니다.", responseData));
 			}
 
 			Map<String, Object> responseData = jwtService.createTokens(user);
 
+			log.info("로그인이 완료되었습니다.");
 			return ResponseEntity.ok()
 				.body(ApiResponseDto.success("로그인이 완료되었습니다.", responseData));
 
@@ -248,7 +253,7 @@ public class AuthController {
 			log.info("로그아웃 완료: {}", userId);
 
 			return ResponseEntity.ok()
-				.body(ApiResponseDto.success("로그아웃이 완료되었습니다.", null));
+				.body(ApiResponseDto.success("로그아웃이 완료되었습니다."));
 
 		} catch (Exception e) {
 			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
