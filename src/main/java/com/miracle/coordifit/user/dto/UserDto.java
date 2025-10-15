@@ -1,4 +1,4 @@
-package com.miracle.coordifit.post.dto;
+package com.miracle.coordifit.user.dto;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -9,7 +9,7 @@ import lombok.NoArgsConstructor;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class LikeUserDto {
+public class UserDto {
 	private String userId;
 	private String nickname;
 	private String profileImageUrl;

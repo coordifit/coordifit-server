@@ -15,13 +15,13 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.miracle.coordifit.common.dto.ApiResponseDto;
 import com.miracle.coordifit.post.dto.CommentResponseDto;
-import com.miracle.coordifit.post.dto.LikeUserDto;
 import com.miracle.coordifit.post.dto.PostCreateRequest;
 import com.miracle.coordifit.post.dto.PostDetailResponse;
 import com.miracle.coordifit.post.dto.PostDto;
 import com.miracle.coordifit.post.service.ICommentService;
 import com.miracle.coordifit.post.service.ILikeService;
 import com.miracle.coordifit.post.service.IPostService;
+import com.miracle.coordifit.user.dto.UserDto;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -153,10 +153,10 @@ public class PostController {
 	}
 
 	@GetMapping("/{postId}/likes")
-	public ResponseEntity<ApiResponseDto<List<LikeUserDto>>> getPostLikes(
+	public ResponseEntity<ApiResponseDto<List<UserDto>>> getPostLikes(
 		@PathVariable String postId) {
 		try {
-			List<LikeUserDto> likeUsers = likeService.getLikeUsers(postId);
+			List<UserDto> likeUsers = likeService.getLikeUsers(postId);
 
 			log.info("게시글 좋아요 목록 조회 완료: postId={}, count={}", postId, likeUsers.size());
 			return ResponseEntity.ok(ApiResponseDto.success("좋아요 목록 조회 성공", likeUsers));

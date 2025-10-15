@@ -5,9 +5,9 @@ import java.util.List;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import com.miracle.coordifit.post.dto.LikeUserDto;
 import com.miracle.coordifit.post.model.Like;
 import com.miracle.coordifit.post.repository.LikeRepository;
+import com.miracle.coordifit.user.dto.UserDto;
 
 import lombok.RequiredArgsConstructor;
 
@@ -42,7 +42,7 @@ public class LikeService implements ILikeService {
 	}
 
 	@Override
-	public List<LikeUserDto> getLikeUsers(String targetId) {
+	public List<UserDto> getLikeUsers(String targetId) {
 		return likeRepository.getLikeUsersByTargetId(targetId);
 	}
 }

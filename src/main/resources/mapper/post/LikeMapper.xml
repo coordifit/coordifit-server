@@ -44,7 +44,7 @@
     WHERE comment_id = #{commentId}
   </update>
 
-  <select id="getLikeUsersByTargetId" resultType="com.miracle.coordifit.post.dto.LikeUserDto">
+  <select id="getLikeUsersByTargetId" resultType="com.miracle.coordifit.user.dto.UserDto">
     SELECT 
       u.user_id as userId,
       u.nickname as nickname,
