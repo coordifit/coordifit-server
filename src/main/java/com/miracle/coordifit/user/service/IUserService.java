@@ -1,6 +1,7 @@
 package com.miracle.coordifit.user.service;
 
 import com.miracle.coordifit.auth.dto.SignUpRequestDto;
+import com.miracle.coordifit.user.dto.MyPageResponseDto;
 import com.miracle.coordifit.user.dto.ProfileUpdateRequestDto;
 import com.miracle.coordifit.user.model.User;
 
@@ -20,4 +21,6 @@ public interface IUserService {
 	User updateUserProfile(String userId, ProfileUpdateRequestDto requestDto);
 
 	void toggleUserActive(String userId);
+
+	MyPageResponseDto getMyPageInfo(String userId, String currentUserId);
 }

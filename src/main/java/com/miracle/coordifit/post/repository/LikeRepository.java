@@ -5,8 +5,8 @@ import java.util.List;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 
-import com.miracle.coordifit.post.dto.LikeUserDto;
 import com.miracle.coordifit.post.model.Like;
+import com.miracle.coordifit.user.dto.UserDto;
 
 @Mapper
 public interface LikeRepository {
@@ -21,5 +21,5 @@ public interface LikeRepository {
 
 	int updateCommentLikeCount(@Param("commentId") String commentId);
 
-	List<LikeUserDto> getLikeUsersByTargetId(@Param("targetId") String targetId);
+	List<UserDto> getLikeUsersByTargetId(@Param("targetId") String targetId);
 }
