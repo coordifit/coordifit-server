@@ -7,6 +7,7 @@ import java.util.List;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.miracle.coordifit.post.dto.CommentResponseDto;
 import com.miracle.coordifit.post.dto.PostClothesResponse;
 import com.miracle.coordifit.post.dto.PostCreateRequest;
 import com.miracle.coordifit.post.dto.PostDetailResponse;
@@ -14,6 +15,8 @@ import com.miracle.coordifit.post.dto.PostDto;
 import com.miracle.coordifit.post.model.Post;
 import com.miracle.coordifit.post.model.PostClothes;
 import com.miracle.coordifit.post.model.PostImage;
+import com.miracle.coordifit.post.repository.CommentRepository;
+import com.miracle.coordifit.post.repository.LikeRepository;
 import com.miracle.coordifit.post.repository.PostRepository;
 
 import lombok.RequiredArgsConstructor;
@@ -23,10 +26,12 @@ import lombok.RequiredArgsConstructor;
 public class PostService implements IPostService {
 
 	private final PostRepository postRepository;
+	private final CommentRepository commentRepository;
+	private final LikeRepository likeRepository;
 
 	@Override
 	@Transactional
-	public Post createPost(PostCreateRequest request, String userId) {
+	public void createPost(PostCreateRequest request, String userId) {
 		String postId = generatePostId();
 
 		Post post = Post.builder()
@@ -72,17 +77,17 @@ public class PostService implements IPostService {
 				}
 			}
 		}
-
-		return post;
 	}
 
 	@Override
-	@Transactional(readOnly = true)
+	@Transactional
 	public PostDetailResponse getPostDetail(String postId, String userId) {
 		PostDetailResponse postDetail = postRepository.getPostDetail(postId);
 		if (postDetail == null) {
 			throw new RuntimeException("게시물을 찾을 수 없습니다: " + postId);
 		}
+
+		postRepository.incrementViewCount(postId);
 
 		List<String> imageUrls = postRepository.getPostImageUrls(postId);
 		postDetail.setImageUrls(imageUrls);
@@ -90,17 +95,13 @@ public class PostService implements IPostService {
 		List<PostClothesResponse> clothes = postRepository.getPostClothes(postId);
 		postDetail.setClothes(clothes);
 
-		//TODO: 댓글 조회
+		List<CommentResponseDto> comments = commentRepository.getCommentsByPostId(postId, userId);
+		postDetail.setComments(comments);
 
-		//TODO: 좋아요 조회
+		int isLiked = likeRepository.isLiked(userId, postId);
+		postDetail.setLiked(isLiked > 0);
 
 		return postDetail;
-	}
-
-	@Override
-	@Transactional
-	public void incrementViewCount(String postId) {
-		postRepository.incrementViewCount(postId);
 	}
 
 	@Override

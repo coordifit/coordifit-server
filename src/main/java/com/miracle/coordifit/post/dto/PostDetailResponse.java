@@ -26,4 +26,5 @@ public class PostDetailResponse {
 	private Integer commentCount;
 	private String createdAt;
 	private boolean isLiked;
+	private List<CommentResponseDto> comments;
 }
