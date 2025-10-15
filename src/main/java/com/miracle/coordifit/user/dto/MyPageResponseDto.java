@@ -21,5 +21,7 @@ public class MyPageResponseDto {
 	private String email;
 	private String profileImageUrl;
 	private int postsCount;
+	private int followersCount;
+	private int followingsCount;
 	private List<PostDto> posts;
 }
