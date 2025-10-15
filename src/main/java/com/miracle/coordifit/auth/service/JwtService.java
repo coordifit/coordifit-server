@@ -163,7 +163,6 @@ public class JwtService implements IJwtService {
 	}
 
 	private Claims getAllClaimsFromToken(String token) {
-		log.info("getAllClaimsFromToken : {}", token);
 		try {
 			return Jwts.parser()
 				.verifyWith(secretKey)

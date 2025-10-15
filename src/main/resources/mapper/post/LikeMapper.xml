@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.miracle.coordifit.post.repository.LikeRepository">
+
+  <select id="isLiked" resultType="int">
+    SELECT COUNT(*)
+    FROM likes
+    WHERE user_id = #{userId} 
+    AND target_id = #{targetId}
+  </select>
+
+  <insert id="insertLike" parameterType="com.miracle.coordifit.post.model.Like">
+    INSERT INTO likes (
+      user_id, target_id, created_at, created_by
+    ) VALUES (
+      #{userId}, #{targetId}, CURRENT_TIMESTAMP, #{createdBy}
+    )
+  </insert>
+
+  <delete id="deleteLike">
+    DELETE FROM likes
+    WHERE user_id = #{userId}
+    AND target_id = #{targetId}
+  </delete>
+
+  <update id="updatePostLikeCount">
+    UPDATE posts
+    SET like_count = (
+      SELECT COUNT(*)
+      FROM likes
+      WHERE target_id = #{postId}
+    )
+    WHERE post_id = #{postId}
+  </update>
+
+  <update id="updateCommentLikeCount">
+    UPDATE comments
+    SET like_count = (
+      SELECT COUNT(*)
+      FROM likes
+      WHERE target_id = #{commentId}
+    )
+    WHERE comment_id = #{commentId}
+  </update>
+
+  <select id="getLikeUsersByTargetId" resultType="com.miracle.coordifit.post.dto.LikeUserDto">
+    SELECT 
+      u.user_id as userId,
+      u.nickname as nickname,
+      fi.s3_url as profileImageUrl
+    FROM likes l
+    INNER JOIN users u ON l.user_id = u.user_id
+    LEFT JOIN file_info fi ON u.file_id = fi.file_id
+    WHERE l.target_id = #{targetId}
+    ORDER BY l.created_at DESC
+  </select>
+
+</mapper>

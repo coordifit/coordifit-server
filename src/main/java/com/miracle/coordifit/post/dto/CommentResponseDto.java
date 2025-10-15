@@ -1,6 +1,6 @@
 package com.miracle.coordifit.post.dto;
 
-import java.util.List;
+import java.time.LocalDateTime;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -13,18 +13,15 @@ import lombok.Setter;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class PostDetailResponse {
+public class CommentResponseDto {
+	private String commentId;
 	private String postId;
 	private String userId;
 	private String nickname;
 	private String profileImageUrl;
+	private String parentId;
 	private String content;
-	private List<String> imageUrls;
-	private List<PostClothesResponse> clothes;
-	private Integer viewCount;
 	private Integer likeCount;
-	private Integer commentCount;
-	private String createdAt;
+	private LocalDateTime createdAt;
 	private boolean isLiked;
-	private List<CommentResponseDto> comments;
 }
