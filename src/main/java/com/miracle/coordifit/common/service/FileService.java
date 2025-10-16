@@ -291,4 +291,15 @@ public class FileService implements IFileService {
 		}
 	}
 
+	@Override
+	@Transactional
+	public void deleteFileById(Long fileId) {
+		FileInfo file = fileRepository.selectFileInfoById(fileId.intValue());
+		if (file == null)
+			return;
+
+		s3Service.deleteObject(file.getS3Key()); // 👈 S3 삭제
+		fileRepository.deleteFileById(fileId); // 👈 DB 삭제
+	}
+
 }

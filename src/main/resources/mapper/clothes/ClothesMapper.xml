@@ -70,23 +70,26 @@
     )
   </insert>
 
-  <update id="updateClothes" parameterType="com.miracle.coordifit.clothes.model.Clothes">
-    UPDATE CLOTHES
-       SET NAME           = #{name},
-           BRAND          = #{brand},
-           CATEGORY_CODE  = #{categoryCode},
-           CLOTHES_SIZE   = #{clothesSize},
-           PRICE          = #{price,jdbcType=NUMERIC},
-           PURCHASE_DATE  = #{purchaseDate},
-           PURCHASE_URL   = #{purchaseUrl},
-           DESCRIPTION    = #{description},
-           WEAR_COUNT     = NVL(#{wearCount,jdbcType=NUMERIC}, 0),
-           LAST_WORN_DATE = #{lastWornDate},
-           UPDATED_BY     = #{updatedBy},
-           UPDATED_AT     = CURRENT_TIMESTAMP
-     WHERE CLOTHES_ID     = #{clothesId}
-       AND NVL(IS_ACTIVE,'Y') = 'Y'
-  </update>
+<update id="updateClothes" parameterType="com.miracle.coordifit.clothes.model.Clothes">
+  UPDATE CLOTHES
+  <set>
+    <if test="name != null">NAME = #{name},</if>
+    <if test="brand != null">BRAND = #{brand},</if>
+    <if test="categoryCode != null">CATEGORY_CODE = #{categoryCode},</if>
+    <if test="clothesSize != null">CLOTHES_SIZE = #{clothesSize},</if>
+    <if test="price != null">PRICE = #{price,jdbcType=NUMERIC},</if>
+    <if test="purchaseDate != null">PURCHASE_DATE = #{purchaseDate},</if>
+    <if test="purchaseUrl != null">PURCHASE_URL = #{purchaseUrl},</if>
+    <if test="description != null">DESCRIPTION = #{description},</if>
+    <if test="wearCount != null">WEAR_COUNT = #{wearCount,jdbcType=NUMERIC},</if>
+    <if test="lastWornDate != null">LAST_WORN_DATE = #{lastWornDate},</if>
+    UPDATED_BY = #{updatedBy},
+    UPDATED_AT = CURRENT_TIMESTAMP
+  </set>
+  WHERE CLOTHES_ID = #{clothesId}
+    AND NVL(IS_ACTIVE, 'Y') = 'Y'
+</update>
+
 
   <update id="deleteClothes">
     UPDATE CLOTHES

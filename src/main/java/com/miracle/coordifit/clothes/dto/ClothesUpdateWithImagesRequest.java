@@ -29,4 +29,6 @@ public class ClothesUpdateWithImagesRequest {
 	// true면 기존 링크 전부 삭제 후 images를 새로 연결 (기본 false)
 	private Boolean replaceAllImages;
 	private LocalDate lastWornDate;
+
+	private List<Long> deletedImageIds;
 }

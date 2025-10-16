@@ -21,6 +21,7 @@ import com.miracle.coordifit.common.service.IFileService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 @Slf4j
@@ -200,6 +201,17 @@ public class ClothesService implements IClothesService {
 			validateCategoryOrThrow(req.getCategoryCode());
 		clothesRepository.updateClothes(c);
 
+		if (req.getDeletedImageIds() != null && !req.getDeletedImageIds().isEmpty()) {
+			for (Long fileId : req.getDeletedImageIds()) {
+				try {
+					removeImage(clothesId, fileId);
+				} catch (Exception e) {
+					// 삭제 중 예외가 발생하더라도 전체 트랜잭션에 영향 주지 않도록 로그만 남김
+					log.warn("이미지 삭제 중 오류 발생 - clothesId: {}, fileId: {}", clothesId, fileId, e);
+				}
+			}
+		}
+
 		List<Base64ImageDto> imgs = req.getImages();
 		boolean replace = Boolean.TRUE.equals(req.getReplaceAllImages());
 
@@ -235,6 +247,7 @@ public class ClothesService implements IClothesService {
 	@Transactional
 	public void removeImage(String clothesId, Long fileId) {
 		clothesRepository.deleteImageLink(clothesId, fileId);
+		fileService.deleteFileById(fileId);
 	}
 
 	@Override

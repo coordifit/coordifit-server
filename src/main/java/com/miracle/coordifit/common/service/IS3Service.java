@@ -9,4 +9,7 @@ public interface IS3Service {
 
 	// base64 바이트 업로드용
 	String uploadBytes(byte[] bytes, String fileName, String contentType) throws IOException;
+
+	void deleteObject(String key);
+
 }
