@@ -21,11 +21,13 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
 @Tag(name = "Clothes", description = "옷 등록/수정/조회 API (Base64 이미지)")
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/api/clothes")
+@Slf4j
 public class ClothesController {
 
 	private final IClothesService clothesService;
@@ -57,6 +59,8 @@ public class ClothesController {
 		@Valid @RequestBody ClothesCreateWithImagesRequest req) {
 		try {
 			String actor = currentUserId();
+
+			log.info(">> actor", actor);
 			if (actor == null)
 				return ApiResponseDto.error("인증 정보가 없습니다. 로그인 후 다시 시도하세요.");
 

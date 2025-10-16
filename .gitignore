@@ -5,12 +5,18 @@ build/
 !**/src/main/**/build/
 !**/src/test/**/build/
 
+# Eclipse/STS workspace metadata
+.metadata/
+.plugins/
+.recommenders/
+
 ### STS ###
 .apt_generated
 .classpath
 .factorypath
 .project
 .settings
+.settings/
 .springBeans
 .sts4-cache
 bin/
