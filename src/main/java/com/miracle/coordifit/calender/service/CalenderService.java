@@ -107,7 +107,7 @@ public class CalenderService implements ICalenderService {
 				item.setUserId(dailyLook.getUserId());
 				item.setDailylookId(dailyLook.getDailylookId());
 				item.setWearDate(Date.valueOf(dailyLook.getWearDate()));
-				item.setClothesId((String)obj.get("id"));
+				item.setClothesId((String)obj.get("clothesId"));
 
 				return item;
 			}).toList();
