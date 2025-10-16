@@ -1,12 +1,12 @@
 package com.miracle.coordifit.user.service;
 
-import com.miracle.coordifit.auth.dto.SignUpRequestDto;
+import com.miracle.coordifit.auth.dto.AuthRequestDto;
 import com.miracle.coordifit.user.dto.MyPageResponseDto;
 import com.miracle.coordifit.user.dto.ProfileUpdateRequestDto;
 import com.miracle.coordifit.user.model.User;
 
 public interface IUserService {
-	User signUp(SignUpRequestDto signUpRequestDto);
+	void signUp(AuthRequestDto signUpRequestDto);
 
 	boolean isEmailAvailable(String email);
 
@@ -21,6 +21,8 @@ public interface IUserService {
 	User updateUserProfile(String userId, ProfileUpdateRequestDto requestDto);
 
 	void toggleUserActive(String userId);
+
+	void resetPassword(AuthRequestDto requestDto);
 
 	MyPageResponseDto getMyPageInfo(String userId, String currentUserId);
 }

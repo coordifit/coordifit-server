@@ -13,8 +13,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.miracle.coordifit.auth.dto.EmailVerificationRequestDto;
-import com.miracle.coordifit.auth.dto.SignUpRequestDto;
+import com.miracle.coordifit.auth.dto.AuthRequestDto;
 import com.miracle.coordifit.auth.service.IEmailService;
 import com.miracle.coordifit.auth.service.IJwtService;
 import com.miracle.coordifit.common.dto.ApiResponseDto;
@@ -35,11 +34,11 @@ public class AuthController {
 	private final IJwtService jwtService;
 
 	@PostMapping("/signup")
-	public ResponseEntity<ApiResponseDto<User>> signUp(
-		@Valid @RequestBody SignUpRequestDto signUpRequestDto,
+	public ResponseEntity<ApiResponseDto<Void>> signUp(
+		@Valid @RequestBody AuthRequestDto requestDto,
 		BindingResult bindingResult) {
 
-		log.info("회원가입 요청: {}", signUpRequestDto.getEmail());
+		log.info("회원가입 요청: {}", requestDto.getEmail());
 
 		if (bindingResult.hasErrors()) {
 			String errorMessage = bindingResult.getFieldErrors().get(0).getDefaultMessage();
@@ -48,11 +47,9 @@ public class AuthController {
 		}
 
 		try {
-			User user = userService.signUp(signUpRequestDto);
-			user.setPassword(null);
-
+			userService.signUp(requestDto);
 			return ResponseEntity.status(HttpStatus.CREATED)
-				.body(ApiResponseDto.success("회원가입이 완료되었습니다.", user));
+				.body(ApiResponseDto.success("회원가입이 완료되었습니다."));
 
 		} catch (IllegalArgumentException e) {
 			log.warn("회원가입 실패 - 유효성 오류: {}", e.getMessage());
@@ -68,37 +65,11 @@ public class AuthController {
 
 	@PostMapping("/send-verification")
 	public ResponseEntity<ApiResponseDto<String>> sendVerificationCode(
-		@Valid @RequestBody EmailVerificationRequestDto requestDto,
+		@Valid @RequestBody AuthRequestDto requestDto,
 		BindingResult bindingResult) {
 
 		log.info("이메일 인증 코드 발송 요청: {}", requestDto.getEmail());
-
-		if (bindingResult.hasErrors()) {
-			String errorMessage = bindingResult.getFieldErrors().get(0).getDefaultMessage();
-			return ResponseEntity.badRequest()
-				.body(ApiResponseDto.error(errorMessage));
-		}
-
-		try {
-			if (!userService.isEmailAvailable(requestDto.getEmail())) {
-				return ResponseEntity.badRequest()
-					.body(ApiResponseDto.error("이미 사용 중인 이메일입니다."));
-			}
-
-			String verificationCode = emailService.sendVerificationCode(requestDto.getEmail());
-			if (verificationCode != null) {
-				return ResponseEntity.ok()
-					.body(ApiResponseDto.success("인증 코드가 발송되었습니다.", verificationCode));
-			} else {
-				return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-					.body(ApiResponseDto.error("인증 코드 발송에 실패했습니다."));
-			}
-
-		} catch (Exception e) {
-			log.error("인증 코드 발송 실패", e);
-			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-				.body(ApiResponseDto.error("인증 코드 발송 중 오류가 발생했습니다."));
-		}
+		return sendVerificationCode(requestDto, bindingResult, true);
 	}
 
 	@GetMapping("/check-email")
@@ -261,6 +232,84 @@ public class AuthController {
 			log.error("로그아웃 처리 중 오류", e);
 			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
 				.body(ApiResponseDto.error("로그아웃 처리 중 오류가 발생했습니다." + e.getMessage()));
+		}
+	}
+
+	@PostMapping("/send-password-reset-code")
+	public ResponseEntity<ApiResponseDto<String>> sendPasswordResetCode(
+		@Valid @RequestBody AuthRequestDto requestDto,
+		BindingResult bindingResult) {
+
+		log.info("비밀번호 재설정 인증 코드 발송 요청: {}", requestDto.getEmail());
+		return sendVerificationCode(requestDto, bindingResult, false);
+	}
+
+	@PostMapping("/reset-password")
+	public ResponseEntity<ApiResponseDto<Void>> resetPassword(
+		@Valid @RequestBody AuthRequestDto requestDto,
+		BindingResult bindingResult) {
+
+		log.info("비밀번호 재설정 요청: {}", requestDto.getEmail());
+
+		if (bindingResult.hasErrors()) {
+			String errorMessage = bindingResult.getFieldErrors().get(0).getDefaultMessage();
+			return ResponseEntity.badRequest()
+				.body(ApiResponseDto.error(errorMessage));
+		}
+
+		try {
+			userService.resetPassword(requestDto);
+
+			return ResponseEntity.ok()
+				.body(ApiResponseDto.success("비밀번호가 성공적으로 재설정되었습니다."));
+
+		} catch (IllegalArgumentException e) {
+			log.warn("비밀번호 재설정 실패 - 유효성 오류: {}", e.getMessage());
+			return ResponseEntity.badRequest()
+				.body(ApiResponseDto.error(e.getMessage()));
+
+		} catch (Exception e) {
+			log.error("비밀번호 재설정 실패 - 시스템 오류", e);
+			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+				.body(ApiResponseDto.error("비밀번호 재설정 처리 중 오류가 발생했습니다."));
+		}
+	}
+
+	private ResponseEntity<ApiResponseDto<String>> sendVerificationCode(
+		AuthRequestDto requestDto,
+		BindingResult bindingResult,
+		boolean isSignUp) {
+
+		if (bindingResult.hasErrors()) {
+			String errorMessage = bindingResult.getFieldErrors().get(0).getDefaultMessage();
+			return ResponseEntity.badRequest()
+				.body(ApiResponseDto.error(errorMessage));
+		}
+
+		try {
+			boolean emailAvailable = userService.isEmailAvailable(requestDto.getEmail());
+
+			if (isSignUp && !emailAvailable) {
+				return ResponseEntity.badRequest()
+					.body(ApiResponseDto.error("이미 사용 중인 이메일입니다."));
+			} else if (!isSignUp && emailAvailable) {
+				return ResponseEntity.badRequest()
+					.body(ApiResponseDto.error("존재하지 않는 이메일입니다."));
+			}
+
+			String verificationCode = emailService.sendVerificationCode(requestDto.getEmail(), isSignUp);
+			if (verificationCode != null) {
+				return ResponseEntity.ok()
+					.body(ApiResponseDto.success("인증 코드가 발송되었습니다.", verificationCode));
+			} else {
+				return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+					.body(ApiResponseDto.error("인증 코드 발송에 실패했습니다."));
+			}
+
+		} catch (Exception e) {
+			log.error("인증 코드 발송 실패", e);
+			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+				.body(ApiResponseDto.error("인증 코드 발송 중 오류가 발생했습니다."));
 		}
 	}
 }
