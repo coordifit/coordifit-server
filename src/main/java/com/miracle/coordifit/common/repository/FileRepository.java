@@ -16,4 +16,7 @@ public interface FileRepository {
 	List<FileInfo> selectFileInfosByIds(@Param("fileIds") List<Integer> fileIds);
 
 	List<FileInfo> selectFileInfos();
+
+	void deleteFileById(@Param("fileId") Long fileId);
+
 }

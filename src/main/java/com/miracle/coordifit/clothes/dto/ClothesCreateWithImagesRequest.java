@@ -14,7 +14,6 @@ import lombok.*;
 @AllArgsConstructor
 @Builder
 public class ClothesCreateWithImagesRequest {
-	@NotBlank
 	private String userId;
 	@NotBlank
 	private String name;

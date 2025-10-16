@@ -27,4 +27,5 @@ public interface IFileService {
 
 	List<FileInfo> uploadBase64Batch(List<Base64ImageDto> list);
 
+	void deleteFileById(Long fileId);
 }

@@ -1,4 +1,3 @@
-// src/main/java/com/miracle/coordifit/clothes/controller/ClothesController.java
 package com.miracle.coordifit.clothes.controller;
 
 import java.util.*;
@@ -60,8 +59,12 @@ public class ClothesController {
 			if (actor == null)
 				return ApiResponseDto.error("인증 정보가 없습니다. 로그인 후 다시 시도하세요.");
 
+			// ✅ JWT 기반 로그인 구조 대응 — userId를 강제 주입
+			req.setUserId(actor);
+
 			for (var img : req.getImages()) {
-				com.miracle.coordifit.common.service.FileService.decodeBase64SafeForPreflight(img.getDataUrl());
+				com.miracle.coordifit.common.service.FileService
+					.decodeBase64SafeForPreflight(img.getDataUrl());
 			}
 
 			validateCategoryCode(req.getCategoryCode());
@@ -82,11 +85,19 @@ public class ClothesController {
 			if (actor == null)
 				return ApiResponseDto.error("인증 정보가 없습니다.");
 
-			if (req.getItems() != null && !req.getItems().isEmpty()) {
-				validateCategoryCodes(
-					req.getItems().stream().map(ClothesCreateWithImagesRequest::getCategoryCode)
-						.collect(Collectors.toList()));
+			// ✅ 모든 항목에 JWT 기반 userId 주입
+			if (req.getItems() != null) {
+				for (ClothesCreateWithImagesRequest item : req.getItems()) {
+					item.setUserId(actor);
+				}
 			}
+
+			if (req.getItems() != null && !req.getItems().isEmpty()) {
+				validateCategoryCodes(req.getItems().stream()
+					.map(ClothesCreateWithImagesRequest::getCategoryCode)
+					.collect(Collectors.toList()));
+			}
+
 			return ApiResponseDto.success("일괄 등록 성공",
 				clothesService.bulkCreateBase64Parallel(req, actor));
 		} catch (Exception e) {
