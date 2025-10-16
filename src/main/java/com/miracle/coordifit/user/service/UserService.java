@@ -8,7 +8,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import com.miracle.coordifit.auth.dto.SignUpRequestDto;
+import com.miracle.coordifit.auth.dto.AuthRequestDto;
 import com.miracle.coordifit.auth.service.IEmailService;
 import com.miracle.coordifit.post.dto.PostDto;
 import com.miracle.coordifit.post.repository.PostRepository;
@@ -31,7 +31,7 @@ public class UserService implements IUserService {
 	private final PasswordEncoder passwordEncoder;
 
 	@Override
-	public User signUp(SignUpRequestDto signUpRequestDto) {
+	public void signUp(AuthRequestDto signUpRequestDto) {
 		log.info("회원가입 시작: {}", signUpRequestDto.getEmail());
 
 		if (!isEmailAvailable(signUpRequestDto.getEmail())) {
@@ -65,7 +65,6 @@ public class UserService implements IUserService {
 		}
 
 		log.info("회원가입 완료: {} -> {}", signUpRequestDto.getEmail(), userId);
-		return user;
 	}
 
 	@Override
@@ -182,6 +181,35 @@ public class UserService implements IUserService {
 			log.info("계정 활성/비활성 완료: userId={}", userId);
 		} catch (Exception e) {
 			log.error("계정 활성/비활성 중 오류 발생: userId={}", userId, e);
+			throw e;
+		}
+	}
+
+	@Override
+	public void resetPassword(AuthRequestDto requestDto) {
+		log.info("비밀번호 재설정 시작: {}", requestDto.getEmail());
+
+		try {
+			User user = userRepository.selectUserByEmail(requestDto.getEmail());
+			if (user == null) {
+				throw new IllegalArgumentException("존재하지 않는 이메일입니다.");
+			}
+
+			if (!emailService.verifyCode(requestDto.getEmail(), requestDto.getVerificationCode())) {
+				throw new IllegalArgumentException("인증 코드가 올바르지 않습니다.");
+			}
+
+			String encodedPassword = passwordEncoder.encode(requestDto.getNewPassword());
+
+			int result = userRepository.updatePassword(requestDto.getEmail(), encodedPassword);
+			if (result <= 0) {
+				throw new RuntimeException("비밀번호 재설정 처리 중 오류가 발생했습니다.");
+			}
+
+			log.info("비밀번호 재설정 완료: {}", requestDto.getEmail());
+
+		} catch (Exception e) {
+			log.error("비밀번호 재설정 중 오류 발생: email={}", requestDto.getEmail(), e);
 			throw e;
 		}
 	}

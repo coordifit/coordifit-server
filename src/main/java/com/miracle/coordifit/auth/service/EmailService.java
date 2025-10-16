@@ -19,28 +19,24 @@ import lombok.extern.slf4j.Slf4j;
 public class EmailService implements IEmailService {
 	private final JavaMailSender mailSender;
 
-	// TODO: Redis를 사용한 인증 코드 저장소로 변경 필요
 	private final Map<String, EmailVerification> verificationStore = new ConcurrentHashMap<>();
 
 	@Override
-	public String sendVerificationCode(String email) {
+	public String sendVerificationCode(String email, boolean isSignUp) {
 		try {
-			// 1. 인증 코드 생성
 			String verificationCode = generateVerificationCode();
 
-			// 2. 이메일 인증 객체 생성 및 저장
 			EmailVerification verification = new EmailVerification(email, verificationCode);
 			verificationStore.put(email, verification);
 
-			// 3. 이메일 발송
 			SimpleMailMessage message = new SimpleMailMessage();
 			message.setTo(email);
-			message.setSubject("[CoordieFit] 이메일 인증 코드");
-			message.setText(buildEmailContent(verificationCode));
+			message.setSubject(String.format("[CoordieFit] %s 인증 코드", isSignUp ? "회원가입" : "비밀번호 재설정"));
+			message.setText(buildEmailContent(verificationCode, isSignUp));
 
 			mailSender.send(message);
 
-			log.info("인증 코드 발송 완료: {}", email);
+			log.info("인증 코드 발송 완료: {} ({})", email, isSignUp ? "회원가입" : "비밀번호 재설정");
 			return verificationCode;
 
 		} catch (Exception e) {
@@ -53,10 +49,10 @@ public class EmailService implements IEmailService {
 		return String.format("%06d", new Random().nextInt(1000000));
 	}
 
-	private String buildEmailContent(String verificationCode) {
+	private String buildEmailContent(String verificationCode, boolean isSignUp) {
 		StringBuilder content = new StringBuilder();
 		content.append("안녕하세요. CoordieFit입니다.\n\n");
-		content.append("회원가입을 위한 이메일 인증 코드입니다.\n\n");
+		content.append(String.format("%s을 위한 이메일 인증 코드입니다.\n\n", isSignUp ? "회원가입" : "비밀번호 재설정"));
 		content.append("인증 코드: ").append(verificationCode).append("\n\n");
 		content.append("이 코드는 10분간 유효합니다.\n");
 		content.append("코드를 입력하여 이메일 인증을 완료해주세요.\n\n");
@@ -83,8 +79,6 @@ public class EmailService implements IEmailService {
 		if (verification.isValidCode(code)) {
 			verification.markAsVerified();
 			log.info("이메일 인증 성공: {}", email);
-
-			// TODO: Redis사용시 변경 필요. 인증 완료 후 일정 시간 후 삭제 (여기서는 바로 삭제)
 			verificationStore.remove(email);
 			return true;
 		}

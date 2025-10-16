@@ -26,5 +26,7 @@ public interface UserRepository {
 
 	int updateIsActive(User user);
 
+	int updatePassword(@Param("email") String email, @Param("password") String password);
+
 	MyPageResponseDto getMyPageInfo(@Param("userId") String userId);
 }

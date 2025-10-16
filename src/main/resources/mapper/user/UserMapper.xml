@@ -129,6 +129,14 @@
         WHERE user_id = #{userId}
     </update>
 
+    <update id="updatePassword">
+        UPDATE users 
+        SET password = #{password},
+            updated_at = CURRENT_TIMESTAMP
+        WHERE email = #{email}
+        AND is_active = 'Y'
+    </update>
+
     <select id="getMyPageInfo" parameterType="String" resultType="com.miracle.coordifit.user.dto.MyPageResponseDto">
         SELECT 
             u.user_id AS userId,
