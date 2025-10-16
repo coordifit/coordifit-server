@@ -9,7 +9,6 @@ import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
@@ -239,14 +238,17 @@ public class AuthController {
 	}
 
 	@PostMapping("/logout")
-	public ResponseEntity<ApiResponseDto<String>> logout(
-		@RequestHeader("Authorization") String authorization) {
+	public ResponseEntity<ApiResponseDto<Void>> logout(
+		@RequestBody String userId) {
 
-		log.info("로그아웃 요청");
+		log.info("로그아웃 요청: {}", userId);
 
 		try {
-			String accessToken = authorization.substring(7);
-			String userId = jwtService.getUserIdFromToken(accessToken);
+			if (userId == null || userId.trim().isEmpty()) {
+				log.warn("사용자 ID가 필요합니다.");
+				return ResponseEntity.badRequest()
+					.body(ApiResponseDto.error("사용자 ID가 필요합니다."));
+			}
 
 			jwtService.deleteAllUserTokens(userId);
 
@@ -256,8 +258,9 @@ public class AuthController {
 				.body(ApiResponseDto.success("로그아웃이 완료되었습니다."));
 
 		} catch (Exception e) {
+			log.error("로그아웃 처리 중 오류", e);
 			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-				.body(ApiResponseDto.error("로그아웃 처리 중 오류가 발생했습니다."));
+				.body(ApiResponseDto.error("로그아웃 처리 중 오류가 발생했습니다." + e.getMessage()));
 		}
 	}
 }
