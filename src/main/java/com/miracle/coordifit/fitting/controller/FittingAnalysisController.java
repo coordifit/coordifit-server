@@ -1,18 +1,19 @@
 package com.miracle.coordifit.fitting.controller;
 
-import org.springframework.http.HttpStatus;
+import java.util.Map;
+
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.miracle.coordifit.common.dto.ApiResponseDto;
 import com.miracle.coordifit.fitting.dto.FittingAnalysisErrorCode;
-import com.miracle.coordifit.fitting.dto.FittingAnalysisErrorResponse;
 import com.miracle.coordifit.fitting.dto.FittingAnalysisRequest;
 import com.miracle.coordifit.fitting.dto.FittingAnalysisResponse;
-import com.miracle.coordifit.fitting.service.FittingAnalysisService;
-import com.miracle.coordifit.fitting.service.FittingAnalysisService.FittingAnalysisFailure;
+import com.miracle.coordifit.fitting.service.FittingAnalysisFailure;
+import com.miracle.coordifit.fitting.service.IFittingAnalysisService;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -23,29 +24,26 @@ import lombok.extern.slf4j.Slf4j;
 @RequiredArgsConstructor
 public class FittingAnalysisController {
 
-	private final FittingAnalysisService fittingAnalysisService;
+	private final IFittingAnalysisService fittingAnalysisService;
 
 	@PostMapping("/analysis")
-	public ResponseEntity<?> analyze(@RequestBody FittingAnalysisRequest request) {
+	public ResponseEntity<ApiResponseDto<?>> analyze(
+		@RequestBody FittingAnalysisRequest request) {
 		try {
 			FittingAnalysisResponse response = fittingAnalysisService.analyze(request);
-			return ResponseEntity.ok(response);
+			return ResponseEntity.ok(
+				ApiResponseDto.success("피팅 분석이 완료되었습니다.", response));
 		} catch (FittingAnalysisFailure e) {
 			FittingAnalysisErrorCode errorCode = e.getErrorCode();
-			FittingAnalysisErrorResponse errorResponse = FittingAnalysisErrorResponse.builder()
-				.code(errorCode.getCode())
-				.message(e.getMessage())
-				.status(errorCode.getStatus().value())
-				.build();
-			return ResponseEntity.status(errorCode.getStatus()).body(errorResponse);
+			log.warn("피팅 분석 실패 - code: {}, detail: {}", errorCode.getCode(), e.getMessage());
+			return ResponseEntity.status(errorCode.getStatus())
+				.body(ApiResponseDto.error(e.getMessage(), Map.of("code", errorCode.getCode())));
 		} catch (Exception e) {
 			log.error("피팅 분석 처리 중 알 수 없는 오류", e);
-			FittingAnalysisErrorResponse errorResponse = FittingAnalysisErrorResponse.builder()
-				.code(FittingAnalysisErrorCode.INTERNAL_ERROR.getCode())
-				.message("피팅 분석 처리 중 오류가 발생했습니다.")
-				.status(HttpStatus.INTERNAL_SERVER_ERROR.value())
-				.build();
-			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorResponse);
+			FittingAnalysisErrorCode errorCode = FittingAnalysisErrorCode.INTERNAL_ERROR;
+			return ResponseEntity.status(errorCode.getStatus())
+				.body(ApiResponseDto.error("피팅 분석 처리 중 오류가 발생했습니다.",
+					Map.of("code", errorCode.getCode())));
 		}
 	}
 }

@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.miracle.coordifit.post.repository.CommentRepository">
+
+  <select id="getNextCommentSequence" resultType="int">
+    SELECT NVL(MAX(TO_NUMBER(SUBSTR(comment_id, 8))), 0) + 1
+      FROM comments
+     WHERE SUBSTR(comment_id, 2, 6) = TO_CHAR(SYSDATE, 'YYMMDD')
+  </select>
+
+  <insert id="insertComment" parameterType="com.miracle.coordifit.post.model.Comment">
+    INSERT INTO comments (
+      comment_id, post_id, user_id, parent_id, content,
+      like_count, is_active, created_at, created_by
+    ) VALUES (
+      #{commentId}, #{postId}, #{userId}, #{parentId}, #{content},
+      0, #{isActive}, CURRENT_TIMESTAMP, #{createdBy}
+    )
+  </insert>
+
+  <update id="updateCommentCount">
+    UPDATE posts
+    SET comment_count = (
+      SELECT COUNT(*)
+      FROM comments
+      WHERE post_id = #{postId}
+      AND is_active = 'Y'
+    )
+    WHERE post_id = #{postId}
+  </update>
+
+  <select id="getCommentsByPostId" resultType="com.miracle.coordifit.post.dto.CommentResponseDto">
+    SELECT 
+      c.comment_id AS commentId,
+      c.post_id AS postId,
+      c.user_id AS userId,
+      u.nickname,
+      fi.s3_url AS profileImageUrl,
+      c.parent_id AS parentId,
+      c.content,
+      c.like_count AS likeCount,
+      c.created_at AS createdAt,
+      CASE 
+        WHEN l.user_id IS NOT NULL THEN 1
+        ELSE 0
+      END AS isLiked
+    FROM comments c
+    INNER JOIN users u ON c.user_id = u.user_id
+    LEFT OUTER JOIN file_info fi ON u.file_id = fi.file_id
+    LEFT OUTER JOIN likes l ON l.target_id = c.comment_id AND l.user_id = #{userId}
+    WHERE c.post_id = #{postId}
+    AND c.is_active = 'Y'
+    ORDER BY 
+      NVL(c.parent_id, c.comment_id) ASC,
+      c.parent_id NULLS FIRST,
+      c.created_at ASC
+  </select>
+
+</mapper>
+

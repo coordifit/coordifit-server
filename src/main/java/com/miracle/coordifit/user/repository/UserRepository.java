@@ -3,6 +3,7 @@ package com.miracle.coordifit.user.repository;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 
+import com.miracle.coordifit.user.dto.MyPageResponseDto;
 import com.miracle.coordifit.user.model.User;
 
 @Mapper
@@ -24,4 +25,8 @@ public interface UserRepository {
 	int updateUserProfile(User user);
 
 	int updateIsActive(User user);
+
+	int updatePassword(@Param("email") String email, @Param("password") String password);
+
+	MyPageResponseDto getMyPageInfo(@Param("userId") String userId);
 }

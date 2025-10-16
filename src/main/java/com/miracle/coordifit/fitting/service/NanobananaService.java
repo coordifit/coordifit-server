@@ -1,4 +1,4 @@
-package com.miracle.coordifit.nanobanana.service;
+package com.miracle.coordifit.fitting.service;
 
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
@@ -6,8 +6,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
 import org.springframework.web.reactive.function.client.WebClientResponseException;
 
-import com.miracle.coordifit.nanobanana.dto.ImageGenerationRequestDTO;
-import com.miracle.coordifit.nanobanana.dto.ImageGenerationResponseDTO;
+import com.miracle.coordifit.fitting.dto.ImageGenerationRequestDTO;
+import com.miracle.coordifit.fitting.dto.ImageGenerationResponseDTO;
 
 import lombok.extern.slf4j.Slf4j;
 

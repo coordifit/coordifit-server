@@ -20,4 +20,5 @@ public class ClothesListItemDto {
 	private String categoryCode;
 	private LocalDate purchaseDate;
 	private String thumbnailUrl;
+	private LocalDate lastWornDate;
 }

@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.miracle.coordifit.user.repository.FollowRepository">
+
+  <select id="isFollowing" resultType="int">
+    SELECT COUNT(*)
+    FROM follows
+    WHERE follower_id = #{followerId}
+    AND following_id = #{followingId}
+  </select>
+
+  <insert id="insertFollow" parameterType="com.miracle.coordifit.user.model.Follow">
+    INSERT INTO follows (
+      follower_id, following_id, created_at, created_by
+    ) VALUES (
+      #{followerId}, #{followingId}, CURRENT_TIMESTAMP, #{createdBy}
+    )
+  </insert>
+
+  <delete id="deleteFollow">
+    DELETE FROM follows
+    WHERE follower_id = #{followerId}
+    AND following_id = #{followingId}
+  </delete>
+
+  <select id="getFollowers" resultType="com.miracle.coordifit.user.dto.UserDto">
+    SELECT 
+      u.user_id as userId,
+      u.nickname as nickname,
+      fi.s3_url as profileImageUrl
+    FROM follows fl
+    INNER JOIN users u ON fl.follower_id = u.user_id
+    LEFT JOIN file_info fi ON u.file_id = fi.file_id
+    WHERE fl.following_id = #{userId}
+    ORDER BY fl.created_at DESC
+  </select>
+
+  <select id="getFollowings" resultType="com.miracle.coordifit.user.dto.UserDto">
+    SELECT 
+      u.user_id as userId,
+      u.nickname as nickname,
+      fi.s3_url as profileImageUrl
+    FROM follows fl
+    INNER JOIN users u ON fl.following_id = u.user_id
+    LEFT JOIN file_info fi ON u.file_id = fi.file_id
+    WHERE fl.follower_id = #{userId}
+    ORDER BY fl.created_at DESC
+  </select>
+
+</mapper>
+

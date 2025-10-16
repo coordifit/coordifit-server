@@ -35,5 +35,87 @@
     )
   </insert>
 
+  <update id="incrementViewCount">
+    UPDATE posts 
+    SET view_count = view_count + 1
+    WHERE post_id = #{postId}
+  </update>
+
+  <select id="getPostDetail" resultType="com.miracle.coordifit.post.dto.PostDetailResponse">
+    SELECT 
+      p.post_id AS postId,
+      p.user_id AS userId,
+      u.nickname,
+      fi.s3_url AS profileImageUrl,
+      p.content,
+      p.view_count AS viewCount,
+      p.like_count AS likeCount,
+      p.comment_count AS commentCount,
+      TO_CHAR(p.created_at, 'YYYY-MM-DD HH24:MI:SS') AS createdAt
+    FROM posts p
+    INNER JOIN users u ON p.user_id = u.user_id
+    LEFT OUTER JOIN file_info fi ON u.file_id = fi.file_id
+    WHERE p.post_id = #{postId} 
+    AND p.is_active = 'Y'
+  </select>
+
+  <select id="getPostImageUrls" resultType="String">
+    SELECT fi.s3_url
+    FROM post_images pi
+    INNER JOIN file_info fi ON pi.file_id = fi.file_id
+    WHERE pi.post_id = #{postId}
+    ORDER BY pi.created_at
+  </select>
+
+  <!-- TODO: 옷 조회 쿼리 조인 INNER JOIN 사용 예정-->
+  <select id="getPostClothes" resultType="com.miracle.coordifit.post.dto.PostClothesResponse">
+    SELECT 
+      c.clothes_id AS clothesId,
+      c.name,
+      c.brand,
+      c.price,
+      fi.s3_url AS imageUrl
+    FROM post_clothes pc
+    INNER JOIN clothes c ON pc.clothes_id = c.clothes_id
+    LEFT OUTER JOIN clothes_images ci ON ci.clothes_id = c.clothes_id
+    LEFT OUTER JOIN file_info fi ON ci.file_id = fi.file_id
+    WHERE pc.post_id = #{postId}
+  </select>
+
+  <select id="getAllPosts" resultType="com.miracle.coordifit.post.dto.PostDto">
+    SELECT 
+      p.post_id AS postId,
+      i.s3_url AS imageUrl
+    FROM posts p
+    INNER JOIN (
+      SELECT
+        pi.post_id,
+        fi.s3_url,
+        ROW_NUMBER() OVER (PARTITION BY pi.post_id ORDER BY pi.created_at) AS rowrum
+      FROM post_images pi
+      INNER JOIN file_info fi ON pi.file_id = fi.file_id
+    ) i ON p.post_id = i.post_id AND i.rowrum = 1
+    WHERE p.is_active = 'Y'
+    ORDER BY p.created_at DESC
+  </select>
+
+  <select id="getUserPosts" parameterType="String" resultType="com.miracle.coordifit.post.dto.PostDto">
+    SELECT
+      p.post_id AS postId,
+      i.s3_url AS imageUrl
+    FROM posts p
+    INNER JOIN (
+      SELECT
+        pi.post_id,
+        f.s3_url,
+        ROW_NUMBER() OVER (PARTITION BY pi.post_id ORDER BY pi.created_at) AS rowrum
+      FROM post_images pi
+      INNER JOIN file_info f ON pi.file_id = f.file_id
+    ) i ON p.post_id = i.post_id AND i.rowrum = 1
+    WHERE p.user_id = #{userId} 
+    AND p.is_active = 'Y'
+    ORDER BY p.created_at DESC
+  </select>
+
 </mapper>
 
