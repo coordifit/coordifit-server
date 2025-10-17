@@ -33,6 +33,28 @@ public class CalenderService implements ICalenderService {
 
 	@Override
 	@Transactional
+	public int deleteDailyLookByDate(String userId, String wearDate) {
+		Optional<DailyLook> existing = calenderRepository.getDailyLookByDate(userId, wearDate);
+		if (existing.isEmpty()) {
+			return 0;
+		}
+
+		DailyLook target = existing.get();
+
+		calenderRepository.deleteDailyLookItemsByDailyLookId(Integer.parseInt(target.getDailylookId()));
+
+		if (target.getOriginImageId() != null)
+			fileservice.deleteFileById(target.getOriginImageId().longValue());
+		if (target.getThumbImageId() != null)
+			fileservice.deleteFileById(target.getThumbImageId().longValue());
+
+		int deleted = calenderRepository.deleteDailyLookById(Integer.parseInt(target.getDailylookId()));
+
+		return deleted;
+	}
+
+	@Override
+	@Transactional
 	public int upsertDailyLook(DailyLook dailyLook) {
 
 		Optional<DailyLook> existing = calenderRepository.getDailyLookByDate(dailyLook.getUserId(),

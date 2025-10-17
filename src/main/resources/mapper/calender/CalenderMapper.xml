@@ -61,4 +61,15 @@
         WHERE dailylook_id = #{dailylookId}
           AND user_id = #{userId}
     </update>
+
+    <delete id="deleteDailyLookItemsByDailyLookId" parameterType="int">
+        DELETE FROM DAILYLOOK_ITEMS
+        WHERE dailylook_id = #{dailylookId}
+    </delete>
+
+    <delete id="deleteDailyLookById" parameterType="int">
+      DELETE FROM DAILYLOOKS
+      WHERE dailylook_id = #{dailylookId}
+    </delete>
+
 </mapper>

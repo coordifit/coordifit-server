@@ -45,6 +45,10 @@ repositories {
 	mavenCentral()
 }
 
+bootRun {
+    systemProperty "spring.profiles.active", "local"
+}
+
 dependencies {
 	// AI WebClient
 	implementation 'org.springframework.boot:spring-boot-starter-webflux'

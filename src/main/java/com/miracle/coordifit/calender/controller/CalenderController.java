@@ -2,9 +2,11 @@ package com.miracle.coordifit.calender.controller;
 
 import java.util.List;
 
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -56,6 +58,31 @@ public class CalenderController {
 
 		return ResponseEntity.badRequest()
 			.body(ApiResponseDto.error("yearMonth 또는 wearDate 파라미터를 제공해야 합니다."));
+	}
+
+	@DeleteMapping("/date/{wearDate:\\d{4}-\\d{2}-\\d{2}}")
+	@Transactional
+	public ResponseEntity<ApiResponseDto<?>> deleteDailyLook(
+		@PathVariable("wearDate") String wearDate,
+		Authentication authentication) {
+		String userId = (String)authentication.getPrincipal();
+
+		try {
+			int deletedCount = calenderService.deleteDailyLookByDate(userId, wearDate);
+
+			if (deletedCount > 0) {
+				return ResponseEntity.ok()
+					.body(ApiResponseDto.success(String.format("%s 날짜의 데일리룩 삭제 성공", wearDate), null));
+			} else {
+				return ResponseEntity.status(HttpStatus.NOT_FOUND)
+					.body(ApiResponseDto.error(String.format("%s 날짜의 데일리룩을 찾을 수 없습니다.", wearDate)));
+			}
+
+		} catch (Exception e) {
+			log.error("❌ 데일리룩 삭제 중 오류 발생: {}", e.getMessage(), e);
+			return ResponseEntity.internalServerError()
+				.body(ApiResponseDto.error("데일리룩 삭제 중 오류가 발생했습니다."));
+		}
 	}
 
 	@Transactional

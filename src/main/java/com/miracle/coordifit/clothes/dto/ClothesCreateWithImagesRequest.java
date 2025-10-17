@@ -8,8 +8,7 @@ import com.miracle.coordifit.common.dto.Base64ImageDto;
 import jakarta.validation.constraints.NotBlank;
 import lombok.*;
 
-@Getter
-@Setter
+@Data
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
