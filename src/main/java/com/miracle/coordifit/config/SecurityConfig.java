@@ -52,7 +52,8 @@ public class SecurityConfig {
 				.requestMatchers("/api/auth/**").permitAll()
 				.requestMatchers(HttpMethod.DELETE, "/api/user/**").permitAll()
 				// Swagger UI 관련 경로는 허용
-				.requestMatchers("/swagger-ui/**", "/v3/api-docs/**", "/swagger-resources/**").permitAll()
+				.requestMatchers("/swagger-ui/**", "/v3/api-docs/**", "/v3/api-docs", "/swagger-resources/**")
+				.permitAll()
 				// 나머지 모든 API는 인증 필요
 				.anyRequest().authenticated());
 

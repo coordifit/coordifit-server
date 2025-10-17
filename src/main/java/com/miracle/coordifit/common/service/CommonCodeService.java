@@ -4,12 +4,15 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.miracle.coordifit.common.model.CommonCode;
 import com.miracle.coordifit.common.repository.CommonCodeRepository;
 
+import ch.qos.logback.classic.Level;
+import ch.qos.logback.classic.Logger;
 import lombok.RequiredArgsConstructor;
 
 @Service
@@ -68,8 +71,16 @@ public class CommonCodeService implements ICommonCodeService {
 
 	@Override
 	public Map<String, CommonCode> getCommonCodes() {
-		List<CommonCode> commonCodes = commonCodeRepository.selectCommonCodes();
-		return createCommonCodeMap(commonCodes);
+		Logger log = (Logger)LoggerFactory.getLogger("log4jdbc.log4j2");
+		Level prevLevel = log.getLevel();
+
+		try {
+			log.setLevel(Level.WARN);
+			List<CommonCode> commonCodes = commonCodeRepository.selectCommonCodes();
+			return createCommonCodeMap(commonCodes);
+		} finally {
+			log.setLevel(prevLevel);
+		}
 	}
 
 	@Override

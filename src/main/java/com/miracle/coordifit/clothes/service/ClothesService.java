@@ -21,9 +21,9 @@ import com.miracle.coordifit.common.service.IFileService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
-@Slf4j
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class ClothesService implements IClothesService {
 
 	private final ClothesRepository clothesRepository;
@@ -39,6 +39,8 @@ public class ClothesService implements IClothesService {
 			throw new IllegalArgumentException("이미지는 최소 1장 필요합니다.");
 		}
 		validateCategoryOrThrow(req.getCategoryCode());
+
+		log.info(">> createOneBase64: {}", req.toString());
 
 		final String id = clothesRepository.selectNextClothesId();
 

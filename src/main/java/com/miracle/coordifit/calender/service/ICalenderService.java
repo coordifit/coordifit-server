@@ -17,4 +17,7 @@ public interface ICalenderService {
 
 	// 특정 날짜 데일리룩 조회
 	DailyLookResponse getDailyLookByDate(String userId, String wearDate);
+
+	// 데일리룩 삭제
+	public int deleteDailyLookByDate(String userId, String wearDate);
 }
