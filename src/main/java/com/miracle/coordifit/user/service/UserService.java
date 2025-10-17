@@ -264,6 +264,12 @@ public class UserService implements IUserService {
 				return user;
 			}
 
+			User existingUser = userRepository.selectUser(User.builder().email(email).build());
+
+			if (existingUser != null) {
+				return linkKakaoUser(existingUser.getUserId(), kakaoId);
+			}
+
 			return createKakaoUser(kakaoUserResponse);
 
 		} catch (InactiveUserException e) {
@@ -273,6 +279,22 @@ public class UserService implements IUserService {
 			log.error("카카오 로그인 처리 중 오류 발생: kakaoId={}", kakaoId, e);
 			throw new RuntimeException("카카오 로그인 처리 중 오류가 발생했습니다.");
 		}
+	}
+
+	private User linkKakaoUser(String userId, String kakaoId) {
+		User user = User.builder()
+			.userId(userId)
+			.kakaoId(kakaoId)
+			.updatedBy(userId)
+			.build();
+
+		int result = userRepository.updateUser(user);
+		if (result <= 0) {
+			throw new RuntimeException("카카오 정보 연결 중 오류가 발생했습니다.");
+		}
+
+		updateLastLoginTime(userId);
+		return userRepository.selectUser(User.builder().userId(userId).build());
 	}
 
 	private User createKakaoUser(KakaoUserResponse kakaoUserResponse) {
