@@ -81,6 +81,9 @@
             <if test="birthDate != null">
                 birth_date = #{birthDate},
             </if>
+            <if test="kakaoId != null">
+                kakao_id = #{kakaoId},
+            </if>
             <if test="isActive != null">
                 is_active = #{isActive},
             </if>
