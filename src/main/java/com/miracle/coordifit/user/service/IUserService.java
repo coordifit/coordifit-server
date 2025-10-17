@@ -1,6 +1,7 @@
 package com.miracle.coordifit.user.service;
 
 import com.miracle.coordifit.auth.dto.AuthRequestDto;
+import com.miracle.coordifit.auth.dto.KakaoUserResponse;
 import com.miracle.coordifit.user.dto.MyPageResponseDto;
 import com.miracle.coordifit.user.dto.ProfileUpdateRequestDto;
 import com.miracle.coordifit.user.model.User;
@@ -25,4 +26,6 @@ public interface IUserService {
 	void resetPassword(AuthRequestDto requestDto);
 
 	MyPageResponseDto getMyPageInfo(String userId, String currentUserId);
+
+	User processKakaoLogin(KakaoUserResponse kakaoUserResponse);
 }

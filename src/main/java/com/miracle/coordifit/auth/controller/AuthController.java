@@ -14,9 +14,12 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.miracle.coordifit.auth.dto.AuthRequestDto;
+import com.miracle.coordifit.auth.dto.KakaoUserResponse;
 import com.miracle.coordifit.auth.service.IEmailService;
 import com.miracle.coordifit.auth.service.IJwtService;
+import com.miracle.coordifit.auth.service.IKakaoAuthService;
 import com.miracle.coordifit.common.dto.ApiResponseDto;
+import com.miracle.coordifit.exception.InactiveUserException;
 import com.miracle.coordifit.user.model.User;
 import com.miracle.coordifit.user.service.IUserService;
 
@@ -32,6 +35,7 @@ public class AuthController {
 	private final IUserService userService;
 	private final IEmailService emailService;
 	private final IJwtService jwtService;
+	private final IKakaoAuthService kakaoAuthService;
 
 	@PostMapping("/signup")
 	public ResponseEntity<ApiResponseDto<Void>> signUp(
@@ -142,22 +146,14 @@ public class AuthController {
 					.body(ApiResponseDto.error("이메일 또는 비밀번호가 올바르지 않습니다."));
 			}
 
-			if ("N".equals(user.getIsActive())) {
-				Map<String, Object> responseData = new HashMap<>();
-				responseData.put("isActive", false);
-				responseData.put("message", "비활성화된 계정입니다. 계정을 다시 활성화하시겠습니까?");
-				responseData.put("userId", user.getUserId());
-
-				log.warn("비활성화된 계정입니다. 계정을 다시 활성화하시겠습니까?");
-				return ResponseEntity.status(HttpStatus.FORBIDDEN)
-					.body(ApiResponseDto.error("비활성화된 계정입니다.", responseData));
-			}
-
 			Map<String, Object> responseData = jwtService.createTokens(user);
 
 			log.info("로그인이 완료되었습니다.");
 			return ResponseEntity.ok()
 				.body(ApiResponseDto.success("로그인이 완료되었습니다.", responseData));
+
+		} catch (InactiveUserException e) {
+			return createInactiveUserResponse(e.getUserId());
 
 		} catch (Exception e) {
 			log.error("로그인 실패", e);
@@ -273,6 +269,46 @@ public class AuthController {
 			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
 				.body(ApiResponseDto.error("비밀번호 재설정 처리 중 오류가 발생했습니다."));
 		}
+	}
+
+	@PostMapping("/kakao/login")
+	public ResponseEntity<ApiResponseDto<Map<String, Object>>> kakaoLogin(
+		@RequestBody Map<String, String> request) {
+
+		String code = request.get("code");
+		String redirectUri = request.get("redirectUri");
+
+		log.info("카카오 로그인 요청: code={}", code);
+
+		try {
+			KakaoUserResponse kakaoUserResponse = kakaoAuthService.getKakaoUserInfo(code, redirectUri);
+
+			User user = userService.processKakaoLogin(kakaoUserResponse);
+
+			Map<String, Object> responseData = jwtService.createTokens(user);
+
+			log.info("카카오 로그인 성공: userId={}", user.getUserId());
+			return ResponseEntity.ok()
+				.body(ApiResponseDto.success("카카오 로그인이 완료되었습니다.", responseData));
+
+		} catch (InactiveUserException e) {
+			return createInactiveUserResponse(e.getUserId());
+		} catch (Exception e) {
+			log.error("카카오 로그인 실패", e);
+			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+				.body(ApiResponseDto.error("카카오 로그인 처리 중 오류가 발생했습니다: " + e.getMessage()));
+		}
+	}
+
+	private ResponseEntity<ApiResponseDto<Map<String, Object>>> createInactiveUserResponse(String userId) {
+		Map<String, Object> responseData = new HashMap<>();
+		responseData.put("isActive", false);
+		responseData.put("message", "비활성화된 계정입니다. 계정을 다시 활성화하시겠습니까?");
+		responseData.put("userId", userId);
+
+		log.warn("비활성화된 계정 로그인 시도: userId={}", userId);
+		return ResponseEntity.status(HttpStatus.FORBIDDEN)
+			.body(ApiResponseDto.error("비활성화된 계정입니다.", responseData));
 	}
 
 	private ResponseEntity<ApiResponseDto<String>> sendVerificationCode(
