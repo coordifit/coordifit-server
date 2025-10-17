@@ -9,7 +9,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.miracle.coordifit.auth.dto.AuthRequestDto;
+import com.miracle.coordifit.auth.dto.KakaoUserResponse;
 import com.miracle.coordifit.auth.service.IEmailService;
+import com.miracle.coordifit.exception.InactiveUserException;
 import com.miracle.coordifit.post.dto.PostDto;
 import com.miracle.coordifit.post.repository.PostRepository;
 import com.miracle.coordifit.user.dto.MyPageResponseDto;
@@ -94,11 +96,20 @@ public class UserService implements IUserService {
 			User user = userRepository.selectUserByEmail(email);
 
 			if (user != null && passwordEncoder.matches(password, user.getPassword())) {
+
+				if ("N".equals(user.getIsActive())) {
+					throw new InactiveUserException(user.getUserId());
+				}
+
 				updateLastLoginTime(user.getUserId());
 				return user;
 			}
 
 			return null;
+
+		} catch (InactiveUserException e) {
+			log.warn("비활성화된 계정 로그인 시도: userId={}", e.getUserId());
+			throw e;
 
 		} catch (Exception e) {
 			log.error("사용자 인증 중 오류 발생", e);
@@ -227,6 +238,64 @@ public class UserService implements IUserService {
 		myPageInfo.setPosts(posts);
 
 		return myPageInfo;
+	}
+
+	@Override
+	public User processKakaoLogin(KakaoUserResponse kakaoUserResponse) {
+		String kakaoId = String.valueOf(kakaoUserResponse.getId());
+		String email = kakaoUserResponse.getKakaoAccount().getEmail();
+
+		log.info("카카오 로그인 처리: kakaoId={}, email={}", kakaoId, email);
+
+		try {
+			User user = userRepository.selectUserByKakaoId(kakaoId);
+
+			if (user != null) {
+				if ("N".equals(user.getIsActive())) {
+					throw new InactiveUserException(user.getUserId());
+				}
+
+				updateLastLoginTime(user.getUserId());
+				return user;
+			}
+
+			return createKakaoUser(kakaoUserResponse);
+
+		} catch (InactiveUserException e) {
+			log.warn("비활성화된 카카오 계정 로그인 시도: userId={}", e.getUserId());
+			throw e;
+		} catch (Exception e) {
+			log.error("카카오 로그인 처리 중 오류 발생: kakaoId={}", kakaoId, e);
+			throw new RuntimeException("카카오 로그인 처리 중 오류가 발생했습니다.");
+		}
+	}
+
+	private User createKakaoUser(KakaoUserResponse kakaoUserResponse) {
+		try {
+			String userId = generateUserId();
+
+			User user = User.builder()
+				.userId(userId)
+				.email(kakaoUserResponse.getKakaoAccount().getEmail())
+				.kakaoId(String.valueOf(kakaoUserResponse.getId()))
+				.nickname(kakaoUserResponse.getKakaoAccount().getProfile().getNickname())
+				.loginTypeCode("A20002")
+				.isActive("Y")
+				.createdBy(userId)
+				.build();
+
+			int result = userRepository.insertUser(user);
+			if (result <= 0) {
+				throw new RuntimeException("카카오 사용자 생성 중 오류가 발생했습니다.");
+			}
+
+			log.info("카카오 사용자 생성 완료: userId={}", userId);
+
+			return user;
+		} catch (Exception e) {
+			log.error("카카오 사용자 생성 중 오류 발생: kakaoUserResponse={}", kakaoUserResponse, e);
+			throw new RuntimeException("카카오 사용자 생성 중 오류가 발생했습니다.", e);
+		}
 	}
 
 	private String generateUserId() {

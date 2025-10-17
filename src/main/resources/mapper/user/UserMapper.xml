@@ -5,11 +5,25 @@
 
     <insert id="insertUser" parameterType="com.miracle.coordifit.user.model.User">
         INSERT INTO users (
-            user_id, email, password, nickname, login_type_code, 
-            is_active, created_at, created_by
+            user_id, 
+            email, 
+            <if test="password != null">password,</if>
+            nickname, 
+            <if test="kakaoId != null">kakao_id,</if>
+            login_type_code, 
+            is_active, 
+            created_at, 
+            created_by
         ) VALUES (
-            #{userId}, #{email}, #{password}, #{nickname}, #{loginTypeCode},
-            #{isActive}, CURRENT_TIMESTAMP, #{createdBy}
+            #{userId}, 
+            #{email}, 
+            <if test="password != null">#{password},</if>
+            #{nickname}, 
+            <if test="kakaoId != null">#{kakaoId},</if>
+            #{loginTypeCode},
+            #{isActive}, 
+            CURRENT_TIMESTAMP, 
+            #{createdBy}
         )
     </insert>
 
@@ -149,5 +163,27 @@
         LEFT OUTER JOIN file_info f ON u.file_id = f.file_id
         WHERE u.user_id = #{userId} AND u.is_active = 'Y'
     </select>
+
+    <select id="selectUserByKakaoId" parameterType="string" resultType="com.miracle.coordifit.user.model.User">
+        SELECT 
+            user_id             AS userId,
+            email,
+            password,
+            nickname,
+            file_id             AS fileId,
+            login_type_code     AS loginTypeCode,
+            kakao_id            AS kakaoId,
+            gender_code         AS genderCode,
+            birth_date          AS birthDate,
+            is_active           AS isActive,
+            created_at          AS createdAt,
+            created_by          AS createdBy,
+            updated_at          AS updatedAt,
+            updated_by          AS updatedBy,
+            logined_at          AS loginedAt
+        FROM users 
+        WHERE kakao_id = #{kakaoId}
+    </select>
+
 
 </mapper>

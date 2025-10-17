@@ -29,4 +29,6 @@ public interface UserRepository {
 	int updatePassword(@Param("email") String email, @Param("password") String password);
 
 	MyPageResponseDto getMyPageInfo(@Param("userId") String userId);
+
+	User selectUserByKakaoId(@Param("kakaoId") String kakaoId);
 }
