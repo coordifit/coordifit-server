@@ -64,7 +64,7 @@
       #{price,jdbcType=NUMERIC},
       #{purchaseDate}, #{purchaseUrl}, #{description},
       NVL(#{wearCount,jdbcType=NUMERIC}, 0),
-      #{lastWornDate},
+      #{lastWornDate, jdbcType=DATE},
       NVL(#{isActive}, 'Y'),
       #{createdBy}, #{updatedBy}
     )
