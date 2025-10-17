@@ -5,15 +5,29 @@
 
     <insert id="insertUser" parameterType="com.miracle.coordifit.user.model.User">
         INSERT INTO users (
-            user_id, email, password, nickname, login_type_code, 
-            is_active, created_at, created_by
+            user_id, 
+            email, 
+            <if test="password != null">password,</if>
+            nickname, 
+            <if test="kakaoId != null">kakao_id,</if>
+            login_type_code, 
+            is_active, 
+            created_at, 
+            created_by
         ) VALUES (
-            #{userId}, #{email}, #{password}, #{nickname}, #{loginTypeCode},
-            #{isActive}, CURRENT_TIMESTAMP, #{createdBy}
+            #{userId}, 
+            #{email}, 
+            <if test="password != null">#{password},</if>
+            #{nickname}, 
+            <if test="kakaoId != null">#{kakaoId},</if>
+            #{loginTypeCode},
+            #{isActive}, 
+            CURRENT_TIMESTAMP, 
+            #{createdBy}
         )
     </insert>
 
-    <select id="selectUserByEmail" parameterType="string" resultType="com.miracle.coordifit.user.model.User">
+    <select id="selectUser" resultType="com.miracle.coordifit.user.model.User">
         SELECT 
             user_id             AS userId,
             email,
@@ -33,68 +47,21 @@
             updated_by          AS updatedBy,
             logined_at          AS loginedAt
         FROM users 
-        WHERE email = #{email} 
-    </select>
-
-    <select id="selectUserByUserId" parameterType="string" resultType="com.miracle.coordifit.user.model.User">
-        SELECT 
-            user_id             AS userId,
-            email,
-            password,
-            nickname,
-            file_id             AS fileId,
-
-            login_type_code     AS loginTypeCode,
-            kakao_id            AS kakaoId,
-            gender_code         AS genderCode,
-            birth_date          AS birthDate,
-            is_active           AS isActive,
-
-            created_at          AS createdAt,
-            created_by          AS createdBy,
-            updated_at          AS updatedAt,
-            updated_by          AS updatedBy,
-            logined_at          AS loginedAt
-        FROM users 
-        WHERE user_id = #{userId} 
-    </select>
-
-    <select id="selectUserByNickname" parameterType="string" resultType="com.miracle.coordifit.user.model.User">
-        SELECT 
-            user_id             AS userId,
-            email,
-            password,
-            nickname,
-            file_id             AS fileId,
-
-            login_type_code     AS loginTypeCode,
-            kakao_id            AS kakaoId,
-            gender_code         AS genderCode,
-            birth_date          AS birthDate,
-            is_active           AS isActive,
-
-            created_at          AS createdAt,
-            created_by          AS createdBy,
-            updated_at          AS updatedAt,
-            updated_by          AS updatedBy,
-            logined_at          AS loginedAt
-        FROM users 
-        WHERE nickname = #{nickname} 
-        AND is_active = 'Y'
-    </select>
-
-    <select id="countByEmail" parameterType="string" resultType="int">
-        SELECT COUNT(*)
-        FROM users 
-        WHERE email = #{email} 
-        AND is_active = 'Y'
-    </select>
-
-    <select id="countByNickname" parameterType="string" resultType="int">
-        SELECT COUNT(*)
-        FROM users 
-        WHERE nickname = #{nickname} 
-        AND is_active = 'Y'
+        <where>
+            <if test="email != null">
+                AND email = #{email}
+            </if>
+            <if test="userId != null">
+                AND user_id = #{userId}
+            </if>
+            <if test="nickname != null">
+                AND nickname = #{nickname}
+                AND is_active = 'Y'
+            </if>
+            <if test="kakaoId != null">
+                AND kakao_id = #{kakaoId}
+            </if>
+        </where>
     </select>
 
     <select id="getNextUserSequence" resultType="int">
@@ -102,39 +69,43 @@
         FROM users
     </select>
 
-    <update id="updateUserProfile" parameterType="com.miracle.coordifit.user.model.User">
+    <update id="updateUser" parameterType="com.miracle.coordifit.user.model.User">
         UPDATE users 
-        SET nickname = #{nickname},
-            gender_code = #{genderCode},
-            birth_date = #{birthDate},
-            is_active = #{isActive},
-            file_id = #{fileId},
-            updated_at = CURRENT_TIMESTAMP,
-            updated_by = #{updatedBy}
-        WHERE user_id = #{userId}
-    </update>
-
-    <update id="updateLastLoginTime" parameterType="string">
-        UPDATE users 
-        SET logined_at = CURRENT_TIMESTAMP
-        WHERE user_id = #{userId}
-        AND is_active = 'Y'
-    </update>
-
-    <update id="updateIsActive" parameterType="com.miracle.coordifit.user.model.User">
-        UPDATE users 
-        SET is_active = #{isActive},
-            updated_at = CURRENT_TIMESTAMP,
-            updated_by = #{updatedBy}
-        WHERE user_id = #{userId}
-    </update>
-
-    <update id="updatePassword">
-        UPDATE users 
-        SET password = #{password},
+        <set>
+            <if test="nickname != null">
+                nickname = #{nickname},
+            </if>
+            <if test="genderCode != null">
+                gender_code = #{genderCode},
+            </if>
+            <if test="birthDate != null">
+                birth_date = #{birthDate},
+            </if>
+            <if test="isActive != null">
+                is_active = #{isActive},
+            </if>
+            <if test="fileId != null">
+                file_id = #{fileId},
+            </if>
+            <if test="password != null">
+                password = #{password},
+            </if>
+            <if test="loginedAt != null">
+                logined_at = #{loginedAt},
+            </if>
+            <if test="updatedBy != null">
+                updated_by = #{updatedBy},
+            </if>
             updated_at = CURRENT_TIMESTAMP
-        WHERE email = #{email}
-        AND is_active = 'Y'
+        </set>
+        <where>
+            <if test="userId != null">
+                AND user_id = #{userId}
+            </if>
+            <if test="email != null">
+                AND email = #{email}
+            </if>
+        </where>
     </update>
 
     <select id="getMyPageInfo" parameterType="String" resultType="com.miracle.coordifit.user.dto.MyPageResponseDto">

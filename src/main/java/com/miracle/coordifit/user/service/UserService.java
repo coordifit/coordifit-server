@@ -9,7 +9,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.miracle.coordifit.auth.dto.AuthRequestDto;
+import com.miracle.coordifit.auth.dto.KakaoUserResponse;
 import com.miracle.coordifit.auth.service.IEmailService;
+import com.miracle.coordifit.exception.InactiveUserException;
 import com.miracle.coordifit.post.dto.PostDto;
 import com.miracle.coordifit.post.repository.PostRepository;
 import com.miracle.coordifit.user.dto.MyPageResponseDto;
@@ -70,20 +72,24 @@ public class UserService implements IUserService {
 	@Override
 	@Transactional(readOnly = true)
 	public boolean isEmailAvailable(String email) {
-		int count = userRepository.countByEmail(email);
-		return count == 0;
+		User user = userRepository.selectUser(User.builder().email(email).build());
+		return user == null;
 	}
 
 	@Override
 	@Transactional(readOnly = true)
 	public boolean isNicknameAvailable(String nickname) {
-		int count = userRepository.countByNickname(nickname);
-		return count == 0;
+		User user = userRepository.selectUser(User.builder().nickname(nickname).build());
+		return user == null;
 	}
 
 	@Override
 	public boolean updateLastLoginTime(String userId) {
-		int result = userRepository.updateLastLoginTime(userId);
+		User user = User.builder()
+			.userId(userId)
+			.loginedAt(java.time.LocalDateTime.now())
+			.build();
+		int result = userRepository.updateUser(user);
 		return result > 0;
 	}
 
@@ -91,14 +97,23 @@ public class UserService implements IUserService {
 	@Transactional(readOnly = true)
 	public User authenticate(String email, String password) {
 		try {
-			User user = userRepository.selectUserByEmail(email);
+			User user = userRepository.selectUser(User.builder().email(email).build());
 
 			if (user != null && passwordEncoder.matches(password, user.getPassword())) {
+
+				if ("N".equals(user.getIsActive())) {
+					throw new InactiveUserException(user.getUserId());
+				}
+
 				updateLastLoginTime(user.getUserId());
 				return user;
 			}
 
 			return null;
+
+		} catch (InactiveUserException e) {
+			log.warn("비활성화된 계정 로그인 시도: userId={}", e.getUserId());
+			throw e;
 
 		} catch (Exception e) {
 			log.error("사용자 인증 중 오류 발생", e);
@@ -110,7 +125,7 @@ public class UserService implements IUserService {
 	@Transactional(readOnly = true)
 	public User getUserById(String userId) {
 		try {
-			return userRepository.selectUserByUserId(userId);
+			return userRepository.selectUser(User.builder().userId(userId).build());
 		} catch (Exception e) {
 			log.error("사용자 조회 중 오류 발생: userId={}", userId, e);
 			throw new RuntimeException("사용자 조회 중 오류가 발생했습니다.", e);
@@ -120,7 +135,7 @@ public class UserService implements IUserService {
 	@Override
 	public User updateUserProfile(String userId, ProfileUpdateRequestDto requestDto) {
 		try {
-			User existingUser = userRepository.selectUserByUserId(userId);
+			User existingUser = userRepository.selectUser(User.builder().userId(userId).build());
 			if (existingUser == null) {
 				throw new IllegalArgumentException("사용자를 찾을 수 없습니다.");
 			}
@@ -133,26 +148,22 @@ public class UserService implements IUserService {
 
 			User updatedUser = User.builder()
 				.userId(userId)
-				.email(existingUser.getEmail())
-				.nickname(requestDto.getNickname() != null ? requestDto.getNickname() : existingUser.getNickname())
-				.genderCode(
-					requestDto.getGenderCode() != null ? requestDto.getGenderCode() : existingUser.getGenderCode())
+				.nickname(requestDto.getNickname())
+				.genderCode(requestDto.getGenderCode())
 				.birthDate(requestDto.getBirthDate() != null ? LocalDate
 					.parse(requestDto.getBirthDate(), DateTimeFormatter.ofPattern("yyyy-MM-dd")).atStartOfDay()
-					: existingUser.getBirthDate())
-				.isActive(requestDto.getIsActive() != null ? requestDto.getIsActive() : existingUser.getIsActive())
-				.fileId(requestDto.getFileId() != null ? requestDto.getFileId() : existingUser.getFileId())
-				.loginTypeCode(existingUser.getLoginTypeCode())
-				.kakaoId(existingUser.getKakaoId())
+					: null)
+				.isActive(requestDto.getIsActive())
+				.fileId(requestDto.getFileId())
 				.updatedBy(userId)
 				.build();
 
-			int result = userRepository.updateUserProfile(updatedUser);
+			int result = userRepository.updateUser(updatedUser);
 			if (result <= 0) {
 				throw new RuntimeException("프로필 업데이트 처리 중 오류가 발생했습니다.");
 			}
 
-			return updatedUser;
+			return userRepository.selectUser(User.builder().userId(userId).build());
 		} catch (Exception e) {
 			log.error("프로필 업데이트 중 오류 발생: userId={}", userId, e);
 			throw e;
@@ -162,7 +173,7 @@ public class UserService implements IUserService {
 	@Override
 	public void toggleUserActive(String userId) {
 		try {
-			User existingUser = userRepository.selectUserByUserId(userId);
+			User existingUser = userRepository.selectUser(User.builder().userId(userId).build());
 			if (existingUser == null) {
 				throw new IllegalArgumentException("사용자를 찾을 수 없습니다.");
 			}
@@ -173,7 +184,7 @@ public class UserService implements IUserService {
 				.updatedBy(userId)
 				.build();
 
-			int result = userRepository.updateIsActive(toggledUser);
+			int result = userRepository.updateUser(toggledUser);
 			if (result <= 0) {
 				throw new RuntimeException("계정 활성/비활성 처리 중 오류가 발생했습니다.");
 			}
@@ -190,7 +201,7 @@ public class UserService implements IUserService {
 		log.info("비밀번호 재설정 시작: {}", requestDto.getEmail());
 
 		try {
-			User user = userRepository.selectUserByEmail(requestDto.getEmail());
+			User user = userRepository.selectUser(User.builder().email(requestDto.getEmail()).build());
 			if (user == null) {
 				throw new IllegalArgumentException("존재하지 않는 이메일입니다.");
 			}
@@ -201,7 +212,12 @@ public class UserService implements IUserService {
 
 			String encodedPassword = passwordEncoder.encode(requestDto.getNewPassword());
 
-			int result = userRepository.updatePassword(requestDto.getEmail(), encodedPassword);
+			User updateUser = User.builder()
+				.email(requestDto.getEmail())
+				.password(encodedPassword)
+				.build();
+
+			int result = userRepository.updateUser(updateUser);
 			if (result <= 0) {
 				throw new RuntimeException("비밀번호 재설정 처리 중 오류가 발생했습니다.");
 			}
@@ -227,6 +243,64 @@ public class UserService implements IUserService {
 		myPageInfo.setPosts(posts);
 
 		return myPageInfo;
+	}
+
+	@Override
+	public User processKakaoLogin(KakaoUserResponse kakaoUserResponse) {
+		String kakaoId = String.valueOf(kakaoUserResponse.getId());
+		String email = kakaoUserResponse.getKakaoAccount().getEmail();
+
+		log.info("카카오 로그인 처리: kakaoId={}, email={}", kakaoId, email);
+
+		try {
+			User user = userRepository.selectUser(User.builder().kakaoId(kakaoId).build());
+
+			if (user != null) {
+				if ("N".equals(user.getIsActive())) {
+					throw new InactiveUserException(user.getUserId());
+				}
+
+				updateLastLoginTime(user.getUserId());
+				return user;
+			}
+
+			return createKakaoUser(kakaoUserResponse);
+
+		} catch (InactiveUserException e) {
+			log.warn("비활성화된 카카오 계정 로그인 시도: userId={}", e.getUserId());
+			throw e;
+		} catch (Exception e) {
+			log.error("카카오 로그인 처리 중 오류 발생: kakaoId={}", kakaoId, e);
+			throw new RuntimeException("카카오 로그인 처리 중 오류가 발생했습니다.");
+		}
+	}
+
+	private User createKakaoUser(KakaoUserResponse kakaoUserResponse) {
+		try {
+			String userId = generateUserId();
+
+			User user = User.builder()
+				.userId(userId)
+				.email(kakaoUserResponse.getKakaoAccount().getEmail())
+				.kakaoId(String.valueOf(kakaoUserResponse.getId()))
+				.nickname(kakaoUserResponse.getKakaoAccount().getProfile().getNickname())
+				.loginTypeCode("A20002")
+				.isActive("Y")
+				.createdBy(userId)
+				.build();
+
+			int result = userRepository.insertUser(user);
+			if (result <= 0) {
+				throw new RuntimeException("카카오 사용자 생성 중 오류가 발생했습니다.");
+			}
+
+			log.info("카카오 사용자 생성 완료: userId={}", userId);
+
+			return user;
+		} catch (Exception e) {
+			log.error("카카오 사용자 생성 중 오류 발생: kakaoUserResponse={}", kakaoUserResponse, e);
+			throw new RuntimeException("카카오 사용자 생성 중 오류가 발생했습니다.", e);
+		}
 	}
 
 	private String generateUserId() {
