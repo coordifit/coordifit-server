@@ -40,8 +40,6 @@ public class ClothesService implements IClothesService {
 		}
 		validateCategoryOrThrow(req.getCategoryCode());
 
-		log.info(">> createOneBase64: {}", req.toString());
-
 		final String id = clothesRepository.selectNextClothesId();
 
 		Clothes c = new Clothes();
