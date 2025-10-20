@@ -1,0 +1,118 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.miracle.coordifit.clothes.sample.repository.ClothesRepositorySample">
+
+  <select id="getNextClothesSequence" resultType="int">
+    SELECT NVL(MAX(TO_NUMBER(SUBSTR(clothes_id, 8))), 0) + 1
+    FROM clothes
+    WHERE SUBSTR(clothes_id, 2, 6) = TO_CHAR(SYSDATE, 'YYMMDD')
+  </select>
+
+  <insert id="insertClothes" parameterType="com.miracle.coordifit.clothes.sample.model.ClothesSample">
+    INSERT INTO clothes (
+      clothes_id, user_id, name, brand, category_code,
+      clothes_size, price, purchase_date, purchase_url, description,
+      wear_count, is_active, created_at, created_by
+    ) VALUES (
+      #{clothesId}, #{userId}, #{name}, #{brand}, #{categoryCode},
+      #{clothesSize}, #{price}, #{purchaseDate}, #{purchaseUrl}, #{description},
+      0, #{isActive}, CURRENT_TIMESTAMP, #{createdBy}
+    )
+  </insert>
+
+  <insert id="insertClothes" parameterType="com.miracle.coordifit.clothes.sample.model.ClothesSample">
+    INSERT INTO clothes (
+      clothes_id, 
+      user_id, 
+      name, 
+      brand, 
+      category_code,
+
+      clothes_size, 
+      price, 
+      purchase_date,
+      <if test="purchaseUrl != null">purchase_url,</if>
+      <if test="description != null">description,</if>
+
+      wear_count, 
+      is_active, 
+      created_at, 
+      created_by
+    ) VALUES (
+      #{clothesId}, 
+      #{userId}, 
+      #{name}, 
+      #{brand}, 
+      #{categoryCode},
+
+      #{clothesSize}, 
+      #{price}, 
+      #{purchaseDate},
+      <if test="purchaseUrl != null">#{purchaseUrl},</if>
+      <if test="description != null">#{description},</if>
+      
+      0, 
+      #{isActive}, 
+      CURRENT_TIMESTAMP, 
+      #{createdBy}
+    )
+  </insert>
+
+  <insert id="insertClothesImage" parameterType="com.miracle.coordifit.clothes.sample.model.ClothesImageSample">
+    INSERT INTO clothes_images (
+      clothes_id, file_id, created_at, created_by
+    ) VALUES (
+      #{clothesId}, #{fileId}, CURRENT_TIMESTAMP, #{createdBy}
+    )
+  </insert>
+
+  <select id="selectUserClothes" parameterType="string" resultType="com.miracle.coordifit.clothes.sample.dto.ClothesResponseSample">
+    SELECT 
+      c.clothes_id AS clothesId,
+      c.name AS name,
+      c.category_code AS categoryCode,
+      c.purchase_date AS purchaseDate,
+      i.s3_url AS imageUrl
+    FROM clothes c
+    INNER JOIN (
+      SELECT
+        ci.clothes_id,
+        f.s3_url,
+        ROW_NUMBER() OVER (PARTITION BY ci.clothes_id ORDER BY ci.created_at) AS rowrum
+      FROM clothes_images ci
+      INNER JOIN file_info f ON ci.file_id = f.file_id
+    ) i ON c.clothes_id = i.clothes_id AND i.rowrum = 1
+    WHERE c.user_id = #{userId}
+    ORDER BY c.created_at DESC
+  </select>
+
+  <select id="selectClothesById" resultType="com.miracle.coordifit.clothes.sample.dto.ClothesDetailResponseDto">
+    SELECT 
+      clothes_id as clothesId,
+      name,
+      brand,
+      category_code as categoryCode,
+      clothes_size as clothesSize,
+      price,
+      purchase_date as purchaseDate,
+      purchase_url as purchaseUrl,
+      description,
+      wear_count as wearCount,
+      last_worn_date as lastWornDate      
+    FROM clothes
+    WHERE clothes_id = #{clothesId}
+    AND user_id = #{userId}
+  </select>
+
+  <select id="selectClothesImage" resultType="string">
+    SELECT f.s3_url
+    FROM clothes_images ci
+    INNER JOIN file_info f ON ci.file_id = f.file_id
+    WHERE ci.clothes_id = #{clothesId}
+  </select>
+
+</mapper>
+
