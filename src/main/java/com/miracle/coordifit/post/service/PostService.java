@@ -6,7 +6,10 @@ import java.util.List;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
+import com.miracle.coordifit.common.model.FileInfo;
+import com.miracle.coordifit.common.service.IFileService;
 import com.miracle.coordifit.post.dto.CommentResponseDto;
 import com.miracle.coordifit.post.dto.PostClothesResponse;
 import com.miracle.coordifit.post.dto.PostCreateRequest;
@@ -25,6 +28,7 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class PostService implements IPostService {
 
+	private final IFileService fileService;
 	private final PostRepository postRepository;
 	private final CommentRepository commentRepository;
 	private final LikeRepository likeRepository;
@@ -48,17 +52,21 @@ public class PostService implements IPostService {
 			throw new RuntimeException("게시물 등록 처리 중 오류가 발생했습니다.");
 		}
 
-		if (request.getImageFileIds() != null && !request.getImageFileIds().isEmpty()) {
-			for (Long fileId : request.getImageFileIds()) {
-				PostImage postImage = PostImage.builder()
-					.postId(postId)
-					.fileId(fileId)
-					.createdBy(userId)
-					.build();
+		if (request.getFiles() != null && !request.getFiles().isEmpty()) {
+			for (MultipartFile file : request.getFiles()) {
+				if (file != null && !file.isEmpty()) {
+					FileInfo uploadedFile = fileService.uploadFile(file);
 
-				result = postRepository.insertPostImage(postImage);
-				if (result <= 0) {
-					throw new RuntimeException("게시물 이미지 등록 처리 중 오류가 발생했습니다.");
+					PostImage postImage = PostImage.builder()
+						.postId(postId)
+						.fileId(uploadedFile.getFileId().longValue())
+						.createdBy(userId)
+						.build();
+
+					result = postRepository.insertPostImage(postImage);
+					if (result <= 0) {
+						throw new RuntimeException("게시물 이미지 등록 처리 중 오류가 발생했습니다.");
+					}
 				}
 			}
 		}

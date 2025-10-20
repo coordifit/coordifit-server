@@ -8,7 +8,6 @@ import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
@@ -51,7 +50,7 @@ public class PostController {
 
 	@PostMapping
 	public ResponseEntity<ApiResponseDto<Void>> createPost(
-		@RequestBody PostCreateRequest request,
+		PostCreateRequest request,
 		Authentication authentication) {
 		try {
 			String userId = authentication.getName();
@@ -60,6 +59,7 @@ public class PostController {
 			log.info("게시물 등록 완료: userId={}", userId);
 			return ResponseEntity.ok(ApiResponseDto.success("게시물 등록 완료"));
 		} catch (Exception e) {
+			log.error("게시물 등록 실패: userId={}", authentication.getName(), e);
 			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
 				.body(ApiResponseDto.error("게시물 등록 실패: " + e.getMessage()));
 		}

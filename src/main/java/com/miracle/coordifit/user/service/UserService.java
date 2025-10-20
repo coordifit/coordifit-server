@@ -11,6 +11,7 @@ import org.springframework.transaction.annotation.Transactional;
 import com.miracle.coordifit.auth.dto.AuthRequestDto;
 import com.miracle.coordifit.auth.dto.KakaoUserResponse;
 import com.miracle.coordifit.auth.service.IEmailService;
+import com.miracle.coordifit.common.service.IFileService;
 import com.miracle.coordifit.exception.InactiveUserException;
 import com.miracle.coordifit.post.dto.PostDto;
 import com.miracle.coordifit.post.repository.PostRepository;
@@ -31,6 +32,7 @@ public class UserService implements IUserService {
 	private final PostRepository postRepository;
 	private final IEmailService emailService;
 	private final PasswordEncoder passwordEncoder;
+	private final IFileService fileService;
 
 	@Override
 	public void signUp(AuthRequestDto signUpRequestDto) {
@@ -133,6 +135,7 @@ public class UserService implements IUserService {
 	}
 
 	@Override
+	@Transactional
 	public User updateUserProfile(String userId, ProfileUpdateRequestDto requestDto) {
 		try {
 			User existingUser = userRepository.selectUser(User.builder().userId(userId).build());
@@ -146,6 +149,12 @@ public class UserService implements IUserService {
 				throw new IllegalArgumentException("이미 사용 중인 닉네임입니다.");
 			}
 
+			Long fileId = existingUser.getFileId();
+
+			if (requestDto.getFile() != null && !requestDto.getFile().isEmpty()) {
+				fileId = fileService.uploadFile(requestDto.getFile()).getFileId().longValue();
+			}
+
 			User updatedUser = User.builder()
 				.userId(userId)
 				.nickname(requestDto.getNickname())
@@ -154,7 +163,7 @@ public class UserService implements IUserService {
 					.parse(requestDto.getBirthDate(), DateTimeFormatter.ofPattern("yyyy-MM-dd")).atStartOfDay()
 					: null)
 				.isActive(requestDto.getIsActive())
-				.fileId(requestDto.getFileId())
+				.fileId(fileId)
 				.updatedBy(userId)
 				.build();
 
