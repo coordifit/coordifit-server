@@ -13,6 +13,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import com.miracle.coordifit.auth.repository.JwtTokenRepository;
+import com.miracle.coordifit.common.repository.FileRepository;
 import com.miracle.coordifit.user.model.User;
 
 import io.jsonwebtoken.Claims;
@@ -43,6 +44,7 @@ public class JwtService implements IJwtService {
 	private String issuer;
 
 	private final JwtTokenRepository jwtTokenRepository;
+	private final FileRepository fileRepository;
 	private SecretKey secretKey;
 
 	private SecretKey getSecretKey() {
@@ -57,12 +59,14 @@ public class JwtService implements IJwtService {
 		claims.put("userId", user.getUserId());
 		claims.put("email", user.getEmail());
 		claims.put("nickname", user.getNickname());
-		claims.put("fileId", user.getFileId());
-		claims.put("loginTypeCode", user.getLoginTypeCode());
-		claims.put("kakaoId", user.getKakaoId());
 		claims.put("genderCode", user.getGenderCode());
 		claims.put("birthDate", user.getBirthDate() != null ? user.getBirthDate().toString() : null);
 		claims.put("type", tokenType);
+
+		if (user.getFileId() != null) {
+			String profileImageUrl = fileRepository.selectFileInfoById(user.getFileId().intValue()).getS3Url();
+			claims.put("profileImageUrl", profileImageUrl);
+		}
 
 		Date now = new Date();
 		Date expiryDate = new Date(
