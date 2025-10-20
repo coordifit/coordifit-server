@@ -11,10 +11,10 @@
 
   <insert id="insertPost" parameterType="com.miracle.coordifit.post.model.Post">
     INSERT INTO posts (
-      post_id, user_id, content, is_public, view_count,
+      post_id, user_id, <if test="content != null">content,</if> is_public, view_count,
       like_count, comment_count, is_active, created_at, created_by
     ) VALUES (
-      #{postId}, #{userId}, #{content}, #{isPublic}, 0,
+      #{postId}, #{userId}, <if test="content != null">#{content},</if> #{isPublic}, 0,
       0, 0, #{isActive}, CURRENT_TIMESTAMP, #{createdBy}
     )
   </insert>
