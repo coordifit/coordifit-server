@@ -13,18 +13,6 @@
 
   <insert id="insertClothes" parameterType="com.miracle.coordifit.clothes.sample.model.ClothesSample">
     INSERT INTO clothes (
-      clothes_id, user_id, name, brand, category_code,
-      clothes_size, price, purchase_date, purchase_url, description,
-      wear_count, is_active, created_at, created_by
-    ) VALUES (
-      #{clothesId}, #{userId}, #{name}, #{brand}, #{categoryCode},
-      #{clothesSize}, #{price}, #{purchaseDate}, #{purchaseUrl}, #{description},
-      0, #{isActive}, CURRENT_TIMESTAMP, #{createdBy}
-    )
-  </insert>
-
-  <insert id="insertClothes" parameterType="com.miracle.coordifit.clothes.sample.model.ClothesSample">
-    INSERT INTO clothes (
       clothes_id, 
       user_id, 
       name, 
@@ -115,4 +103,3 @@
   </select>
 
 </mapper>
-
