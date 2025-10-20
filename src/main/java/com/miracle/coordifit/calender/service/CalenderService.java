@@ -1,6 +1,8 @@
 package com.miracle.coordifit.calender.service;
 
 import java.sql.Date;
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -68,6 +70,10 @@ public class CalenderService implements ICalenderService {
 			log.info(">>>>> dailyLook in update {}", dailyLook.toString());
 			return calenderRepository.updateDailyLook(dailyLook);
 		} else {
+			String dailylookId = generateDailylookId();
+
+			dailyLook.setDailylookId(dailylookId);
+
 			log.info(">>>>> dailyLook in insert {}", dailyLook.toString());
 			return calenderRepository.insertDailyLook(dailyLook);
 		}
@@ -136,5 +142,13 @@ public class CalenderService implements ICalenderService {
 		} catch (Exception e) {
 			throw new RuntimeException("itemsJson 파싱 실패", e);
 		}
+	}
+
+	private String generateDailylookId() {
+		DateTimeFormatter YYMMDD = DateTimeFormatter.ofPattern("yyMMdd");
+		String date = LocalDate.now().format(YYMMDD);
+		int nextSeq = calenderRepository.getNextDailyLookSequence();
+
+		return String.format("D%s%03d", date, nextSeq);
 	}
 }

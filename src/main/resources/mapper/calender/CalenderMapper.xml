@@ -4,15 +4,16 @@
   "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 
 <mapper namespace="com.miracle.coordifit.calender.repository.CalenderRepository">
-    <insert id="insertDailyLook" parameterType="com.miracle.coordifit.calender.model.DailyLook">
-	    <selectKey keyProperty="dailylookId" resultType="string" order="BEFORE">
-        	SELECT TO_CHAR(DAILYLOOKS_SEQ.NEXTVAL) FROM DUAL
-    	</selectKey>
-        INSERT INTO DAILYLOOKS
-            (dailylook_id, user_id, wear_date, description, origin_image_id, thumb_image_id, canvas_json, created_at, updated_at)
-        VALUES
-            (#{dailylookId}, #{userId}, #{wearDate}, #{description}, #{originImageId}, #{thumbImageId}, #{canvasJson}, SYSTIMESTAMP, SYSTIMESTAMP)
-    </insert>   
+  <insert id="insertDailyLook" parameterType="com.miracle.coordifit.calender.model.DailyLook">
+    INSERT INTO DAILYLOOKS
+      (dailylook_id, user_id, wear_date, description,
+      origin_image_id, thumb_image_id, canvas_json,
+      created_at, updated_at)
+    VALUES
+      (#{dailylookId}, #{userId}, #{wearDate}, #{description},
+      #{originImageId}, #{thumbImageId}, #{canvasJson},
+      SYSTIMESTAMP, SYSTIMESTAMP)
+  </insert>
 
 	<insert id="insertDailyLookItem"
 	        parameterType="com.miracle.coordifit.calender.model.DailyLookItem">
@@ -67,15 +68,14 @@
         WHERE dailylook_id = #{dailylookId}
     </delete>
 
+    <select id="getNextDailyLookSequence" resultType="int">
+      SELECT NVL(MAX(TO_NUMBER(SUBSTR(dailylook_id, 8))), 0) + 1
+      FROM dailylooks
+     WHERE SUBSTR(dailylook_id, 2, 6) = TO_CHAR(SYSDATE, 'YYMMDD')
+    </select>
+
     <delete id="deleteDailyLookById" parameterType="string">
       DELETE FROM DAILYLOOKS
       WHERE dailylook_id = #{dailylookId}
     </delete>
-
-    <select id="selectNextDailyLookId" resultType="string">
-      SELECT 'D' ||
-            TO_CHAR(SYSDATE, 'YYMMDD') ||
-            LPAD(NEXT_DAILYLOOK_NO, 3, '0')
-      FROM DUAL
-    </select>
 </mapper>
