@@ -57,14 +57,15 @@
   <insert id="insertClothes" parameterType="com.miracle.coordifit.clothes.model.Clothes">
     INSERT INTO CLOTHES (
       CLOTHES_ID, USER_ID, NAME, BRAND, CATEGORY_CODE, CLOTHES_SIZE, PRICE,
-      PURCHASE_DATE, PURCHASE_URL, DESCRIPTION, WEAR_COUNT, LAST_WORN_DATE,
+      PURCHASE_DATE, PURCHASE_URL, DESCRIPTION, WEAR_COUNT,
+      <if test="lastWornDate != null">LAST_WORN_DATE,</if>
       IS_ACTIVE, CREATED_BY, UPDATED_BY
     ) VALUES (
       #{clothesId}, #{userId}, #{name}, #{brand}, #{categoryCode}, #{clothesSize},
       #{price,jdbcType=NUMERIC},
       #{purchaseDate}, #{purchaseUrl}, #{description},
       NVL(#{wearCount,jdbcType=NUMERIC}, 0),
-      #{lastWornDate, jdbcType=DATE},
+      <if test="lastWornDate != null">#{lastWornDate},</if>
       NVL(#{isActive}, 'Y'),
       #{createdBy}, #{updatedBy}
     )

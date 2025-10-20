@@ -110,6 +110,10 @@ public class CalenderController {
 
 		int result = calenderService.upsertDailyLook(dailyLook);
 
+		if (dailyLook.getDailylookId() == null) {
+			throw new IllegalStateException("dailyLookId가 설정되지 않았습니다.");
+		}
+
 		calenderService.insertDailyLookItem(itemsJson, dailyLook);
 
 		return ResponseEntity.ok(result);

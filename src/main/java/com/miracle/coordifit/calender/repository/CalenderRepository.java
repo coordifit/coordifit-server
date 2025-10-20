@@ -29,8 +29,11 @@ public interface CalenderRepository {
 	// 데일리룩 수정
 	int updateDailyLook(DailyLook dailyLook);
 
-	// 데일리룩 삭제
-	int deleteDailyLookItemsByDailyLookId(Integer dailylookId);
+	// 데일리룩 Id 생성
+	int getNextDailyLookSequence();
 
-	int deleteDailyLookById(Integer dailylookId);
+	// 데일리룩 삭제
+	int deleteDailyLookItemsByDailyLookId(String dailylookId);
+
+	int deleteDailyLookById(String dailylookId);
 }

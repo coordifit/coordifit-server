@@ -59,7 +59,6 @@ public class ClothesController {
 		try {
 			String actor = currentUserId();
 
-			log.info(">> actor", actor);
 			if (actor == null)
 				return ApiResponseDto.error("인증 정보가 없습니다. 로그인 후 다시 시도하세요.");
 
