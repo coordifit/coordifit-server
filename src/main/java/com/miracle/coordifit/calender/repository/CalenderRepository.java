@@ -30,7 +30,7 @@ public interface CalenderRepository {
 	int updateDailyLook(DailyLook dailyLook);
 
 	// 데일리룩 삭제
-	int deleteDailyLookItemsByDailyLookId(Integer dailylookId);
+	int deleteDailyLookItemsByDailyLookId(String dailylookId);
 
-	int deleteDailyLookById(Integer dailylookId);
+	int deleteDailyLookById(String dailylookId);
 }

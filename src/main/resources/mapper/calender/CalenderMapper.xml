@@ -62,14 +62,20 @@
           AND user_id = #{userId}
     </update>
 
-    <delete id="deleteDailyLookItemsByDailyLookId" parameterType="int">
+    <delete id="deleteDailyLookItemsByDailyLookId" parameterType="string">
         DELETE FROM DAILYLOOK_ITEMS
         WHERE dailylook_id = #{dailylookId}
     </delete>
 
-    <delete id="deleteDailyLookById" parameterType="int">
+    <delete id="deleteDailyLookById" parameterType="string">
       DELETE FROM DAILYLOOKS
       WHERE dailylook_id = #{dailylookId}
     </delete>
 
+    <select id="selectNextDailyLookId" resultType="string">
+      SELECT 'D' ||
+            TO_CHAR(SYSDATE, 'YYMMDD') ||
+            LPAD(NEXT_DAILYLOOK_NO, 3, '0')
+      FROM DUAL
+    </select>
 </mapper>
