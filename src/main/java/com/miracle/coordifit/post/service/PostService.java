@@ -114,8 +114,8 @@ public class PostService implements IPostService {
 
 	@Override
 	@Transactional(readOnly = true)
-	public List<PostDto> getAllPosts() {
-		return postRepository.getAllPosts();
+	public List<PostDto> getAllPosts(String userId) {
+		return postRepository.getAllPosts(userId);
 	}
 
 	private String generatePostId() {
