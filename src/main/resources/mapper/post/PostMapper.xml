@@ -67,7 +67,6 @@
     ORDER BY pi.created_at
   </select>
 
-  <!-- TODO: 옷 조회 쿼리 조인 INNER JOIN 사용 예정-->
   <select id="getPostClothes" resultType="com.miracle.coordifit.post.dto.PostClothesResponse">
     SELECT 
       c.clothes_id AS clothesId,
@@ -77,8 +76,8 @@
       fi.s3_url AS imageUrl
     FROM post_clothes pc
     INNER JOIN clothes c ON pc.clothes_id = c.clothes_id
-    LEFT OUTER JOIN clothes_images ci ON ci.clothes_id = c.clothes_id
-    LEFT OUTER JOIN file_info fi ON ci.file_id = fi.file_id
+    INNER JOIN clothes_images ci ON ci.clothes_id = c.clothes_id
+    INNER JOIN file_info fi ON ci.file_id = fi.file_id
     WHERE pc.post_id = #{postId}
   </select>
 
