@@ -15,6 +15,7 @@ import com.miracle.coordifit.clothes.sample.dto.ClothesResponseSample;
 import com.miracle.coordifit.clothes.sample.model.ClothesImageSample;
 import com.miracle.coordifit.clothes.sample.model.ClothesSample;
 import com.miracle.coordifit.clothes.sample.repository.ClothesRepositorySample;
+import com.miracle.coordifit.common.aspect.SaveHistory;
 import com.miracle.coordifit.common.model.FileInfo;
 import com.miracle.coordifit.common.service.IFileService;
 
@@ -31,6 +32,7 @@ public class ClothesServiceSample implements IClothesServiceSample {
 
 	@Override
 	@Transactional
+	@SaveHistory(entityType = "CLOTHES", actionType = "INSERT")
 	public ClothesSample createClothes(ClothesRequestSample request, String userId) {
 		if (request.getFiles() == null || request.getFiles().isEmpty()) {
 			throw new IllegalArgumentException("이미지는 최소 1장 필요합니다.");
@@ -82,6 +84,7 @@ public class ClothesServiceSample implements IClothesServiceSample {
 
 	@Override
 	@Transactional
+	@SaveHistory(entityType = "CLOTHES", actionType = "UPDATE")
 	public ClothesSample updateClothes(String clothesId, ClothesRequestSample request, String userId) {
 		log.info("옷 수정 시작: clothesId={}, userId={}", clothesId, userId);
 

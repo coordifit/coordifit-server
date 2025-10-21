@@ -59,6 +59,9 @@ dependencies {
 	implementation 'org.springframework:spring-test'
 	// Spring Security
 	implementation 'org.springframework.boot:spring-boot-starter-security'
+	
+	// Spring AOP
+	implementation 'org.springframework.boot:spring-boot-starter-aop'
 
 	// JDBC (DataSource)
 	implementation 'org.springframework.boot:spring-boot-starter-jdbc'
