@@ -95,11 +95,36 @@
     AND user_id = #{userId}
   </select>
 
-  <select id="selectClothesImage" resultType="string">
-    SELECT f.s3_url
+  <select id="selectClothesImage" resultType="com.miracle.coordifit.clothes.sample.dto.ClothesDetailResponseDto$ClothesImage">
+    SELECT 
+      ci.file_id AS fileId,
+      f.s3_url AS url
     FROM clothes_images ci
     INNER JOIN file_info f ON ci.file_id = f.file_id
     WHERE ci.clothes_id = #{clothesId}
+    ORDER BY ci.created_at
   </select>
+
+  <delete id="deleteClothesImage">
+    DELETE FROM clothes_images
+    WHERE clothes_id = #{clothesId}
+    AND file_id = #{fileId}
+  </delete>
+
+  <update id="updateClothes" parameterType="com.miracle.coordifit.clothes.sample.model.ClothesSample">
+    UPDATE clothes
+    SET 
+      name = #{name},
+      brand = #{brand},
+      category_code = #{categoryCode},
+      clothes_size = #{clothesSize},
+      price = #{price},
+      purchase_date = #{purchaseDate},
+      <if test="purchaseUrl != null">purchase_url = #{purchaseUrl},</if>
+      <if test="description != null">description = #{description},</if>
+      updated_at = CURRENT_TIMESTAMP,
+      updated_by = #{updatedBy}
+    WHERE clothes_id = #{clothesId}
+  </update>
 
 </mapper>
