@@ -19,4 +19,6 @@ public class ClothesResponseSample {
 	private String categoryCode;
 	private LocalDate purchaseDate;
 	private String imageUrl;
+	private Integer wearCount;
+	private LocalDate lastWornDate;
 }
