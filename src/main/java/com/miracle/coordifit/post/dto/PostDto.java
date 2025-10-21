@@ -22,6 +22,7 @@ public class PostDto {
 	private String postId;
 	private String imageUrl;
 	private String userId;
+	private String profileImageUrl;
 	private String content;
 	private Integer likeCount;
 	private boolean isLiked;
