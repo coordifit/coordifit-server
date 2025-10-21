@@ -127,4 +127,13 @@
     WHERE clothes_id = #{clothesId}
   </update>
 
+  <update id="deleteClothes" parameterType="com.miracle.coordifit.clothes.sample.model.ClothesSample">
+    UPDATE clothes
+    SET 
+      is_active = 'N',
+      updated_at = CURRENT_TIMESTAMP,
+      updated_by = #{updatedBy}
+    WHERE clothes_id = #{clothesId}
+  </update>
+
 </mapper>
