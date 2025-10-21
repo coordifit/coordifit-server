@@ -5,11 +5,25 @@
     <insert id="insertFileInfo" parameterType="com.miracle.coordifit.common.model.FileInfo"
             useGeneratedKeys="true" keyProperty="fileId" keyColumn="FILE_ID">
         INSERT INTO file_info (
-            original_name, s3_key, s3_url, bucket_name, file_size, 
-            file_type, upload_by, upload_date
+            original_name,
+            s3_key,
+            s3_url,
+            <if test="s3ThumbnailUrl != null">s3_thumbnail_url,</if>
+            bucket_name,
+            file_size, 
+            file_type,
+            upload_by,
+            upload_date
         ) VALUES (
-            #{originalName}, #{s3Key}, #{s3Url}, #{bucketName}, #{fileSize}, 
-            #{fileType}, #{uploadBy}, CURRENT_TIMESTAMP
+            #{originalName},
+            #{s3Key},
+            #{s3Url},
+            <if test="s3ThumbnailUrl != null">#{s3ThumbnailUrl},</if>
+            #{bucketName},
+            #{fileSize},
+            #{fileType},
+            #{uploadBy},
+            CURRENT_TIMESTAMP
         )
     </insert>
 

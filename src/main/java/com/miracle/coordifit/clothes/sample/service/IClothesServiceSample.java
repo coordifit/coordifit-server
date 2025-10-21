@@ -16,4 +16,8 @@ public interface IClothesServiceSample {
 	List<ClothesResponseSample> getUserClothes(String userId);
 
 	ClothesDetailResponseDto getClothesDetail(String clothesId, String userId);
+
+	ClothesSample deleteClothes(String clothesId, String userId);
+
+	List<ClothesSample> bulkDeleteClothes(List<String> clothesIds, String userId);
 }

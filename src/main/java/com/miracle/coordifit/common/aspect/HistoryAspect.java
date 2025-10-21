@@ -45,10 +45,20 @@ public class HistoryAspect {
 
 			String userId = getCurrentUserId();
 
-			saver.saveHistory(result, actionType, userId);
-
-			log.info("=== AOP: 히스토리 저장 완료 - entityType: {}, actionType: {}, actionBy: {} ===",
-				entityType, actionType, userId);
+			if (result instanceof List) {
+				List<?> list = (List<?>)result;
+				log.info("=== AOP: 리스트 감지 - count: {} ===", list.size());
+				for (Object item : list) {
+					if (item != null) {
+						saver.saveHistory(item, actionType, userId);
+					}
+				}
+				log.info("=== AOP: 리스트 히스토리 저장 완료 - count: {} ===", list.size());
+			} else {
+				saver.saveHistory(result, actionType, userId);
+				log.info("=== AOP: 히스토리 저장 완료 - entityType: {}, actionType: {}, actionBy: {} ===",
+					entityType, actionType, userId);
+			}
 
 		} catch (Exception e) {
 			log.error("히스토리 저장 중 오류 발생", e);

@@ -5,10 +5,12 @@ import java.util.List;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -122,6 +124,56 @@ public class ClothesControllerSample {
 			log.error("옷 상세 조회 실패", e);
 			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
 				.body(ApiResponseDto.error("옷 상세 조회 중 오류가 발생했습니다."));
+		}
+	}
+
+	@DeleteMapping("/{clothesId}")
+	public ResponseEntity<ApiResponseDto<Void>> deleteClothes(
+		@PathVariable String clothesId,
+		Authentication authentication) {
+		try {
+			String userId = authentication.getName();
+
+			log.info("옷 삭제 요청: clothesId={}, userId={}", clothesId, userId);
+
+			clothesService.deleteClothes(clothesId, userId);
+
+			log.info("옷 삭제 완료: clothesId={}", clothesId);
+			return ResponseEntity.ok(
+				ApiResponseDto.success("옷이 성공적으로 삭제되었습니다.", null));
+		} catch (IllegalArgumentException e) {
+			log.warn("옷 삭제 실패 (잘못된 요청): {}", e.getMessage());
+			return ResponseEntity.badRequest()
+				.body(ApiResponseDto.error(e.getMessage()));
+		} catch (Exception e) {
+			log.error("옷 삭제 실패", e);
+			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+				.body(ApiResponseDto.error("옷 삭제 중 오류가 발생했습니다."));
+		}
+	}
+
+	@DeleteMapping("/bulk")
+	public ResponseEntity<ApiResponseDto<Void>> bulkDeleteClothes(
+		@RequestBody List<String> clothesIds,
+		Authentication authentication) {
+		try {
+			String userId = authentication.getName();
+
+			log.info("옷 일괄 삭제 요청: count={}, userId={}", clothesIds.size(), userId);
+
+			clothesService.bulkDeleteClothes(clothesIds, userId);
+
+			log.info("옷 일괄 삭제 완료: count={}", clothesIds.size());
+			return ResponseEntity.ok(
+				ApiResponseDto.success("선택한 옷이 성공적으로 삭제되었습니다.", null));
+		} catch (IllegalArgumentException e) {
+			log.warn("옷 일괄 삭제 실패 (잘못된 요청): {}", e.getMessage());
+			return ResponseEntity.badRequest()
+				.body(ApiResponseDto.error(e.getMessage()));
+		} catch (Exception e) {
+			log.error("옷 일괄 삭제 실패", e);
+			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+				.body(ApiResponseDto.error("옷 일괄 삭제 중 오류가 발생했습니다."));
 		}
 	}
 }
