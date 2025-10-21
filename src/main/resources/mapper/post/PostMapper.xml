@@ -86,6 +86,7 @@
       p.post_id AS postId,
       i.s3_url AS imageUrl,
       p.user_id AS userId,
+      u.nickname,
       fi.s3_url as profileImageUrl,
       p.content,
       p.like_count AS likeCount,
