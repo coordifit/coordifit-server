@@ -9,8 +9,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
-import com.miracle.coordifit.clothes.sample.dto.ClothesCreateRequestSample;
 import com.miracle.coordifit.clothes.sample.dto.ClothesDetailResponseDto;
+import com.miracle.coordifit.clothes.sample.dto.ClothesRequestSample;
 import com.miracle.coordifit.clothes.sample.dto.ClothesResponseSample;
 import com.miracle.coordifit.clothes.sample.model.ClothesImageSample;
 import com.miracle.coordifit.clothes.sample.model.ClothesSample;
@@ -31,7 +31,7 @@ public class ClothesServiceSample implements IClothesServiceSample {
 
 	@Override
 	@Transactional
-	public String createClothes(ClothesCreateRequestSample request, String userId) {
+	public ClothesSample createClothes(ClothesRequestSample request, String userId) {
 		if (request.getFiles() == null || request.getFiles().isEmpty()) {
 			throw new IllegalArgumentException("이미지는 최소 1장 필요합니다.");
 		}
@@ -77,7 +77,60 @@ public class ClothesServiceSample implements IClothesServiceSample {
 		}
 
 		log.info("옷 등록 완료: clothesId={}", clothesId);
-		return clothesId;
+		return clothes;
+	}
+
+	@Override
+	@Transactional
+	public ClothesSample updateClothes(String clothesId, ClothesRequestSample request, String userId) {
+		log.info("옷 수정 시작: clothesId={}, userId={}", clothesId, userId);
+
+		ClothesSample clothes = ClothesSample.builder()
+			.clothesId(clothesId)
+			.name(request.getName())
+			.brand(request.getBrand())
+			.categoryCode(request.getCategoryCode())
+			.clothesSize(request.getClothesSize())
+			.price(request.getPrice())
+			.purchaseDate(request.getPurchaseDate() != null
+				? LocalDate.parse(request.getPurchaseDate(), DateTimeFormatter.ofPattern("yyyy-MM-dd"))
+				: null)
+			.purchaseUrl(request.getPurchaseUrl())
+			.description(request.getDescription())
+			.updatedBy(userId)
+			.build();
+
+		clothesRepository.updateClothes(clothes);
+
+		if (request.getDeletedFileIds() != null && !request.getDeletedFileIds().isEmpty()) {
+			for (Long fileId : request.getDeletedFileIds()) {
+				try {
+					clothesRepository.deleteClothesImage(clothesId, fileId);
+					log.info("이미지 삭제 완료: clothesId={}, fileId={}", clothesId, fileId);
+				} catch (Exception e) {
+					log.warn("이미지 삭제 실패: clothesId={}, fileId={}", clothesId, fileId, e);
+				}
+			}
+		}
+
+		if (request.getFiles() != null && !request.getFiles().isEmpty()) {
+			for (MultipartFile file : request.getFiles()) {
+				if (file != null && !file.isEmpty()) {
+					FileInfo uploadedFile = fileService.uploadFile(file);
+
+					ClothesImageSample clothesImage = ClothesImageSample.builder()
+						.clothesId(clothesId)
+						.fileId(uploadedFile.getFileId().longValue())
+						.createdBy(userId)
+						.build();
+
+					clothesRepository.insertClothesImage(clothesImage);
+				}
+			}
+		}
+
+		log.info("옷 수정 완료: clothesId={}", clothesId);
+		return clothes;
 	}
 
 	@Override
@@ -99,7 +152,7 @@ public class ClothesServiceSample implements IClothesServiceSample {
 			throw new IllegalArgumentException("옷 정보를 찾을 수 없습니다.");
 		}
 
-		List<String> images = clothesRepository.selectClothesImage(clothesId);
+		List<ClothesDetailResponseDto.ClothesImage> images = clothesRepository.selectClothesImage(clothesId);
 		clothes.setImages(images);
 
 		log.info("옷 상세 조회 완료: clothesId={}", clothesId);

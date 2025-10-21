@@ -2,13 +2,16 @@ package com.miracle.coordifit.clothes.sample.service;
 
 import java.util.List;
 
-import com.miracle.coordifit.clothes.sample.dto.ClothesCreateRequestSample;
 import com.miracle.coordifit.clothes.sample.dto.ClothesDetailResponseDto;
+import com.miracle.coordifit.clothes.sample.dto.ClothesRequestSample;
 import com.miracle.coordifit.clothes.sample.dto.ClothesResponseSample;
+import com.miracle.coordifit.clothes.sample.model.ClothesSample;
 
 public interface IClothesServiceSample {
 
-	String createClothes(ClothesCreateRequestSample request, String userId);
+	ClothesSample createClothes(ClothesRequestSample request, String userId);
+
+	ClothesSample updateClothes(String clothesId, ClothesRequestSample request, String userId);
 
 	List<ClothesResponseSample> getUserClothes(String userId);
 

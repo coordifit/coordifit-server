@@ -26,5 +26,15 @@ public class ClothesDetailResponseDto {
 	private String description;
 	private Integer wearCount;
 	private LocalDate lastWornDate;
-	private List<String> images;
+	private List<ClothesImage> images;
+
+	@Getter
+	@Setter
+	@Builder
+	@NoArgsConstructor
+	@AllArgsConstructor
+	public static class ClothesImage {
+		private Long fileId;
+		private String url;
+	}
 }

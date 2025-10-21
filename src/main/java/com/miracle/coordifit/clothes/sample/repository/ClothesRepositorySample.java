@@ -17,11 +17,15 @@ public interface ClothesRepositorySample {
 
 	int insertClothes(ClothesSample clothes);
 
+	int updateClothes(ClothesSample clothes);
+
 	int insertClothesImage(ClothesImageSample clothesImage);
 
 	List<ClothesResponseSample> selectUserClothes(@Param("userId") String userId);
 
 	ClothesDetailResponseDto selectClothesById(@Param("clothesId") String clothesId, @Param("userId") String userId);
 
-	List<String> selectClothesImage(@Param("clothesId") String clothesId);
+	List<ClothesDetailResponseDto.ClothesImage> selectClothesImage(@Param("clothesId") String clothesId);
+
+	int deleteClothesImage(@Param("clothesId") String clothesId, @Param("fileId") Long fileId);
 }
