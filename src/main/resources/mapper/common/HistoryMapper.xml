@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.miracle.coordifit.common.repository.HistoryRepository">
+
+  <insert id="insertHistory" parameterType="map">
+    INSERT INTO ${tableName} (
+      created_at,
+      action_type,
+      action_by,
+      <foreach collection="history.fields.keySet()" item="key" separator=",">
+        ${key}
+      </foreach>
+    ) VALUES (
+      CURRENT_TIMESTAMP,
+      #{history.actionType},
+      #{history.actionBy},
+      <foreach collection="history.fields.keySet()" item="key" separator=",">
+        #{history.fields[${key}]}
+      </foreach>
+    )
+  </insert>
+
+</mapper>
