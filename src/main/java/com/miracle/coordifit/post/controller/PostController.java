@@ -36,10 +36,11 @@ public class PostController {
 	private final ILikeService likeService;
 
 	@GetMapping
-	public ResponseEntity<ApiResponseDto<List<PostDto>>> getAllPosts() {
+	public ResponseEntity<ApiResponseDto<List<PostDto>>> getAllPosts(Authentication authentication) {
 		try {
-			List<PostDto> posts = postService.getAllPosts();
-			log.info("전체 게시물 조회 완료: {} 개", posts.size());
+			String userId = authentication.getName();
+			List<PostDto> posts = postService.getAllPosts(userId);
+			log.info("전체 게시물 조회 완료: {} 개 (userId={})", posts.size(), userId);
 			return ResponseEntity.ok(ApiResponseDto.success("전체 게시물 조회 성공", posts));
 		} catch (Exception e) {
 			log.error("전체 게시물 조회 실패", e);

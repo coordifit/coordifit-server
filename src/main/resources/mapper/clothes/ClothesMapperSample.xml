@@ -76,6 +76,7 @@
       INNER JOIN file_info f ON ci.file_id = f.file_id
     ) i ON c.clothes_id = i.clothes_id AND i.rowrum = 1
     WHERE c.user_id = #{userId}
+    AND c.is_active = 'Y'
     ORDER BY c.created_at DESC
   </select>
 
@@ -95,6 +96,7 @@
     FROM clothes
     WHERE clothes_id = #{clothesId}
     AND user_id = #{userId}
+    AND is_active = 'Y'
   </select>
 
   <select id="selectClothesImage" resultType="com.miracle.coordifit.clothes.sample.dto.ClothesDetailResponseDto$ClothesImage">
@@ -124,6 +126,15 @@
       purchase_date = #{purchaseDate},
       <if test="purchaseUrl != null">purchase_url = #{purchaseUrl},</if>
       <if test="description != null">description = #{description},</if>
+      updated_at = CURRENT_TIMESTAMP,
+      updated_by = #{updatedBy}
+    WHERE clothes_id = #{clothesId}
+  </update>
+
+  <update id="deleteClothes" parameterType="com.miracle.coordifit.clothes.sample.model.ClothesSample">
+    UPDATE clothes
+    SET 
+      is_active = 'N',
       updated_at = CURRENT_TIMESTAMP,
       updated_by = #{updatedBy}
     WHERE clothes_id = #{clothesId}

@@ -28,4 +28,6 @@ public interface ClothesRepositorySample {
 	List<ClothesDetailResponseDto.ClothesImage> selectClothesImage(@Param("clothesId") String clothesId);
 
 	int deleteClothesImage(@Param("clothesId") String clothesId, @Param("fileId") Long fileId);
+
+	int deleteClothes(ClothesSample clothes);
 }

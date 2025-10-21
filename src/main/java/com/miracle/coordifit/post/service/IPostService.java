@@ -12,5 +12,5 @@ public interface IPostService {
 
 	PostDetailResponse getPostDetail(String postId, String userId);
 
-	List<PostDto> getAllPosts();
+	List<PostDto> getAllPosts(String userId);
 }

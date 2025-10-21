@@ -18,6 +18,7 @@ public class FileInfo {
 	private String originalName;
 	private String s3Key;
 	private String s3Url;
+	private String s3ThumbnailUrl;
 	private String bucketName;
 	private Long fileSize;
 	private String fileType;

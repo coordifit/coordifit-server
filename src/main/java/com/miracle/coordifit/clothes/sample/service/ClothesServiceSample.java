@@ -3,6 +3,7 @@ package com.miracle.coordifit.clothes.sample.service;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
 import java.util.List;
 
 import org.springframework.stereotype.Service;
@@ -15,6 +16,7 @@ import com.miracle.coordifit.clothes.sample.dto.ClothesResponseSample;
 import com.miracle.coordifit.clothes.sample.model.ClothesImageSample;
 import com.miracle.coordifit.clothes.sample.model.ClothesSample;
 import com.miracle.coordifit.clothes.sample.repository.ClothesRepositorySample;
+import com.miracle.coordifit.common.aspect.SaveHistory;
 import com.miracle.coordifit.common.model.FileInfo;
 import com.miracle.coordifit.common.service.IFileService;
 
@@ -31,6 +33,7 @@ public class ClothesServiceSample implements IClothesServiceSample {
 
 	@Override
 	@Transactional
+	@SaveHistory(entityType = "CLOTHES", actionType = "INSERT")
 	public ClothesSample createClothes(ClothesRequestSample request, String userId) {
 		if (request.getFiles() == null || request.getFiles().isEmpty()) {
 			throw new IllegalArgumentException("이미지는 최소 1장 필요합니다.");
@@ -82,6 +85,7 @@ public class ClothesServiceSample implements IClothesServiceSample {
 
 	@Override
 	@Transactional
+	@SaveHistory(entityType = "CLOTHES", actionType = "UPDATE")
 	public ClothesSample updateClothes(String clothesId, ClothesRequestSample request, String userId) {
 		log.info("옷 수정 시작: clothesId={}, userId={}", clothesId, userId);
 
@@ -157,6 +161,56 @@ public class ClothesServiceSample implements IClothesServiceSample {
 
 		log.info("옷 상세 조회 완료: clothesId={}", clothesId);
 		return clothes;
+	}
+
+	@Override
+	@Transactional
+	@SaveHistory(entityType = "CLOTHES", actionType = "DELETE")
+	public ClothesSample deleteClothes(String clothesId, String userId) {
+		log.info("옷 삭제 시작: clothesId={}, userId={}", clothesId, userId);
+
+		ClothesSample clothes = ClothesSample.builder()
+			.clothesId(clothesId)
+			.updatedBy(userId)
+			.build();
+
+		int result = clothesRepository.deleteClothes(clothes);
+		if (result <= 0) {
+			throw new IllegalArgumentException("옷 정보를 찾을 수 없거나 삭제할 수 없습니다.");
+		}
+
+		log.info("옷 삭제 완료: clothesId={}", clothesId);
+		return clothes;
+	}
+
+	@Override
+	@Transactional
+	@SaveHistory(entityType = "CLOTHES", actionType = "DELETE")
+	public List<ClothesSample> bulkDeleteClothes(List<String> clothesIds, String userId) {
+		if (clothesIds == null || clothesIds.isEmpty()) {
+			throw new IllegalArgumentException("삭제할 옷 ID 목록이 비어있습니다.");
+		}
+
+		log.info("옷 일괄 삭제 시작: count={}, userId={}", clothesIds.size(), userId);
+
+		List<ClothesSample> clothesList = new ArrayList<>();
+
+		for (String clothesId : clothesIds) {
+			ClothesSample clothes = ClothesSample.builder()
+				.clothesId(clothesId)
+				.updatedBy(userId)
+				.build();
+
+			int result = clothesRepository.deleteClothes(clothes);
+			if (result > 0) {
+				clothesList.add(clothes);
+			} else {
+				log.warn("옷 삭제 실패: clothesId={}", clothesId);
+			}
+		}
+
+		log.info("옷 일괄 삭제 완료: count={}", clothesList.size());
+		return clothesList;
 	}
 
 	private String generateClothesId() {
