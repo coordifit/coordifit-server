@@ -63,6 +63,8 @@
       c.name AS name,
       c.category_code AS categoryCode,
       c.purchase_date AS purchaseDate,
+      c.wear_count AS wearCount,
+      c.last_worn_date as lastWornDate,
       i.s3_url AS imageUrl
     FROM clothes c
     INNER JOIN (
