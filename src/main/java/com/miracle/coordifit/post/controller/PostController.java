@@ -8,15 +8,16 @@ import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.miracle.coordifit.common.dto.ApiResponseDto;
 import com.miracle.coordifit.post.dto.CommentResponseDto;
-import com.miracle.coordifit.post.dto.PostCreateRequest;
 import com.miracle.coordifit.post.dto.PostDetailResponse;
 import com.miracle.coordifit.post.dto.PostDto;
+import com.miracle.coordifit.post.dto.PostRequest;
 import com.miracle.coordifit.post.service.ICommentService;
 import com.miracle.coordifit.post.service.ILikeService;
 import com.miracle.coordifit.post.service.IPostService;
@@ -51,7 +52,7 @@ public class PostController {
 
 	@PostMapping
 	public ResponseEntity<ApiResponseDto<Void>> createPost(
-		PostCreateRequest request,
+		PostRequest request,
 		Authentication authentication) {
 		try {
 			String userId = authentication.getName();
@@ -80,6 +81,24 @@ public class PostController {
 			log.error("게시물 상세 조회 실패: postId={}", postId, e);
 			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
 				.body(ApiResponseDto.error("게시물 상세 조회 실패: " + e.getMessage()));
+		}
+	}
+
+	@PutMapping("/{postId}")
+	public ResponseEntity<ApiResponseDto<Void>> updatePost(
+		@PathVariable String postId,
+		PostRequest request,
+		Authentication authentication) {
+		try {
+			String userId = authentication.getName();
+			postService.updatePost(postId, request, userId);
+
+			log.info("게시물 수정 완료: postId={}, userId={}", postId, userId);
+			return ResponseEntity.ok(ApiResponseDto.success("게시물 수정 완료"));
+		} catch (Exception e) {
+			log.error("게시물 수정 실패: postId={}", postId, e);
+			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+				.body(ApiResponseDto.error("게시물 수정 실패: " + e.getMessage()));
 		}
 	}
 

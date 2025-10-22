@@ -19,6 +19,16 @@
     )
   </insert>
 
+  <update id="updatePost" parameterType="com.miracle.coordifit.post.model.Post">
+    UPDATE posts
+    SET 
+      <if test="content != null">content = #{content},</if>
+      <if test="isPublic != null">is_public = #{isPublic},</if>
+      updated_at = CURRENT_TIMESTAMP,
+      updated_by = #{updatedBy}
+    WHERE post_id = #{postId}
+  </update>
+
   <insert id="insertPostImage" parameterType="com.miracle.coordifit.post.model.PostImage">
     INSERT INTO post_images (
       post_id, file_id, created_at, created_by
@@ -35,6 +45,17 @@
     )
   </insert>
 
+  <delete id="deletePostImage">
+    DELETE FROM post_images
+    WHERE post_id = #{postId}
+    AND file_id = #{fileId}
+  </delete>
+
+  <delete id="deletePostClothes">
+    DELETE FROM post_clothes
+    WHERE post_id = #{postId}
+  </delete>
+
   <update id="incrementViewCount">
     UPDATE posts 
     SET view_count = view_count + 1
@@ -48,6 +69,7 @@
       u.nickname,
       fi.s3_url AS profileImageUrl,
       p.content,
+      DECODE(p.is_public, 'Y', 1, 0) AS isPublic,
       p.view_count AS viewCount,
       p.like_count AS likeCount,
       p.comment_count AS commentCount,
@@ -59,8 +81,10 @@
     AND p.is_active = 'Y'
   </select>
 
-  <select id="getPostImageUrls" resultType="String">
-    SELECT fi.s3_url
+  <select id="getPostImages" resultType="com.miracle.coordifit.post.dto.PostDetailResponse$PostImage">
+    SELECT 
+      pi.file_id AS fileId,
+      fi.s3_url AS url
     FROM post_images pi
     INNER JOIN file_info fi ON pi.file_id = fi.file_id
     WHERE pi.post_id = #{postId}
@@ -76,7 +100,13 @@
       fi.s3_url AS imageUrl
     FROM post_clothes pc
     INNER JOIN clothes c ON pc.clothes_id = c.clothes_id
-    INNER JOIN clothes_images ci ON ci.clothes_id = c.clothes_id
+    INNER JOIN (
+      SELECT 
+        ci.clothes_id,
+        ci.file_id,
+        ROW_NUMBER() OVER (PARTITION BY ci.clothes_id ORDER BY ci.created_at) AS rn
+      FROM clothes_images ci
+    ) ci ON ci.clothes_id = c.clothes_id AND ci.rn = 1
     INNER JOIN file_info fi ON ci.file_id = fi.file_id
     WHERE pc.post_id = #{postId}
   </select>
@@ -113,10 +143,11 @@
     LEFT OUTER JOIN file_info fi ON u.file_id = fi.file_id
     LEFT OUTER JOIN likes l ON p.post_id = l.target_id AND l.user_id = #{userId}
     WHERE p.is_active = 'Y'
+    AND p.is_public = 'Y'
     ORDER BY p.created_at DESC
   </select>
 
-  <select id="getUserPosts" parameterType="String" resultType="com.miracle.coordifit.post.dto.PostDto">
+  <select id="getUserPosts" resultType="com.miracle.coordifit.post.dto.PostDto">
     SELECT
       p.post_id AS postId,
       i.s3_url AS imageUrl
@@ -131,6 +162,9 @@
     ) i ON p.post_id = i.post_id AND i.rowrum = 1
     WHERE p.user_id = #{userId} 
     AND p.is_active = 'Y'
+    <if test="isPublic == true">
+      AND p.is_public = 'Y'
+    </if>
     ORDER BY p.created_at DESC
   </select>
 

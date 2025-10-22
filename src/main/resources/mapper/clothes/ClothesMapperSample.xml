@@ -61,6 +61,8 @@
     SELECT 
       c.clothes_id AS clothesId,
       c.name AS name,
+      c.brand AS brand,
+      c.price AS price,
       c.category_code AS categoryCode,
       c.purchase_date AS purchaseDate,
       c.wear_count AS wearCount,
