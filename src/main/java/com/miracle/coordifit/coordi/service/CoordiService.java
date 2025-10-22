@@ -2,12 +2,14 @@ package com.miracle.coordifit.coordi.service;
 
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 
 import org.apache.ibatis.jdbc.RuntimeSqlException;
+import org.springframework.dao.DataAccessException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -36,16 +38,52 @@ public class CoordiService implements ICoordiService {
 	@Override
 	@Transactional
 	public List<CoordiResponse> getAllCoordisByUser(String userId) {
-		List<Coordi> coordis = coordiRepository.getAllCoordisByUser(userId);
+		try {
+			log.info(">> getAllCoordisByUser called - userId={}", userId);
 
-		List<Integer> thumbIds = coordis.stream()
-			.map(Coordi::getThumbImageId)
-			.filter(Objects::nonNull)
-			.toList();
+			if (userId == null || userId.isBlank()) {
+				log.warn("⚠️ userId is null or blank");
+				throw new IllegalArgumentException("사용자 정보가 유효하지 않습니다.");
+			}
 
-		Map<Integer, FileInfo> thumbMap = fileService.getFilesByIds(thumbIds);
+			List<Coordi> coordis = coordiRepository.getAllCoordisByUser(userId);
+			if (coordis == null || coordis.isEmpty()) {
+				log.info(">> No coordis found for userId={}", userId);
+				return Collections.emptyList();
+			}
 
-		return coordiMapper.toReponseList(coordis, thumbMap);
+			List<Integer> thumbIds = coordis.stream()
+				.map(Coordi::getFileId)
+				.filter(Objects::nonNull)
+				.distinct()
+				.toList();
+
+			log.info("thumbIds data {}", thumbIds.toString());
+
+			Map<Integer, FileInfo> thumbMap = thumbIds.isEmpty()
+				? Collections.emptyMap()
+				: fileService.getFilesByIds(thumbIds);
+
+			thumbMap.forEach((id, fileInfo) -> log.info("thumbMap[{}] = s3Url={}, thumbUrl={}",
+				id, fileInfo.getS3Url(), fileInfo.getS3ThumbnailUrl()));
+			List<CoordiResponse> responses = coordiMapper.toReponseList(coordis, thumbMap);
+
+			log.info(">> getAllCoordisByUser success - userId={}, count={}", userId, responses.size());
+
+			return responses;
+		} catch (IllegalArgumentException e) {
+			// 잘못된 파라미터
+			log.warn("Invalid argument in getAllCoordisByUser: {}", e.getMessage());
+			throw e; // 그대로 위로 올림 (ControllerAdvice에서 잡히게)
+		} catch (DataAccessException e) {
+			// DB 관련 예외 (MyBatis, JDBC 등)
+			log.error("DB error while fetching coordis for userId={}", userId, e);
+			throw new RuntimeException("코디 데이터를 조회하는 중 오류가 발생했습니다.", e);
+		} catch (Exception e) {
+			// 기타 예외
+			log.error("Unexpected error in getAllCoordisByUser for userId={}", userId, e);
+			throw new RuntimeException("코디 목록 조회 중 알 수 없는 오류가 발생했습니다.", e);
+		}
 	};
 
 	@Override
@@ -61,12 +99,11 @@ public class CoordiService implements ICoordiService {
 
 		log.info(">> coordi from getById, {}", coordi.toString());
 
-		Integer originImageId = coordi.getOriginImageId();
+		Integer fileId = coordi.getFileId();
 
-		FileInfo fileInfo = fileService.getFileById(originImageId);
-		String originImageUrl = fileInfo.getS3Url();
+		FileInfo imageInfo = fileService.getFileById(fileId);
 
-		CoordiResponse response = coordiMapper.toResponse(coordi, originImageUrl, null);
+		CoordiResponse response = coordiMapper.toResponse(coordi, imageInfo.getS3Url(), imageInfo.getS3ThumbnailUrl());
 
 		return response;
 	};

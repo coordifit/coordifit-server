@@ -34,9 +34,9 @@ public class CoordiMapper {
 	public List<CoordiResponse> toReponseList(List<Coordi> coordis, Map<Integer, FileInfo> thumbMap) {
 		List<CoordiResponse> resultList = coordis.stream()
 			.map(coordi -> {
-				FileInfo fileInfo = thumbMap.get(coordi.getThumbImageId());
+				FileInfo fileInfo = thumbMap.get(coordi.getFileId());
 
-				CoordiResponse coordiResponse = toResponse(coordi, null, fileInfo.getS3Url());
+				CoordiResponse coordiResponse = toResponse(coordi, fileInfo.getS3Url(), fileInfo.getS3ThumbnailUrl());
 
 				return coordiResponse;
 			})
