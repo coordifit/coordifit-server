@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.miracle.coordifit.coordi.repository.CoordiRepository">
+    <select id="getAllCoordisByUser" parameterType="string" resultType="com.miracle.coordifit.coordi.model.Coordi">
+        SELECT 
+            coordi_id AS coordiId,
+            user_id AS userId,
+            coordi_name AS coordiName,
+            description AS description,
+            file_id AS fileId,
+            canvas_json AS canvasJson
+        FROM coordis WHERE user_id = #{userId}
+    </select>
+    
+    <select id="getCoordiById" parameterType="string" resultType="com.miracle.coordifit.coordi.model.Coordi">
+        SELECT 
+            coordi_id AS coordiId,
+            user_id AS userId,
+            coordi_name AS coordiName,
+            description AS description,
+            file_id AS fileId,
+            canvas_json AS canvasJson
+        FROM coordis WHERE coordi_id = #{coordiId}
+    </select>
+
+    <insert id="insertCoordi" parameterType="com.miracle.coordifit.coordi.model.Coordi">
+        INSERT INTO coordis (
+            coordi_id, user_id, coordi_name, description, file_id, canvas_json, created_by, updated_by
+        ) VALUES (
+            #{coordiId}, #{userId}, #{coordiName}, #{description}, #{fileId}, #{canvasJson}, #{userId}, #{userId}
+        )
+    </insert>
+
+    <insert id="insertCoordiItem" parameterType="com.miracle.coordifit.coordi.model.CoordiItem">
+        INSERT INTO LOOK_ITEMS
+            (coordi_id, clothes_id, created_by, created_at)
+        VALUES
+            (#{coordiId}, #{clothesId}, #{userId}, SYSTIMESTAMP)
+    </insert>
+    
+    <select id="getNextCoordiSequence" resultType="int">
+        SELECT NVL(MAX(TO_NUMBER(SUBSTR(coordi_id, 8))), 0) + 1
+        FROM coordis
+        WHERE SUBSTR(coordi_id, 2, 6) = TO_CHAR(SYSDATE, 'YYMMDD')
+    </select>
+
+    <update id="updateCoordiById" parameterType="com.miracle.coordifit.coordi.model.Coordi">
+        UPDATE coordis
+        SET
+            coordi_name   = #{coordiName},
+            description = #{description},
+            file_id     = #{fileId},
+            canvas_json = #{canvasJson},
+            updated_by   = #{userId},
+            updated_at   = SYSTIMESTAMP
+        WHERE coordi_id = #{coordiId}
+    </update>
+
+    <delete id="deleteCoordiById" parameterType="string">
+        DELETE FROM coordis WHERE coordi_id = #{coordiId}
+    </delete>
+
+    <delete id="deleteCoordiItemsByLookId" parameterType="string">
+        DELETE FROM coordi_items WHERE coordi_id = #{coordiId}
+    </delete>
+</mapper>

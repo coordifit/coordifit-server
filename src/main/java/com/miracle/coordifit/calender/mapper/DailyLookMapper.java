@@ -31,12 +31,12 @@ public class DailyLookMapper {
 			.build();
 	}
 
-	public List<DailyLookResponse> toResponseList(List<DailyLook> dailyLooks, Map<Integer, FileInfo> thumbMap) {
+	public List<DailyLookResponse> toResponseList(List<DailyLook> dailyLooks, Map<Integer, FileInfo> fileMap) {
 		return dailyLooks.stream()
 			.map(dailyLook -> {
-				FileInfo fileInfo = thumbMap.get(dailyLook.getThumbImageId());
+				FileInfo fileInfo = fileMap.get(dailyLook.getFileId());
 
-				return toResponse(dailyLook, null, fileInfo.getS3Url());
+				return toResponse(dailyLook, fileInfo.getS3Url(), fileInfo.getS3ThumbnailUrl());
 			})
 			.collect(Collectors.toList());
 	}

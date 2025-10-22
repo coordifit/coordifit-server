@@ -1,6 +1,8 @@
 package com.miracle.coordifit.calender.controller;
 
+import java.net.URI;
 import java.util.List;
+import java.util.Map;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -87,7 +89,7 @@ public class CalenderController {
 
 	@Transactional
 	@PostMapping("/date/{wearDate:\\d{4}-\\d{2}-\\d{2}}")
-	public ResponseEntity<?> createDailyLook(
+	public ResponseEntity<ApiResponseDto<?>> createDailyLook(
 		@PathVariable("wearDate") String wearDate,
 		@RequestPart("image") MultipartFile image,
 		@RequestParam("description") String description,
@@ -95,27 +97,39 @@ public class CalenderController {
 		Authentication authentication) {
 		String userId = (String)authentication.getPrincipal();
 
-		FileInfo originImage = fileService.uploadFile(image);
-		FileInfo thumbImage = fileService.uploadThumbnail(image);
+		FileInfo imageInfo = fileService.uploadFile(image);
 
-		DailyLook dailyLook = new DailyLook();
-		dailyLook.setUserId(userId);
-		dailyLook.setWearDate(wearDate);
-		dailyLook.setDescription(description);
-		dailyLook.setOriginImageId(originImage.getFileId());
-		dailyLook.setThumbImageId(thumbImage.getFileId());
-		dailyLook.setCanvasJson(itemsJson);
+		DailyLook dailyLook = DailyLook.builder()
+			.userId(userId)
+			.wearDate(wearDate)
+			.description(description)
+			.fileId(imageInfo.getFileId())
+			.canvasJson(itemsJson)
+			.build();
 
-		log.info("dailyLook info: {}", dailyLook.toString());
+		log.info(">> Before insert dailyLook info: {}", dailyLook.toString());
+		try {
+			int result = calenderService.upsertDailyLook(dailyLook);
 
-		int result = calenderService.upsertDailyLook(dailyLook);
+			log.info(">> calendar editor post coordi save success {}", result);
 
-		if (dailyLook.getDailylookId() == null) {
-			throw new IllegalStateException("dailyLookId가 설정되지 않았습니다.");
+			if (dailyLook.getDailylookId() == null) {
+				throw new IllegalStateException("dailyLookId가 설정되지 않았습니다.");
+			}
+
+			calenderService.insertDailyLookItem(itemsJson, dailyLook);
+
+			log.info(">> calendar editor post dailylook items save success");
+
+			URI location = URI.create("/api/daily-look/date/" + dailyLook.getWearDate());
+
+			Map<String, Object> body = Map.of("dailyLookId", dailyLook.getDailylookId(), "affectedRows", result);
+
+			return ResponseEntity.created(location).body(ApiResponseDto.success("데일리룩 등록 성공", body));
+		} catch (Exception e) {
+			log.error(">> create DailyLook failed", e);
+			return ResponseEntity.internalServerError()
+				.body(ApiResponseDto.error("데일리룩 저장 실패", e.getMessage()));
 		}
-
-		calenderService.insertDailyLookItem(itemsJson, dailyLook);
-
-		return ResponseEntity.ok(result);
 	}
 }

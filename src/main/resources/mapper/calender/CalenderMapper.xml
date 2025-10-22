@@ -7,11 +7,11 @@
   <insert id="insertDailyLook" parameterType="com.miracle.coordifit.calender.model.DailyLook">
     INSERT INTO DAILYLOOKS
       (dailylook_id, user_id, wear_date, description,
-      origin_image_id, thumb_image_id, canvas_json,
+      file_id, canvas_json,
       created_at, updated_at)
     VALUES
       (#{dailylookId}, #{userId}, #{wearDate}, #{description},
-      #{originImageId}, #{thumbImageId}, #{canvasJson},
+      #{fileId}, #{canvasJson},
       SYSTIMESTAMP, SYSTIMESTAMP)
   </insert>
 
@@ -44,8 +44,7 @@
         	user_id AS userId,
         	wear_date AS wearDate,
         	description AS description,
-        	origin_image_id AS originImageId,
-        	thumb_image_id AS thumbImageId,
+        	file_id AS fileId,
         	canvas_json AS canvasJson
         FROM DAILYLOOKS
         WHERE user_id = #{userId}
@@ -55,8 +54,7 @@
     <update id="updateDailyLook" parameterType="com.miracle.coordifit.calender.model.DailyLook">
         UPDATE DAILYLOOKS
         SET description = #{description},
-            origin_image_id = #{originImageId},
-            thumb_image_id = #{thumbImageId},
+            file_id = #{fildId},
             canvas_json = #{canvasJson},
             updated_at = SYSTIMESTAMP
         WHERE dailylook_id = #{dailylookId}
