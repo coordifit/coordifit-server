@@ -40,4 +40,6 @@ public interface PostRepository {
 	List<PostDto> getAllPosts(@Param("userId") String userId);
 
 	List<PostDto> getUserPosts(@Param("userId") String userId, @Param("isPublic") Boolean isPublic);
+
+	List<PostDto> getUserLikedPosts(@Param("userId") String userId);
 }

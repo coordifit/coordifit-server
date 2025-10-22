@@ -247,10 +247,15 @@ public class UserService implements IUserService {
 			throw new RuntimeException("사용자 정보를 찾을 수 없습니다: " + userId);
 		}
 
-		boolean isPublic = !userId.equals(currentUserId);
+		boolean isPublic = userId.equals(currentUserId);
 		List<PostDto> posts = postRepository.getUserPosts(userId, isPublic);
 		myPageInfo.setPostsCount(posts.size());
 		myPageInfo.setPosts(posts);
+
+		if (isPublic) {
+			List<PostDto> likedPosts = postRepository.getUserLikedPosts(userId);
+			myPageInfo.setLikedPosts(likedPosts);
+		}
 
 		return myPageInfo;
 	}
