@@ -1,6 +1,7 @@
 package com.miracle.coordifit.common.service;
 
 import java.awt.image.BufferedImage;
+import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -188,10 +189,10 @@ public class FileService implements IFileService {
 	@Override
 	@Transactional
 	public FileInfo uploadThumbnail(MultipartFile file) {
-
 		try {
 			// transform MultipartFile to BufferedImage
-			BufferedImage originalImage = ImageIO.read(file.getInputStream());
+			byte[] originalBytes = file.getBytes();
+			BufferedImage originalImage = ImageIO.read(new ByteArrayInputStream(originalBytes));
 
 			// create thumbnail image (300 * 300)
 			BufferedImage thumbnail = Thumbnails.of(originalImage).size(300, 300).keepAspectRatio(true)
@@ -212,6 +213,7 @@ public class FileService implements IFileService {
 			// upload image to S3 and save metadata to DB
 			return uploadFile(thumbnailFile);
 		} catch (IOException e) {
+			log.error(">> uploadThumbnail failed", e);
 			throw new RuntimeException("썸네일 생성 실패", e);
 		}
 	}
