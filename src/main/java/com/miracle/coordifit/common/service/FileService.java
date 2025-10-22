@@ -1,9 +1,9 @@
 package com.miracle.coordifit.common.service;
 
 import java.awt.image.BufferedImage;
-import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -15,6 +15,7 @@ import javax.imageio.ImageIO;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.mock.web.MockMultipartFile;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
@@ -39,7 +40,7 @@ public class FileService implements IFileService {
 	private String bucketName;
 
 	@Value("${file.thumbnail.suffix}")
-	private String thumbnailSuffix;
+	private String THUMB_SUFFIX;
 
 	private static final Pattern BASE64_ALLOWED_BODY = Pattern.compile("^[A-Za-z0-9+/=]+$");
 
@@ -161,60 +162,37 @@ public class FileService implements IFileService {
 	@Transactional
 	public FileInfo uploadFile(MultipartFile file) {
 		try {
-			String url = s3Service.uploadFile(file);
-			String fileName = url.substring(url.lastIndexOf("/") + 1);
+			final String originalUrl = s3Service.uploadFile(file);
+			final String originalKey = getFileName(originalUrl);
+
+			byte[] thumbBytes = createThumbnailPngBytes(file.getInputStream());
+
+			String thumbKey = addSuffixToFilenName(originalKey, THUMB_SUFFIX);
+
+			MultipartFile thumbFile = new MockMultipartFile(
+				thumbKey,
+				thumbKey,
+				"image/png",
+				thumbBytes);
+
+			final String thumbUrl = s3Service.uploadFile(thumbFile);
 
 			FileInfo fileInfo = FileInfo.builder()
 				.originalName(file.getOriginalFilename())
-				.s3Key(fileName)
-				.s3Url(url)
+				.s3Key(originalKey)
+				.s3Url(originalUrl)
+				.s3ThumbnailUrl(thumbUrl)
 				.bucketName(bucketName)
 				.fileSize(file.getSize())
 				.fileType(file.getContentType())
-				.uploadBy("ADMIN")
+				.uploadBy(getCurrentUser())
 				.build();
 
 			fileRepository.insertFileInfo(fileInfo);
 			return fileInfo;
+
 		} catch (IOException e) {
 			throw new RuntimeException("파일 업로드 중 오류가 발생했습니다.", e);
-		}
-	}
-
-	/**
-	 * For Saving Thumbnail Image File Using uploadFile
-	 * @param MultipartFile Save target image file.
-	 * @return FileInfo Fileinfo model
-	 */
-	@Override
-	@Transactional
-	public FileInfo uploadThumbnail(MultipartFile file) {
-		try {
-			// transform MultipartFile to BufferedImage
-			byte[] originalBytes = file.getBytes();
-			BufferedImage originalImage = ImageIO.read(new ByteArrayInputStream(originalBytes));
-
-			// create thumbnail image (300 * 300)
-			BufferedImage thumbnail = Thumbnails.of(originalImage).size(300, 300).keepAspectRatio(true)
-				.asBufferedImage();
-
-			// write thumbnail image to ByteArrayOutputStream
-			ByteArrayOutputStream baos = new ByteArrayOutputStream();
-
-			ImageIO.write(thumbnail, "png", baos);
-
-			// transform ByteArrayOutputStream to MultipartFile
-			MultipartFile thumbnailFile = new MockMultipartFile(
-				file.getOriginalFilename() + thumbnailSuffix,
-				file.getOriginalFilename() + thumbnailSuffix,
-				"image/png",
-				baos.toByteArray());
-
-			// upload image to S3 and save metadata to DB
-			return uploadFile(thumbnailFile);
-		} catch (IOException e) {
-			log.error(">> uploadThumbnail failed", e);
-			throw new RuntimeException("썸네일 생성 실패", e);
 		}
 	}
 
@@ -304,4 +282,41 @@ public class FileService implements IFileService {
 		fileRepository.deleteFileById(fileId); // 👈 DB 삭제
 	}
 
+	private String getFileName(String url) {
+		return url.substring(url.lastIndexOf('/') + 1);
+	}
+
+	private String addSuffixToFilenName(String fileName, String suffix) {
+		int dotIndex = fileName.lastIndexOf('.');
+		if (dotIndex == -1)
+			return fileName + suffix;
+		String name = fileName.substring(0, dotIndex);
+		String ext = fileName.substring(dotIndex);
+		return name + suffix + ext;
+	}
+
+	private byte[] createThumbnailPngBytes(InputStream input) throws IOException {
+		BufferedImage originalImage = ImageIO.read(input);
+		BufferedImage thumbnail = Thumbnails.of(originalImage)
+			.size(300, 300)
+			.keepAspectRatio(true)
+			.asBufferedImage();
+
+		try (ByteArrayOutputStream baos = new ByteArrayOutputStream()) {
+			ImageIO.write(thumbnail, "png", baos);
+			return baos.toByteArray();
+		}
+	}
+
+	private String getCurrentUser() {
+		try {
+			var auth = SecurityContextHolder.getContext().getAuthentication();
+			return (auth != null && auth.isAuthenticated() && !"anonymousUser".equals(auth.getName()))
+				? auth.getName()
+				: "ADMIN";
+		} catch (Exception e) {
+			log.debug("getCurrentUser ignored: {}", e.getMessage());
+			return "ADMIN";
+		}
+	}
 }

@@ -9,11 +9,8 @@ import com.miracle.coordifit.common.dto.Base64ImageDto;
 import com.miracle.coordifit.common.model.FileInfo;
 
 public interface IFileService {
-	// Multipart 업로드
+	// Multipart + Thumbnails 업로드
 	FileInfo uploadFile(MultipartFile file);
-
-	// 썸네일 업로드
-	FileInfo uploadThumbnail(MultipartFile file);
 
 	// 조회
 	FileInfo getFileById(Integer fileId);
