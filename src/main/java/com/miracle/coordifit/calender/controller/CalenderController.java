@@ -95,8 +95,11 @@ public class CalenderController {
 		Authentication authentication) {
 		String userId = (String)authentication.getPrincipal();
 
+		log.info(">> createDailyLook image parameter {}", image.getContentType());
 		FileInfo originImage = fileService.uploadFile(image);
+		log.info(">> coordi editor post request originImage save success {}", originImage.getS3Url());
 		FileInfo thumbImage = fileService.uploadThumbnail(image);
+		log.info(">> coordi editor post request thumbImage save success {}", thumbImage.getS3Url());
 
 		DailyLook dailyLook = new DailyLook();
 		dailyLook.setUserId(userId);
@@ -110,11 +113,15 @@ public class CalenderController {
 
 		int result = calenderService.upsertDailyLook(dailyLook);
 
+		log.info(">> calendar editor post coordi save success {}", result);
+
 		if (dailyLook.getDailylookId() == null) {
 			throw new IllegalStateException("dailyLookId가 설정되지 않았습니다.");
 		}
 
 		calenderService.insertDailyLookItem(itemsJson, dailyLook);
+
+		log.info(">> calendar editor post dailylook items save success");
 
 		return ResponseEntity.ok(result);
 	}
