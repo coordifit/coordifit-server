@@ -6,67 +6,67 @@
 <mapper namespace="com.miracle.coordifit.coordi.repository.CoordiRepository">
     <select id="getAllCoordisByUser" parameterType="string" resultType="com.miracle.coordifit.coordi.model.Coordi">
         SELECT 
-            look_id AS coordiId,
+            coordi_id AS coordiId,
             user_id AS userId,
-            look_name AS title,
+            coordi_name AS coordiName,
             description AS description,
             file_id AS originImageId,
             thumb_file_id AS thumbImageId,
             canvas_json AS canvasJson
-        FROM LOOKS WHERE user_id = #{userId}
+        FROM coordis WHERE user_id = #{userId}
     </select>
     
     <select id="getCoordiById" parameterType="string" resultType="com.miracle.coordifit.coordi.model.Coordi">
         SELECT 
-            look_id AS coordiId,
+            coordi_id AS coordiId,
             user_id AS userId,
-            look_name AS title,
+            coordi_name AS coordiName,
             description AS description,
             file_id AS originImageId,
             thumb_file_id AS thumbImageId,
             canvas_json AS canvasJson
-        FROM LOOKS WHERE look_id = #{coordiId}
+        FROM coordis WHERE coordi_id = #{coordiId}
     </select>
 
     <insert id="insertCoordi" parameterType="com.miracle.coordifit.coordi.model.Coordi">
-        INSERT INTO LOOKS (
-            look_id, user_id, look_name, description, file_id, thumb_file_id, canvas_json, created_by, updated_by
+        INSERT INTO coordis (
+            coordi_id, user_id, coordi_name, description, file_id, thumb_file_id, canvas_json, created_by, updated_by
         ) VALUES (
-            #{coordiId}, #{userId}, #{title}, #{description}, #{originImageId}, #{thumbImageId}, #{canvasJson}, #{userId}, #{userId}
+            #{coordiId}, #{userId}, #{coordiName}, #{description}, #{originImageId}, #{thumbImageId}, #{canvasJson}, #{userId}, #{userId}
         )
     </insert>
 
     <insert id="insertCoordiItem" parameterType="com.miracle.coordifit.coordi.model.CoordiItem">
         INSERT INTO LOOK_ITEMS
-            (look_id, clothes_id, created_by, created_at)
+            (coordi_id, clothes_id, created_by, created_at)
         VALUES
             (#{coordiId}, #{clothesId}, #{userId}, SYSTIMESTAMP)
     </insert>
     
     <select id="getNextCoordiSequence" resultType="int">
-        SELECT NVL(MAX(TO_NUMBER(SUBSTR(look_id, 8))), 0) + 1
-        FROM looks
-        WHERE SUBSTR(look_id, 2, 6) = TO_CHAR(SYSDATE, 'YYMMDD')
+        SELECT NVL(MAX(TO_NUMBER(SUBSTR(coordi_id, 8))), 0) + 1
+        FROM coordis
+        WHERE SUBSTR(coordi_id, 2, 6) = TO_CHAR(SYSDATE, 'YYMMDD')
     </select>
 
     <update id="updateCoordiById" parameterType="com.miracle.coordifit.coordi.model.Coordi">
-        UPDATE LOOKS
+        UPDATE coordis
         SET
-            look_name   = #{title},
+            coordi_name   = #{coordiName},
             description = #{description},
             file_id     = #{originImageId},
             thumb_file_id = #{thumbImageId},
             canvas_json = #{canvasJson},
             updated_by   = #{userId},
             updated_at   = SYSTIMESTAMP
-        WHERE look_id = #{coordiId}
+        WHERE coordi_id = #{coordiId}
     </update>
 
     <delete id="deleteCoordiById" parameterType="string">
-        DELETE FROM LOOKS WHERE look_id = #{coordiId}
+        DELETE FROM coordis WHERE coordi_id = #{coordiId}
     </delete>
 
     <delete id="deleteCoordiItemsByLookId" parameterType="string">
-        DELETE FROM LOOK_ITEMS WHERE look_id = #{coordiId}
+        DELETE FROM coordi_items WHERE coordi_id = #{coordiId}
     </delete>
 </mapper>

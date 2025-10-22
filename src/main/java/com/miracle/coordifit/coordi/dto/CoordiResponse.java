@@ -12,7 +12,7 @@ import lombok.NoArgsConstructor;
 public class CoordiResponse {
 	private String coordiId;
 	private String userId;
-	private String title;
+	private String coordiName;
 	private String description;
 	private String canvasJson;
 	private String originImageUrl;

@@ -23,7 +23,7 @@ public class CoordiMapper {
 		return CoordiResponse.builder()
 			.coordiId(coordi.getCoordiId())
 			.userId(coordi.getUserId())
-			.title(coordi.getTitle())
+			.coordiName(coordi.getCoordiName())
 			.description(coordi.getDescription())
 			.canvasJson(coordi.getCanvasJson())
 			.originImageUrl(originImageUrl)
