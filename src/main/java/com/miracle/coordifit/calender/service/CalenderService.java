@@ -45,10 +45,7 @@ public class CalenderService implements ICalenderService {
 
 		calenderRepository.deleteDailyLookItemsByDailyLookId(target.getDailylookId());
 
-		if (target.getOriginImageId() != null)
-			fileservice.deleteFileById(target.getOriginImageId().longValue());
-		if (target.getThumbImageId() != null)
-			fileservice.deleteFileById(target.getThumbImageId().longValue());
+		fileservice.deleteFileById(target.getFileId().longValue());
 
 		int deleted = calenderRepository.deleteDailyLookById(target.getDailylookId());
 
@@ -94,12 +91,12 @@ public class CalenderService implements ICalenderService {
 	public List<DailyLookResponse> getDailyLooksByMonth(String userId, String yearMonth) {
 		List<DailyLook> dailyLooks = calenderRepository.getDailyLooksByMonth(userId, yearMonth);
 
-		List<Integer> thumbIds = dailyLooks.stream()
-			.map(DailyLook::getThumbImageId)
+		List<Integer> fileIdList = dailyLooks.stream()
+			.map(DailyLook::getFileId)
 			.filter(Objects::nonNull)
 			.toList();
 
-		Map<Integer, FileInfo> thumbMap = fileservice.getFilesByIds(thumbIds);
+		Map<Integer, FileInfo> thumbMap = fileservice.getFilesByIds(fileIdList);
 
 		return dailyLookMapper.toResponseList(dailyLooks, thumbMap);
 	}
@@ -115,12 +112,13 @@ public class CalenderService implements ICalenderService {
 		DailyLook dailyLook = optional.get();
 
 		log.info("dailyLook : {}", dailyLook.toString());
-		Integer originImageId = dailyLook.getOriginImageId();
+		Integer imageId = dailyLook.getFileId();
 
-		FileInfo fileInfo = fileservice.getFileById(originImageId);
+		FileInfo fileInfo = fileservice.getFileById(imageId);
 		String originImageUrl = fileInfo.getS3Url();
+		String thumbImageUrl = fileInfo.getS3ThumbnailUrl();
 
-		DailyLookResponse response = dailyLookMapper.toResponse(dailyLook, originImageUrl, null);
+		DailyLookResponse response = dailyLookMapper.toResponse(dailyLook, originImageUrl, thumbImageUrl);
 
 		return response;
 	}
