@@ -1,5 +1,6 @@
 package com.miracle.coordifit.coordi.controller;
 
+import java.net.URI;
 import java.util.List;
 import java.util.Map;
 
@@ -12,6 +13,7 @@ import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RequestPart;
@@ -25,6 +27,7 @@ import com.miracle.coordifit.coordi.dto.CoordiResponse;
 import com.miracle.coordifit.coordi.model.Coordi;
 import com.miracle.coordifit.coordi.service.ICoordiService;
 
+import jakarta.validation.constraints.NotBlank;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
@@ -80,51 +83,79 @@ public class CoordiController {
 	}
 
 	@Transactional
-	@PostMapping(value = {"", "/{coordiId}"}, consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-	public ResponseEntity<ApiResponseDto<?>> createOrUpdateCoordi(
+	@PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+	public ResponseEntity<ApiResponseDto<?>> createCoordi(
 		Authentication authentication,
-		@PathVariable(required = false) String coordiId,
 		@RequestPart("image") MultipartFile image,
-		@RequestParam("canvasJson") String canvasJson,
-		@RequestParam("title") String title,
-		@RequestParam("description") String description) {
-		String userId = (String)authentication.getPrincipal();
+		@RequestParam("canvasJson") @NotBlank String canvasJson,
+		@RequestParam("coordiName") @NotBlank String coordiName,
+		@RequestParam(value = "description", required = false) String description) {
+		final String userId = (String)authentication.getPrincipal();
 		try {
 			log.info(">> POST /api/coordi - userId={}", userId);
 
-			FileInfo originImage = fileService.uploadFile(image);
-			log.info(">> upload original Image from createCoordi");
-
-			FileInfo thumbImage = fileService.uploadThumbnail(image);
-			log.info(">> upload thumbnails Image from createCoordi");
+			FileInfo imageInfo = fileService.uploadFile(image);
 
 			Coordi coordi = Coordi.builder()
 				.userId(userId)
-				.title(title)
-				.originImageId(originImage.getFileId())
-				.thumbImageId(thumbImage.getFileId())
+				.coordiName(coordiName)
+				.fileId(imageInfo.getFileId())
 				.description(description)
 				.canvasJson(canvasJson)
 				.build();
 
-			if (coordiId != null && !coordiId.isBlank()) {
-				coordi.setCoordiId(coordiId);
-			}
+			int affected = coordiService.upsertCoordi(coordi);
 
-			// 3️⃣ Upsert
-			int result = coordiService.upsertCoordi(coordi);
+			URI location = URI.create("/api/coordi/" + coordi.getCoordiId());
 
-			Map<String, Object> response = Map.of(
-				"coordiId", coordi.getCoordiId(),
-				"affectedRows", result);
+			Map<String, Object> body = Map.of("coordiId", coordi.getCoordiId(), "affectedRows", affected);
 
-			return ResponseEntity.ok(ApiResponseDto.success(
-				"코디 등록 / 수정 성공", response));
+			return ResponseEntity.created(location).body(ApiResponseDto.success("코디 등록 성공", body));
+
 		} catch (Exception e) {
-			log.error(">> create Or Update Coordi failed", e);
-
+			log.error(">> createCoordi failed", e);
 			return ResponseEntity.internalServerError()
 				.body(ApiResponseDto.error("코디 저장 실패", e.getMessage()));
+		}
+	}
+
+	@Transactional
+	@PutMapping(value = "/{coordiId}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+	public ResponseEntity<ApiResponseDto<?>> updateCoordi(
+		Authentication authentication,
+		@PathVariable("coordiId") @NotBlank String coordiId,
+		@RequestPart(value = "image") MultipartFile image,
+		@RequestParam("canvasJson") @NotBlank String canvasJson,
+		@RequestParam("coordiName") @NotBlank String coordiName,
+		@RequestParam(value = "description") String description) {
+		final String userId = (String)authentication.getPrincipal();
+
+		try {
+			log.info(">> PUT /api/coordi/{} - userId={}", coordiId, userId);
+
+			FileInfo originImage = fileService.uploadFile(image);
+			int fileId = originImage.getFileId();
+
+			Coordi coordi = Coordi.builder()
+				.coordiId(coordiId)
+				.userId(userId)
+				.coordiName(coordiName)
+				.fileId(fileId)
+				.description(description)
+				.canvasJson(canvasJson)
+				.build();
+
+			int affected = coordiService.upsertCoordi(coordi);
+
+			Map<String, Object> body = Map.of(
+				"coordiId", coordiId,
+				"affectedRows", affected);
+			return ResponseEntity.ok(ApiResponseDto.success("코디 수정 성공", body));
+
+		} catch (Exception e) {
+			log.error(">> updateCoordi failed", e);
+			return ResponseEntity.internalServerError()
+				.body(ApiResponseDto.error("코디 수정 실패", e.getMessage()));
 		}
 	}
 
