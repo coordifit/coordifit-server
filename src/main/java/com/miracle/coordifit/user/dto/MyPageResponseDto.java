@@ -24,4 +24,5 @@ public class MyPageResponseDto {
 	private int followersCount;
 	private int followingsCount;
 	private List<PostDto> posts;
+	private List<PostDto> likedPosts;
 }
