@@ -160,7 +160,7 @@ public class UserController {
 		}
 	}
 
-	@GetMapping("/{userId}/mypage")
+	@GetMapping("/{userId}")
 	public ResponseEntity<ApiResponseDto<MyPageResponseDto>> getMyPageInfo(
 		@PathVariable String userId,
 		Authentication authentication) {
