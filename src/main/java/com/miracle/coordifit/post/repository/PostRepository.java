@@ -19,13 +19,19 @@ public interface PostRepository {
 
 	int insertPost(Post post);
 
+	int updatePost(Post post);
+
 	int insertPostImage(PostImage postImage);
 
 	int insertPostClothes(PostClothes postClothes);
 
+	int deletePostImage(@Param("postId") String postId, @Param("fileId") Long fileId);
+
+	int deletePostClothes(@Param("postId") String postId);
+
 	PostDetailResponse getPostDetail(@Param("postId") String postId);
 
-	List<String> getPostImageUrls(@Param("postId") String postId);
+	List<PostDetailResponse.PostImage> getPostImages(@Param("postId") String postId);
 
 	List<PostClothesResponse> getPostClothes(@Param("postId") String postId);
 
@@ -33,5 +39,5 @@ public interface PostRepository {
 
 	List<PostDto> getAllPosts(@Param("userId") String userId);
 
-	List<PostDto> getUserPosts(@Param("userId") String userId);
+	List<PostDto> getUserPosts(@Param("userId") String userId, @Param("isPublic") Boolean isPublic);
 }

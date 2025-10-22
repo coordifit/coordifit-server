@@ -15,9 +15,10 @@ import lombok.Setter;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class PostCreateRequest {
+public class PostRequest {
 	private String content;
 	private Boolean isPublic;
 	private List<String> clothesIds;
+	private List<Long> deletedFileIds;
 	private List<MultipartFile> files;
 }

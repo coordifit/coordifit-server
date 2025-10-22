@@ -19,7 +19,8 @@ public class PostDetailResponse {
 	private String nickname;
 	private String profileImageUrl;
 	private String content;
-	private List<String> imageUrls;
+	private Boolean isPublic;
+	private List<PostImage> images;
 	private List<PostClothesResponse> clothes;
 	private Integer viewCount;
 	private Integer likeCount;
@@ -27,4 +28,14 @@ public class PostDetailResponse {
 	private String createdAt;
 	private boolean isLiked;
 	private List<CommentResponseDto> comments;
+
+	@Getter
+	@Setter
+	@Builder
+	@NoArgsConstructor
+	@AllArgsConstructor
+	public static class PostImage {
+		private Long fileId;
+		private String url;
+	}
 }

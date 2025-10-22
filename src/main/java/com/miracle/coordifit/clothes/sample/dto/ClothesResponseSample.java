@@ -16,6 +16,8 @@ import lombok.Setter;
 public class ClothesResponseSample {
 	private String clothesId;
 	private String name;
+	private String brand;
+	private Integer price;
 	private String categoryCode;
 	private LocalDate purchaseDate;
 	private String imageUrl;
