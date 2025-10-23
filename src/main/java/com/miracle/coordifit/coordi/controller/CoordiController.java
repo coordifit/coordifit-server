@@ -14,6 +14,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RequestPart;
@@ -175,4 +176,12 @@ public class CoordiController {
 				.body(ApiResponseDto.error("코디 삭제 실패", e.getMessage()));
 		}
 	}
+
+	@DeleteMapping
+	public ResponseEntity<ApiResponseDto<?>> deleteCoordis(@RequestBody List<String> coordiIds) {
+		log.info("DELETE /api/coordi - 다중 삭제 요청: {}", coordiIds);
+		coordiService.deleteCoordis(coordiIds);
+		return ResponseEntity.ok(ApiResponseDto.success("코디 다중 삭제 성공", coordiIds));
+	}
+
 }

@@ -22,14 +22,16 @@
           CLOTHES_ID,
           USER_ID,
           WEAR_DATE,
-          CREATED_AT
+          CREATED_AT,
+          CREATED_BY
       )
       VALUES (
           #{dailylookId},
           #{clothesId},
           #{userId},
           TO_DATE(#{wearDate}, 'YYYY-MM-DD'),
-          SYSTIMESTAMP
+          SYSTIMESTAMP,
+          #{userId}
       )
   </insert>
 
@@ -59,7 +61,7 @@
     <update id="updateDailyLook" parameterType="com.miracle.coordifit.calender.model.DailyLook">
         UPDATE DAILYLOOKS
         SET description = #{description},
-            file_id = #{fildId},
+            file_id = #{fileId},
             canvas_json = #{canvasJson},
             updated_at = SYSTIMESTAMP
         WHERE dailylook_id = #{dailylookId}
