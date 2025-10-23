@@ -59,7 +59,7 @@
     <update id="updateDailyLook" parameterType="com.miracle.coordifit.calender.model.DailyLook">
         UPDATE DAILYLOOKS
         SET description = #{description},
-            file_id = #{fildId},
+            file_id = #{fileId},
             canvas_json = #{canvasJson},
             updated_at = SYSTIMESTAMP
         WHERE dailylook_id = #{dailylookId}
