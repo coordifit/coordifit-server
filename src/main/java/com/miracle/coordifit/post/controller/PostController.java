@@ -5,6 +5,7 @@ import java.util.List;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -184,6 +185,21 @@ public class PostController {
 			log.error("게시글 좋아요 목록 조회 실패: postId={}", postId, e);
 			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
 				.body(ApiResponseDto.error("좋아요 목록 조회 실패: " + e.getMessage()));
+		}
+	}
+
+	@DeleteMapping("/{postId}")
+	public ResponseEntity<ApiResponseDto<Void>> deletePost(
+		@PathVariable String postId,
+		Authentication authentication) {
+		try {
+			String userId = authentication.getName();
+			postService.deletePost(postId, userId);
+			return ResponseEntity.ok(ApiResponseDto.success("게시물 삭제 성공"));
+		} catch (Exception e) {
+			log.error("게시물 삭제 실패: postId={}", postId, e);
+			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+				.body(ApiResponseDto.error("게시물 삭제 실패: " + e.getMessage()));
 		}
 	}
 }
