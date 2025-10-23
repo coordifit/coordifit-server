@@ -22,14 +22,16 @@
           CLOTHES_ID,
           USER_ID,
           WEAR_DATE,
-          CREATED_AT
+          CREATED_AT,
+          CREATED_BY
       )
       VALUES (
           #{dailylookId},
           #{clothesId},
           #{userId},
           TO_DATE(#{wearDate}, 'YYYY-MM-DD'),
-          SYSTIMESTAMP
+          SYSTIMESTAMP,
+          #{userId}
       )
   </insert>
 
