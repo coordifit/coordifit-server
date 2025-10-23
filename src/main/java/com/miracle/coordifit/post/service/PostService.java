@@ -191,4 +191,29 @@ public class PostService implements IPostService {
 		int nextSeq = postRepository.getNextPostSequence();
 		return String.format("P%s%03d", LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyMMdd")), nextSeq);
 	}
+
+	@Override
+	@Transactional
+	public void deletePost(String postId, String userId) {
+		PostDetailResponse existingPost = postRepository.getPostDetail(postId);
+		if (existingPost == null) {
+			throw new RuntimeException("게시물을 찾을 수 없습니다: " + postId);
+		}
+
+		if (!existingPost.getUserId().equals(userId)) {
+			throw new RuntimeException("게시물 수정 권한이 없습니다.");
+		}
+
+		Post post = Post.builder()
+			.postId(postId)
+			.isActive("N")
+			.updatedBy(userId)
+			.build();
+
+		int result = postRepository.updatePost(post);
+		if (result <= 0) {
+			throw new RuntimeException("게시물 삭제 처리 중 오류가 발생했습니다.");
+		}
+	}
+
 }

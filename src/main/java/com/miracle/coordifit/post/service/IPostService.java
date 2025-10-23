@@ -15,4 +15,6 @@ public interface IPostService {
 	PostDetailResponse getPostDetail(String postId, String userId);
 
 	List<PostDto> getAllPosts(String userId);
+
+	void deletePost(String postId, String userId);
 }
