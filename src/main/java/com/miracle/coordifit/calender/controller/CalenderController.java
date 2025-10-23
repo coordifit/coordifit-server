@@ -97,7 +97,7 @@ public class CalenderController {
 		Authentication authentication) {
 		String userId = (String)authentication.getPrincipal();
 
-		FileInfo imageInfo = fileService.uploadFile(image);
+		FileInfo imageInfo = fileService.uploadFileWithThumbnail(image);
 
 		DailyLook dailyLook = DailyLook.builder()
 			.userId(userId)
