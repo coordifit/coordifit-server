@@ -166,6 +166,26 @@ public class CoordiService implements ICoordiService {
 		log.info(">>>>> deleteCoordi 완료: {}", coordiId);
 	}
 
+	@Override
+	@Transactional
+	public void deleteCoordis(List<String> coordiIds) {
+		if (coordiIds == null || coordiIds.isEmpty()) {
+			throw new IllegalArgumentException("삭제할 코디 ID 목록이 비어 있습니다.");
+		}
+
+		log.info(">>>>> deleteCoordis - 요청된 ID 개수: {}", coordiIds.size());
+
+		for (String coordiId : coordiIds) {
+			try {
+				deleteCoordi(coordiId); // 기존 단일 삭제 메서드 재사용
+			} catch (Exception e) {
+				log.error(">>>>> deleteCoordi 실패 (coordiId={}): {}", coordiId, e.getMessage());
+			}
+		}
+
+		log.info(">>>>> deleteCoordis 완료 - 총 {}개 요청 처리", coordiIds.size());
+	}
+
 	private List<CoordiItem> parseCanvasJson(String canvasJson, Coordi coordi) {
 		try {
 			List<Map<String, Object>> rawList = objectMapper.readValue(canvasJson,
