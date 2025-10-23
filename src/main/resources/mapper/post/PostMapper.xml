@@ -24,6 +24,7 @@
     SET 
       <if test="content != null">content = #{content},</if>
       <if test="isPublic != null">is_public = #{isPublic},</if>
+      <if test="isActive != null">is_active = #{isActive},</if>
       updated_at = CURRENT_TIMESTAMP,
       updated_by = #{updatedBy}
     WHERE post_id = #{postId}
