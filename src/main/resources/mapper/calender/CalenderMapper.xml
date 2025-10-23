@@ -15,18 +15,23 @@
       SYSTIMESTAMP, SYSTIMESTAMP)
   </insert>
 
-	<insert id="insertDailyLookItem"
-	        parameterType="com.miracle.coordifit.calender.model.DailyLookItem">
-	  INSERT INTO DAILYLOOK_ITEMS
-	    (ITEM_ID, CLOTHES_ID, USER_ID, DAILYLOOK_ID, WEAR_DATE, CREATED_AT)
-	  VALUES
-	    (DAILYLOOK_ITEMS_SEQ.NEXTVAL,
-	     #{clothesId},
-	     #{userId},
-	     #{dailylookId},
-	     TO_DATE(#{wearDate}, 'YYYY-MM-DD'),
-	     SYSTIMESTAMP)
-	</insert>
+  <insert id="insertDailyLookItem"
+          parameterType="com.miracle.coordifit.calender.model.DailyLookItem">
+      INSERT INTO DAILYLOOK_ITEMS (
+          DAILYLOOK_ID,
+          CLOTHES_ID,
+          USER_ID,
+          WEAR_DATE,
+          CREATED_AT
+      )
+      VALUES (
+          #{dailylookId},
+          #{clothesId},
+          #{userId},
+          TO_DATE(#{wearDate}, 'YYYY-MM-DD'),
+          SYSTIMESTAMP
+      )
+  </insert>
 
     <!-- 특정 월의 데일리룩 조회 -->
     <select id="getDailyLooksByMonth" resultType="com.miracle.coordifit.calender.model.DailyLook">
