@@ -7,11 +7,11 @@
   <insert id="insertDailyLook" parameterType="com.miracle.coordifit.calender.model.DailyLook">
     INSERT INTO DAILYLOOKS
       (dailylook_id, user_id, wear_date, description,
-      file_id, canvas_json,
+      file_id, canvas_json, created_by,
       created_at, updated_at)
     VALUES
       (#{dailylookId}, #{userId}, #{wearDate}, #{description},
-      #{fileId}, #{canvasJson},
+      #{fileId}, #{canvasJson}, #{userId},
       SYSTIMESTAMP, SYSTIMESTAMP)
   </insert>
 
