@@ -17,6 +17,7 @@ public class CoordiResponse {
 	private String canvasJson;
 	private String originImageUrl;
 	private String thumbImageUrl;
+	private String aiImageUrl;
 
 	public static CoordiResponse empty() {
 		return CoordiResponse.builder().build();
