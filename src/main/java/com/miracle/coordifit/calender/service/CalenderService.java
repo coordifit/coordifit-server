@@ -8,6 +8,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 
+import org.springframework.dao.DuplicateKeyException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -80,10 +81,15 @@ public class CalenderService implements ICalenderService {
 	@Transactional
 	public void insertDailyLookItem(String itemsJson, DailyLook dailyLook) {
 		List<DailyLookItem> items = parseItemsJson(itemsJson, dailyLook);
-		log.info("parsed items : {}", items.toString());
+		log.info("parsed items : {}", items);
 
 		for (DailyLookItem item : items) {
-			calenderRepository.insertDailyLookItem(item);
+			try {
+				calenderRepository.insertDailyLookItem(item);
+			} catch (DuplicateKeyException e) {
+				log.warn("이미 등록된 아이템: dailylookId={}, clothesId={}",
+					item.getDailylookId(), item.getClothesId());
+			}
 		}
 	}
 
