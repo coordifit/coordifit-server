@@ -13,6 +13,8 @@ public interface ICoordiService {
 
 	int upsertCoordi(Coordi coordi);
 
+	int updateAiFileId(String coordiId, Integer aiFileId, String updatedBy);
+
 	void insertCoordiItem(String canvasJson, Coordi coordi);
 
 	void deleteCoordi(String coordiId);

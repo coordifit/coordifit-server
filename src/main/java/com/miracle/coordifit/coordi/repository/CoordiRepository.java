@@ -34,4 +34,10 @@ public interface CoordiRepository {
 
 	// 코디 아이디 생성
 	int getNextCoordiSequence();
+
+	int updateAiFileId(
+		@Param("coordiId") String coordiId,
+		@Param("aiFileId") Integer aiFileId,
+		@Param("updatedBy") String updatedBy);
+
 }

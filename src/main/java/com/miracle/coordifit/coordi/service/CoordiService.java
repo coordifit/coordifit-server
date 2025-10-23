@@ -52,21 +52,28 @@ public class CoordiService implements ICoordiService {
 				return Collections.emptyList();
 			}
 
-			List<Integer> thumbIds = coordis.stream()
+			List<Integer> fileIds = coordis.stream()
 				.map(Coordi::getFileId)
 				.filter(Objects::nonNull)
 				.distinct()
 				.toList();
 
-			log.info("thumbIds data {}", thumbIds.toString());
+			List<Integer> aiFileIds = coordis.stream()
+				.map(Coordi::getAiFileId)
+				.filter(Objects::nonNull)
+				.distinct()
+				.toList();
 
-			Map<Integer, FileInfo> thumbMap = thumbIds.isEmpty()
-				? Collections.emptyMap()
-				: fileService.getFilesByIds(thumbIds);
+			Map<Integer, FileInfo> fileMap = fileService.getFilesByIds(fileIds);
+			Map<Integer, FileInfo> aiFileMap = fileService.getFilesByIds(aiFileIds);
 
-			thumbMap.forEach((id, fileInfo) -> log.info("thumbMap[{}] = s3Url={}, thumbUrl={}",
+			fileMap.forEach((id, fileInfo) -> log.info("fileMap[{}] = s3Url={}, thumbUrl={}",
 				id, fileInfo.getS3Url(), fileInfo.getS3ThumbnailUrl()));
-			List<CoordiResponse> responses = coordiMapper.toReponseList(coordis, thumbMap);
+
+			aiFileMap.forEach((id, fileInfo) -> log.info("aiFileMap[{}] = s3Url={}, thumbUrl={}",
+				id, fileInfo.getS3Url(), fileInfo.getS3ThumbnailUrl()));
+
+			List<CoordiResponse> responses = coordiMapper.toReponseList(coordis, fileMap, aiFileMap);
 
 			log.info(">> getAllCoordisByUser success - userId={}, count={}", userId, responses.size());
 
@@ -96,16 +103,35 @@ public class CoordiService implements ICoordiService {
 		}
 
 		Coordi coordi = optional.get();
-
-		log.info(">> coordi from getById, {}", coordi.toString());
+		log.info(">> coordi from getById, {}", coordi);
 
 		Integer fileId = coordi.getFileId();
+		Integer aiFileId = coordi.getAiFileId();
 
-		FileInfo imageInfo = fileService.getFileById(fileId);
+		FileInfo imageInfo = null;
+		FileInfo aiImageInfo = null;
 
-		CoordiResponse response = coordiMapper.toResponse(coordi, imageInfo.getS3Url(), imageInfo.getS3ThumbnailUrl());
+		if (fileId != null) {
+			try {
+				imageInfo = fileService.getFileById(fileId);
+			} catch (Exception e) {
+				log.warn("⚠️ fileId={} 파일 조회 실패: {}", fileId, e.getMessage());
+			}
+		}
 
-		return response;
+		if (aiFileId != null) {
+			try {
+				aiImageInfo = fileService.getFileById(aiFileId);
+			} catch (Exception e) {
+				log.warn("⚠️ aiFileId={} 파일 조회 실패: {}", aiFileId, e.getMessage());
+			}
+		}
+
+		String originImageUrl = imageInfo != null ? imageInfo.getS3Url() : null;
+		String thumbImageUrl = imageInfo != null ? imageInfo.getS3ThumbnailUrl() : null;
+		String aiImageUrl = aiImageInfo != null ? aiImageInfo.getS3Url() : null;
+
+		return coordiMapper.toResponse(coordi, originImageUrl, thumbImageUrl, aiImageUrl);
 	};
 
 	@Override
@@ -125,6 +151,20 @@ public class CoordiService implements ICoordiService {
 			return result;
 		}
 	};
+
+	@Override
+	@Transactional
+	public int updateAiFileId(String coordiId, Integer aiFileId, String updatedBy) {
+		if (coordiId == null || coordiId.isBlank()) {
+			throw new IllegalArgumentException("coordiId는 필수값입니다.");
+		}
+		if (aiFileId == null) {
+			throw new IllegalArgumentException("aiFileId는 null일 수 없습니다.");
+		}
+
+		log.info(">>>>> [UPDATE AI_FILE_ID] coordiId={}, aiFileId={}, updatedBy={}", coordiId, aiFileId, updatedBy);
+		return coordiRepository.updateAiFileId(coordiId, aiFileId, updatedBy);
+	}
 
 	@Override
 	@Transactional
