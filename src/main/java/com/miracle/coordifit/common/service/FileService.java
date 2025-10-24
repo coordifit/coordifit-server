@@ -165,8 +165,32 @@ public class FileService implements IFileService {
 			final String originalUrl = s3Service.uploadFile(file);
 			final String originalKey = getFileName(originalUrl);
 
-			byte[] thumbBytes = createThumbnailPngBytes(file.getInputStream());
+			FileInfo fileInfo = FileInfo.builder()
+				.originalName(file.getOriginalFilename())
+				.s3Key(originalKey)
+				.s3Url(originalUrl)
+				.bucketName(bucketName)
+				.fileSize(file.getSize())
+				.fileType(file.getContentType())
+				.uploadBy(getCurrentUser())
+				.build();
 
+			fileRepository.insertFileInfo(fileInfo);
+			return fileInfo;
+
+		} catch (IOException e) {
+			throw new RuntimeException("파일 업로드 중 오류가 발생했습니다.", e);
+		}
+	}
+
+	@Override
+	@Transactional
+	public FileInfo uploadFileWithThumbnail(MultipartFile file) {
+		try {
+			final String originalUrl = s3Service.uploadFile(file);
+			final String originalKey = getFileName(originalUrl);
+
+			byte[] thumbBytes = createThumbnailPngBytes(file.getInputStream());
 			String thumbKey = addSuffixToFilenName(originalKey, THUMB_SUFFIX);
 
 			MultipartFile thumbFile = new MockMultipartFile(
@@ -192,7 +216,7 @@ public class FileService implements IFileService {
 			return fileInfo;
 
 		} catch (IOException e) {
-			throw new RuntimeException("파일 업로드 중 오류가 발생했습니다.", e);
+			throw new RuntimeException("파일 및 썸네일 업로드 중 오류가 발생했습니다.", e);
 		}
 	}
 

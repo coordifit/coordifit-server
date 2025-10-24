@@ -59,6 +59,14 @@
         WHERE coordi_id = #{coordiId}
     </update>
 
+    <update id="updateAiFileId">
+        UPDATE coordis
+        SET ai_file_id = #{aiFileId},
+            updated_by = #{updatedBy},
+            updated_at = SYSTIMESTAMP
+        WHERE coordi_id = #{coordiId}
+    </update>
+
     <delete id="deleteCoordiById" parameterType="string">
         DELETE FROM coordis WHERE coordi_id = #{coordiId}
     </delete>

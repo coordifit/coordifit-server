@@ -18,6 +18,7 @@ public class Coordi {
 	private String description;
 	private String canvasJson;
 	private Date lastWornDate;
+	private Integer aiFileId;
 	private Integer fileId;
 	private String createdBy;
 	private String isFavorite;

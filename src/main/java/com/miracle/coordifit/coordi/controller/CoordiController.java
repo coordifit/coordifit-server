@@ -95,7 +95,7 @@ public class CoordiController {
 		try {
 			log.info(">> POST /api/coordi - userId={}", userId);
 
-			FileInfo imageInfo = fileService.uploadFile(image);
+			FileInfo imageInfo = fileService.uploadFileWithThumbnail(image);
 
 			Coordi coordi = Coordi.builder()
 				.userId(userId)
@@ -134,7 +134,7 @@ public class CoordiController {
 		try {
 			log.info(">> PUT /api/coordi/{} - userId={}", coordiId, userId);
 
-			FileInfo originImage = fileService.uploadFile(image);
+			FileInfo originImage = fileService.uploadFileWithThumbnail(image);
 			int fileId = originImage.getFileId();
 
 			Coordi coordi = Coordi.builder()
@@ -177,11 +177,11 @@ public class CoordiController {
 		}
 	}
 
+	@Transactional
 	@DeleteMapping
 	public ResponseEntity<ApiResponseDto<?>> deleteCoordis(@RequestBody List<String> coordiIds) {
 		log.info("DELETE /api/coordi - 다중 삭제 요청: {}", coordiIds);
 		coordiService.deleteCoordis(coordiIds);
 		return ResponseEntity.ok(ApiResponseDto.success("코디 다중 삭제 성공", coordiIds));
 	}
-
 }

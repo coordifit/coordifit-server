@@ -32,7 +32,7 @@
             file_id, original_name, s3_key, s3_url, s3_thumbnail_url, bucket_name, 
             file_size, file_type, upload_by, upload_date
         FROM file_info 
-        WHERE file_id = #{fileId}
+        WHERE file_id = #{fileId, jdbcType=INTEGER}
     </select>
     
     <select id="selectFileInfosByIds" parameterType="list" resultType="com.miracle.coordifit.common.model.FileInfo">
@@ -41,8 +41,8 @@
             file_size, file_type, upload_by, upload_date
     	FROM file_info
     	WHERE file_id IN
-    	<foreach collection="fileIds" item="id" open="(" separator="," close=")">
-      		#{id}
+    	<foreach collection="fileIds" item="fileId" open="(" separator="," close=")">
+      		#{fileId, jdbcType=INTEGER}
     	</foreach>
   	</select>
 

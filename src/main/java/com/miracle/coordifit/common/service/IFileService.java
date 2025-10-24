@@ -12,6 +12,9 @@ public interface IFileService {
 	// Multipart + Thumbnails 업로드
 	FileInfo uploadFile(MultipartFile file);
 
+	// Multipart + Thumbnails 업로드
+	FileInfo uploadFileWithThumbnail(MultipartFile file);
+
 	// 조회
 	FileInfo getFileById(Integer fileId);
 
