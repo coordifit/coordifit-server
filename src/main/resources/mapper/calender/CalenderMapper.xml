@@ -7,11 +7,11 @@
   <insert id="insertDailyLook" parameterType="com.miracle.coordifit.calender.model.DailyLook">
     INSERT INTO DAILYLOOKS
       (dailylook_id, user_id, wear_date, description,
-      file_id, canvas_json, created_by,
+      file_id, canvas_json, created_by, is_active,
       created_at, updated_at)
     VALUES
       (#{dailylookId}, #{userId}, #{wearDate}, #{description},
-      #{fileId}, #{canvasJson}, #{userId},
+      #{fileId}, #{canvasJson}, #{userId}, 'Y',
       SYSTIMESTAMP, SYSTIMESTAMP)
   </insert>
 
@@ -39,8 +39,9 @@
     <select id="getDailyLooksByMonth" resultType="com.miracle.coordifit.calender.model.DailyLook">
         SELECT *
         FROM DAILYLOOKS
-        WHERE user_id = #{userId}
-          AND TO_CHAR(wear_date, 'YYYY-MM') = #{yearMonth}
+        WHERE user_id = #{userId} 
+        AND IS_ACTIVE = 'Y' 
+        AND TO_CHAR(wear_date, 'YYYY-MM') = #{yearMonth}
         ORDER BY wear_date ASC
     </select>
 
@@ -55,6 +56,7 @@
         	canvas_json AS canvasJson
         FROM DAILYLOOKS
         WHERE user_id = #{userId}
+          AND IS_ACTIVE = 'Y' 
           AND wear_date = TO_DATE(#{wearDate}, 'YYYY-MM-DD')
     </select>
 
@@ -68,19 +70,62 @@
           AND user_id = #{userId}
     </update>
 
-    <delete id="deleteDailyLookItemsByDailyLookId" parameterType="string">
-        DELETE FROM DAILYLOOK_ITEMS
-        WHERE dailylook_id = #{dailylookId}
-    </delete>
-
     <select id="getNextDailyLookSequence" resultType="int">
       SELECT NVL(MAX(TO_NUMBER(SUBSTR(dailylook_id, 8))), 0) + 1
       FROM dailylooks
      WHERE SUBSTR(dailylook_id, 2, 6) = TO_CHAR(SYSDATE, 'YYMMDD')
     </select>
 
-    <delete id="deleteDailyLookById" parameterType="string">
-      DELETE FROM DAILYLOOKS
-      WHERE dailylook_id = #{dailylookId}
-    </delete>
+    <update id="deleteDailyLookById" parameterType="string">
+      UPDATE DAILYLOOKS
+      SET IS_ACTIVE = 'N'
+      WHERE DAILYLOOK_ID = #{dailylookId}
+    </update>
+    
+    <!-- 데일리룩 통계 -->
+    <select id="selectDailyLookCountByMonth" resultType="int">
+      SELECT COUNT(*)
+      FROM DAILYLOOKS 
+      WHERE TO_CHAR(WEAR_DATE, 'YYYY-MM') = #{yearMonth} 
+      AND USER_ID = #{userId} 
+      AND IS_ACTIVE = 'Y'
+    </select>
+
+    <select id="selectMostWornClothes" resultType="com.miracle.coordifit.calender.model.MostWornClothesDto">
+      SELECT
+        C.CLOTHES_ID AS clothesId,
+        C.NAME AS name,
+        FI.S3_URL AS imageUrl,
+        COUNT(*) AS wearCount
+      FROM DAILYLOOK_ITEMS DI
+      JOIN DAILYLOOKS D ON DI.DAILYLOOK_ID = D.DAILYLOOK_ID
+      JOIN CLOTHES C ON DI.CLOTHES_ID = C.CLOTHES_ID
+      LEFT JOIN CLOTHES_IMAGES CI ON CI.CLOTHES_ID = C.CLOTHES_ID
+      LEFT JOIN FILE_INFO FI ON CI.FILE_ID = FI.FILE_ID
+      WHERE D.USER_ID = #{userId}
+        AND D.IS_ACTIVE = 'Y'
+        AND (C.IS_ACTIVE = 'Y' OR C.IS_ACTIVE IS NULL)
+      GROUP BY C.CLOTHES_ID, C.NAME, FI.S3_URL
+      ORDER BY wearCount DESC
+      FETCH FIRST 1 ROWS ONLY
+    </select>
+
+    <select id="selectMostWornClothesByMonth" resultType="com.miracle.coordifit.calender.model.MostWornClothesDto">
+      SELECT
+        C.CLOTHES_ID AS clothesId,
+        C.NAME AS name,
+        FI.S3_URL AS imageUrl,
+        COUNT(*) AS wearCount
+      FROM DAILYLOOK_ITEMS DI
+      JOIN DAILYLOOKS D ON DI.DAILYLOOK_ID = D.DAILYLOOK_ID
+      JOIN CLOTHES C ON DI.CLOTHES_ID = C.CLOTHES_ID
+      LEFT JOIN CLOTHES_IMAGES CI ON CI.CLOTHES_ID = C.CLOTHES_ID
+      LEFT JOIN FILE_INFO FI ON CI.FILE_ID = FI.FILE_ID 
+      WHERE D.USER_ID = #{userId}
+        AND D.IS_ACTIVE = 'Y'
+        AND TO_CHAR(D.WEAR_DATE, 'YYYY-MM') = #{yearMonth} 
+      GROUP BY C.CLOTHES_ID, C.NAME, FI.S3_URL
+      ORDER BY wearCount DESC
+      FETCH FIRST 1 ROWS ONLY
+    </select>
 </mapper>
