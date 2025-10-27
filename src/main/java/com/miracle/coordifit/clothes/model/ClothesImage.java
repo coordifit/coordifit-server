@@ -13,7 +13,7 @@ import lombok.Setter;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class ClothesImageSample {
+public class ClothesImage {
 	private String clothesId;
 	private Long fileId;
 	private LocalDateTime createdAt;

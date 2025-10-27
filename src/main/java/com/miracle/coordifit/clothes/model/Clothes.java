@@ -1,7 +1,7 @@
-package com.miracle.coordifit.clothes.dto;
+package com.miracle.coordifit.clothes.model;
 
 import java.time.LocalDate;
-import java.util.List;
+import java.time.LocalDateTime;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -14,8 +14,9 @@ import lombok.Setter;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class ClothesDetailResponseDto {
+public class Clothes {
 	private String clothesId;
+	private String userId;
 	private String name;
 	private String brand;
 	private String categoryCode;
@@ -26,15 +27,9 @@ public class ClothesDetailResponseDto {
 	private String description;
 	private Integer wearCount;
 	private LocalDate lastWornDate;
-	private List<ClothesImage> images;
-
-	@Getter
-	@Setter
-	@Builder
-	@NoArgsConstructor
-	@AllArgsConstructor
-	public static class ClothesImage {
-		private Long fileId;
-		private String url;
-	}
+	private String isActive;
+	private LocalDateTime createdAt;
+	private String createdBy;
+	private LocalDateTime updatedAt;
+	private String updatedBy;
 }

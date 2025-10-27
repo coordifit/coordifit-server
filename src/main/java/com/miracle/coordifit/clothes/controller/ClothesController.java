@@ -15,10 +15,10 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.miracle.coordifit.clothes.dto.ClothesDetailResponseDto;
-import com.miracle.coordifit.clothes.dto.ClothesRequestSample;
-import com.miracle.coordifit.clothes.dto.ClothesResponseSample;
-import com.miracle.coordifit.clothes.service.IClothesServiceSample;
+import com.miracle.coordifit.clothes.dto.ClothesDetailResponse;
+import com.miracle.coordifit.clothes.dto.ClothesRequest;
+import com.miracle.coordifit.clothes.dto.ClothesResponse;
+import com.miracle.coordifit.clothes.service.IClothesService;
 import com.miracle.coordifit.common.dto.ApiResponseDto;
 
 import jakarta.validation.Valid;
@@ -27,15 +27,15 @@ import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 @RestController
-@RequestMapping("/api/clothes/sample")
+@RequestMapping("/api/clothes")
 @RequiredArgsConstructor
-public class ClothesControllerSample {
+public class ClothesController {
 
-	private final IClothesServiceSample clothesService;
+	private final IClothesService clothesService;
 
 	@PostMapping
 	public ResponseEntity<ApiResponseDto<Void>> createClothes(
-		@Valid ClothesRequestSample request,
+		@Valid ClothesRequest request,
 		BindingResult bindingResult,
 		Authentication authentication) {
 
@@ -69,7 +69,7 @@ public class ClothesControllerSample {
 	@PutMapping("/{clothesId}")
 	public ResponseEntity<ApiResponseDto<Void>> updateClothes(
 		@PathVariable String clothesId,
-		@Valid ClothesRequestSample request,
+		@Valid ClothesRequest request,
 		BindingResult bindingResult,
 		Authentication authentication) {
 
@@ -103,14 +103,14 @@ public class ClothesControllerSample {
 	}
 
 	@GetMapping
-	public ResponseEntity<ApiResponseDto<List<ClothesResponseSample>>> getUserClothes(
+	public ResponseEntity<ApiResponseDto<List<ClothesResponse>>> getUserClothes(
 		Authentication authentication) {
 		try {
 			String userId = authentication.getName();
 
 			log.info("옷 목록 조회 요청: userId={}", userId);
 
-			List<ClothesResponseSample> clothesList = clothesService.getUserClothes(userId);
+			List<ClothesResponse> clothesList = clothesService.getUserClothes(userId);
 
 			log.info("옷 목록 조회 완료: count={}", clothesList.size());
 			return ResponseEntity.ok(
@@ -123,7 +123,7 @@ public class ClothesControllerSample {
 	}
 
 	@GetMapping("/{clothesId}")
-	public ResponseEntity<ApiResponseDto<ClothesDetailResponseDto>> getClothesDetail(
+	public ResponseEntity<ApiResponseDto<ClothesDetailResponse>> getClothesDetail(
 		@PathVariable String clothesId,
 		Authentication authentication) {
 		try {
@@ -131,7 +131,7 @@ public class ClothesControllerSample {
 
 			log.info("옷 상세 조회 요청: clothesId={}, userId={}", clothesId, userId);
 
-			ClothesDetailResponseDto clothes = clothesService.getClothesDetail(clothesId, userId);
+			ClothesDetailResponse clothes = clothesService.getClothesDetail(clothesId, userId);
 
 			log.info("옷 상세 조회 완료: clothesId={}", clothesId);
 			return ResponseEntity.ok(

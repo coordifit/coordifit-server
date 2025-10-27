@@ -10,12 +10,12 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
-import com.miracle.coordifit.clothes.dto.ClothesDetailResponseDto;
-import com.miracle.coordifit.clothes.dto.ClothesRequestSample;
-import com.miracle.coordifit.clothes.dto.ClothesResponseSample;
-import com.miracle.coordifit.clothes.model.ClothesImageSample;
-import com.miracle.coordifit.clothes.model.ClothesSample;
-import com.miracle.coordifit.clothes.repository.ClothesRepositorySample;
+import com.miracle.coordifit.clothes.dto.ClothesDetailResponse;
+import com.miracle.coordifit.clothes.dto.ClothesRequest;
+import com.miracle.coordifit.clothes.dto.ClothesResponse;
+import com.miracle.coordifit.clothes.model.Clothes;
+import com.miracle.coordifit.clothes.model.ClothesImage;
+import com.miracle.coordifit.clothes.repository.ClothesRepository;
 import com.miracle.coordifit.common.aspect.SaveHistory;
 import com.miracle.coordifit.common.model.FileInfo;
 import com.miracle.coordifit.common.service.IFileService;
@@ -26,15 +26,15 @@ import lombok.extern.slf4j.Slf4j;
 @Service
 @RequiredArgsConstructor
 @Slf4j
-public class ClothesServiceSample implements IClothesServiceSample {
+public class ClothesService implements IClothesService {
 
-	private final ClothesRepositorySample clothesRepository;
+	private final ClothesRepository clothesRepository;
 	private final IFileService fileService;
 
 	@Override
 	@Transactional
 	@SaveHistory(entityType = "CLOTHES", actionType = "INSERT")
-	public ClothesSample createClothes(ClothesRequestSample request, String userId) {
+	public Clothes createClothes(ClothesRequest request, String userId) {
 		if (request.getFiles() == null || request.getFiles().isEmpty()) {
 			throw new IllegalArgumentException("이미지는 최소 1장 필요합니다.");
 		}
@@ -43,7 +43,7 @@ public class ClothesServiceSample implements IClothesServiceSample {
 
 		String clothesId = generateClothesId();
 
-		ClothesSample clothes = ClothesSample.builder()
+		Clothes clothes = Clothes.builder()
 			.clothesId(clothesId)
 			.userId(userId)
 			.name(request.getName())
@@ -66,7 +66,7 @@ public class ClothesServiceSample implements IClothesServiceSample {
 			if (file != null && !file.isEmpty()) {
 				FileInfo uploadedFile = fileService.uploadFile(file);
 
-				ClothesImageSample clothesImage = ClothesImageSample.builder()
+				ClothesImage clothesImage = ClothesImage.builder()
 					.clothesId(clothesId)
 					.fileId(uploadedFile.getFileId().longValue())
 					.createdBy(userId)
@@ -86,10 +86,10 @@ public class ClothesServiceSample implements IClothesServiceSample {
 	@Override
 	@Transactional
 	@SaveHistory(entityType = "CLOTHES", actionType = "UPDATE")
-	public ClothesSample updateClothes(String clothesId, ClothesRequestSample request, String userId) {
+	public Clothes updateClothes(String clothesId, ClothesRequest request, String userId) {
 		log.info("옷 수정 시작: clothesId={}, userId={}", clothesId, userId);
 
-		ClothesSample clothes = ClothesSample.builder()
+		Clothes clothes = Clothes.builder()
 			.clothesId(clothesId)
 			.name(request.getName())
 			.brand(request.getBrand())
@@ -122,7 +122,7 @@ public class ClothesServiceSample implements IClothesServiceSample {
 				if (file != null && !file.isEmpty()) {
 					FileInfo uploadedFile = fileService.uploadFile(file);
 
-					ClothesImageSample clothesImage = ClothesImageSample.builder()
+					ClothesImage clothesImage = ClothesImage.builder()
 						.clothesId(clothesId)
 						.fileId(uploadedFile.getFileId().longValue())
 						.createdBy(userId)
@@ -138,25 +138,25 @@ public class ClothesServiceSample implements IClothesServiceSample {
 	}
 
 	@Override
-	public List<ClothesResponseSample> getUserClothes(String userId) {
+	public List<ClothesResponse> getUserClothes(String userId) {
 		log.info("옷 목록 조회: userId={}", userId);
 
-		List<ClothesResponseSample> clothesList = clothesRepository.selectUserClothes(userId);
+		List<ClothesResponse> clothesList = clothesRepository.selectUserClothes(userId);
 
 		log.info("옷 목록 조회 완료: count={}", clothesList.size());
 		return clothesList;
 	}
 
 	@Override
-	public ClothesDetailResponseDto getClothesDetail(String clothesId, String userId) {
+	public ClothesDetailResponse getClothesDetail(String clothesId, String userId) {
 		log.info("옷 상세 조회: clothesId={}, userId={}", clothesId, userId);
 
-		ClothesDetailResponseDto clothes = clothesRepository.selectClothesById(clothesId, userId);
+		ClothesDetailResponse clothes = clothesRepository.selectClothesById(clothesId, userId);
 		if (clothes == null) {
 			throw new IllegalArgumentException("옷 정보를 찾을 수 없습니다.");
 		}
 
-		List<ClothesDetailResponseDto.ClothesImage> images = clothesRepository.selectClothesImage(clothesId);
+		List<ClothesDetailResponse.ClothesImage> images = clothesRepository.selectClothesImage(clothesId);
 		clothes.setImages(images);
 
 		log.info("옷 상세 조회 완료: clothesId={}", clothesId);
@@ -166,10 +166,10 @@ public class ClothesServiceSample implements IClothesServiceSample {
 	@Override
 	@Transactional
 	@SaveHistory(entityType = "CLOTHES", actionType = "DELETE")
-	public ClothesSample deleteClothes(String clothesId, String userId) {
+	public Clothes deleteClothes(String clothesId, String userId) {
 		log.info("옷 삭제 시작: clothesId={}, userId={}", clothesId, userId);
 
-		ClothesSample clothes = ClothesSample.builder()
+		Clothes clothes = Clothes.builder()
 			.clothesId(clothesId)
 			.updatedBy(userId)
 			.build();
@@ -186,17 +186,17 @@ public class ClothesServiceSample implements IClothesServiceSample {
 	@Override
 	@Transactional
 	@SaveHistory(entityType = "CLOTHES", actionType = "DELETE")
-	public List<ClothesSample> bulkDeleteClothes(List<String> clothesIds, String userId) {
+	public List<Clothes> bulkDeleteClothes(List<String> clothesIds, String userId) {
 		if (clothesIds == null || clothesIds.isEmpty()) {
 			throw new IllegalArgumentException("삭제할 옷 ID 목록이 비어있습니다.");
 		}
 
 		log.info("옷 일괄 삭제 시작: count={}, userId={}", clothesIds.size(), userId);
 
-		List<ClothesSample> clothesList = new ArrayList<>();
+		List<Clothes> clothesList = new ArrayList<>();
 
 		for (String clothesId : clothesIds) {
-			ClothesSample clothes = ClothesSample.builder()
+			Clothes clothes = Clothes.builder()
 				.clothesId(clothesId)
 				.updatedBy(userId)
 				.build();

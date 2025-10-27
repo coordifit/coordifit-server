@@ -13,7 +13,7 @@ import lombok.Setter;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class ClothesResponseSample {
+public class ClothesResponse {
 	private String clothesId;
 	private String name;
 	private String brand;
