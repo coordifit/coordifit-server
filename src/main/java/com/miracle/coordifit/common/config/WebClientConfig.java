@@ -1,4 +1,4 @@
-package com.miracle.coordifit.config;
+package com.miracle.coordifit.common.config;
 
 import java.time.Duration;
 import java.util.concurrent.TimeUnit;

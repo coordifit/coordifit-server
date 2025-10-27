@@ -1,10 +1,19 @@
 package com.miracle.coordifit.clothes.model;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 
-import lombok.Data;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
 
-@Data
+@Getter
+@Setter
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
 public class Clothes {
 	private String clothesId;
 	private String userId;
@@ -19,6 +28,8 @@ public class Clothes {
 	private Integer wearCount;
 	private LocalDate lastWornDate;
 	private String isActive;
+	private LocalDateTime createdAt;
 	private String createdBy;
+	private LocalDateTime updatedAt;
 	private String updatedBy;
 }
