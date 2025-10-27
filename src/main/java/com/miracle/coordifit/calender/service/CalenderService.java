@@ -46,13 +46,7 @@ public class CalenderService implements ICalenderService {
 
 		DailyLook target = existing.get();
 
-		calenderRepository.deleteDailyLookItemsByDailyLookId(target.getDailylookId());
-
 		int deleted = calenderRepository.deleteDailyLookById(target.getDailylookId());
-
-		if (target.getFileId() != null) {
-			fileservice.deleteFileById(target.getFileId().longValue());
-		}
 
 		return deleted;
 	}

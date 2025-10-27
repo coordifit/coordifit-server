@@ -76,12 +76,6 @@
      WHERE SUBSTR(dailylook_id, 2, 6) = TO_CHAR(SYSDATE, 'YYMMDD')
     </select>
 
-    <update id="deleteDailyLookItemsByDailyLookId" parameterType="string">
-      UPDATE DAILYLOOK_ITEMS
-      SET IS_ACTIVE = 'N'
-      WHERE DAILYLOOK_ID = #{dailylookId}
-    </update>
-
     <update id="deleteDailyLookById" parameterType="string">
       UPDATE DAILYLOOKS
       SET IS_ACTIVE = 'N'
