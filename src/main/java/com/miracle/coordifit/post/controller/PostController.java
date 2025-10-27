@@ -5,6 +5,7 @@ import java.util.List;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
+import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -24,6 +25,7 @@ import com.miracle.coordifit.post.service.ILikeService;
 import com.miracle.coordifit.post.service.IPostService;
 import com.miracle.coordifit.user.dto.UserDto;
 
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
@@ -53,8 +55,17 @@ public class PostController {
 
 	@PostMapping
 	public ResponseEntity<ApiResponseDto<Void>> createPost(
-		PostRequest request,
+		@Valid PostRequest request,
+		BindingResult bindingResult,
 		Authentication authentication) {
+
+		if (bindingResult.hasErrors()) {
+			String errorMessage = bindingResult.getFieldErrors().get(0).getDefaultMessage();
+			log.warn("게시물 등록 실패 - 유효성 검사 오류: {}", errorMessage);
+			return ResponseEntity.badRequest()
+				.body(ApiResponseDto.error(errorMessage));
+		}
+
 		try {
 			String userId = authentication.getName();
 			postService.createPost(request, userId);
@@ -88,8 +99,17 @@ public class PostController {
 	@PutMapping("/{postId}")
 	public ResponseEntity<ApiResponseDto<Void>> updatePost(
 		@PathVariable String postId,
-		PostRequest request,
+		@Valid PostRequest request,
+		BindingResult bindingResult,
 		Authentication authentication) {
+
+		if (bindingResult.hasErrors()) {
+			String errorMessage = bindingResult.getFieldErrors().get(0).getDefaultMessage();
+			log.warn("게시물 수정 실패 - 유효성 검사 오류: {}", errorMessage);
+			return ResponseEntity.badRequest()
+				.body(ApiResponseDto.error(errorMessage));
+		}
+
 		try {
 			String userId = authentication.getName();
 			postService.updatePost(postId, request, userId);

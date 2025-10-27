@@ -5,6 +5,7 @@ import java.util.List;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
+import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -20,6 +21,7 @@ import com.miracle.coordifit.clothes.sample.dto.ClothesResponseSample;
 import com.miracle.coordifit.clothes.sample.service.IClothesServiceSample;
 import com.miracle.coordifit.common.dto.ApiResponseDto;
 
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
@@ -33,8 +35,17 @@ public class ClothesControllerSample {
 
 	@PostMapping
 	public ResponseEntity<ApiResponseDto<Void>> createClothes(
-		ClothesRequestSample request,
+		@Valid ClothesRequestSample request,
+		BindingResult bindingResult,
 		Authentication authentication) {
+
+		if (bindingResult.hasErrors()) {
+			String errorMessage = bindingResult.getFieldErrors().get(0).getDefaultMessage();
+			log.warn("옷 등록 실패 - 유효성 검사 오류: {}", errorMessage);
+			return ResponseEntity.badRequest()
+				.body(ApiResponseDto.error(errorMessage));
+		}
+
 		try {
 			String userId = authentication.getName();
 
@@ -58,8 +69,17 @@ public class ClothesControllerSample {
 	@PutMapping("/{clothesId}")
 	public ResponseEntity<ApiResponseDto<Void>> updateClothes(
 		@PathVariable String clothesId,
-		ClothesRequestSample request,
+		@Valid ClothesRequestSample request,
+		BindingResult bindingResult,
 		Authentication authentication) {
+
+		if (bindingResult.hasErrors()) {
+			String errorMessage = bindingResult.getFieldErrors().get(0).getDefaultMessage();
+			log.warn("옷 수정 실패 - 유효성 검사 오류: {}", errorMessage);
+			return ResponseEntity.badRequest()
+				.body(ApiResponseDto.error(errorMessage));
+		}
+
 		try {
 			String userId = authentication.getName();
 
