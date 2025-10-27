@@ -3,6 +3,7 @@ package com.miracle.coordifit.calender.service;
 import java.util.List;
 
 import com.miracle.coordifit.calender.dto.DailyLookResponse;
+import com.miracle.coordifit.calender.dto.DailyLookSummaryResponse;
 import com.miracle.coordifit.calender.model.DailyLook;
 
 public interface ICalenderService {
@@ -20,4 +21,7 @@ public interface ICalenderService {
 
 	// 데일리룩 삭제
 	public int deleteDailyLookByDate(String userId, String wearDate);
+
+	// 데일리룩 통계
+	public DailyLookSummaryResponse getDailyLookSummary(String userId, String yearMonth);
 }

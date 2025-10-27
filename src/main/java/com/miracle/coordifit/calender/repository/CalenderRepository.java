@@ -8,6 +8,7 @@ import org.apache.ibatis.annotations.Param;
 
 import com.miracle.coordifit.calender.model.DailyLook;
 import com.miracle.coordifit.calender.model.DailyLookItem;
+import com.miracle.coordifit.calender.model.MostWornClothesDto;
 
 @Mapper
 public interface CalenderRepository {
@@ -36,4 +37,11 @@ public interface CalenderRepository {
 	int deleteDailyLookItemsByDailyLookId(String dailylookId);
 
 	int deleteDailyLookById(String dailylookId);
+
+	// 데일리룩 통계
+	int selectDailyLookCountByMonth(String userId, String yearMonth);
+
+	MostWornClothesDto selectMostWornClothesByMonth(String userId, String yearMonth);
+
+	MostWornClothesDto selectMostWornClothes(String userId);
 }

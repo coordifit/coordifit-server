@@ -15,9 +15,11 @@ import org.springframework.transaction.annotation.Transactional;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.miracle.coordifit.calender.dto.DailyLookResponse;
+import com.miracle.coordifit.calender.dto.DailyLookSummaryResponse;
 import com.miracle.coordifit.calender.mapper.DailyLookMapper;
 import com.miracle.coordifit.calender.model.DailyLook;
 import com.miracle.coordifit.calender.model.DailyLookItem;
+import com.miracle.coordifit.calender.model.MostWornClothesDto;
 import com.miracle.coordifit.calender.repository.CalenderRepository;
 import com.miracle.coordifit.common.model.FileInfo;
 import com.miracle.coordifit.common.service.IFileService;
@@ -129,6 +131,24 @@ public class CalenderService implements ICalenderService {
 		DailyLookResponse response = dailyLookMapper.toResponse(dailyLook, originImageUrl, thumbImageUrl);
 
 		return response;
+	}
+
+	@Override
+	public DailyLookSummaryResponse getDailyLookSummary(String userId, String yearMonth) {
+		int totalCount = calenderRepository.selectDailyLookCountByMonth(userId, yearMonth);
+		MostWornClothesDto mostWornClothes = calenderRepository.selectMostWornClothes(userId);
+		MostWornClothesDto mostWornClothesByMonth = calenderRepository.selectMostWornClothesByMonth(userId, yearMonth);
+
+		if (mostWornClothes == null)
+			mostWornClothes = MostWornClothesDto.empty();
+		if (mostWornClothesByMonth == null)
+			mostWornClothesByMonth = MostWornClothesDto.empty();
+
+		return DailyLookSummaryResponse.builder()
+			.totalDailyLookCount(totalCount)
+			.mostWornClothesOverall(mostWornClothes)
+			.mostWornClothesThisMonth(mostWornClothesByMonth)
+			.build();
 	}
 
 	private List<DailyLookItem> parseItemsJson(String itemsJson, DailyLook dailyLook) {

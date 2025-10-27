@@ -19,6 +19,7 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
 import com.miracle.coordifit.calender.dto.DailyLookResponse;
+import com.miracle.coordifit.calender.dto.DailyLookSummaryResponse;
 import com.miracle.coordifit.calender.model.DailyLook;
 import com.miracle.coordifit.calender.service.ICalenderService;
 import com.miracle.coordifit.common.dto.ApiResponseDto;
@@ -60,6 +61,16 @@ public class CalenderController {
 
 		return ResponseEntity.badRequest()
 			.body(ApiResponseDto.error("yearMonth 또는 wearDate 파라미터를 제공해야 합니다."));
+	}
+
+	@GetMapping("/summary")
+	public ResponseEntity<ApiResponseDto<?>> getStatistics(@RequestParam String yearMonth,
+		Authentication authentication) {
+		String userId = (String)authentication.getPrincipal();
+
+		DailyLookSummaryResponse data = calenderService.getDailyLookSummary(userId, yearMonth);
+
+		return ResponseEntity.ok(ApiResponseDto.success("월간 통계 조회 성공", data));
 	}
 
 	@DeleteMapping("/date/{wearDate:\\d{4}-\\d{2}-\\d{2}}")
