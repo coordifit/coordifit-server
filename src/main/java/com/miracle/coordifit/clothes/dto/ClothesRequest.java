@@ -1,4 +1,4 @@
-package com.miracle.coordifit.clothes.sample.dto;
+package com.miracle.coordifit.clothes.dto;
 
 import java.util.List;
 
@@ -17,7 +17,7 @@ import lombok.Setter;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class ClothesRequestSample {
+public class ClothesRequest {
 	@NotBlank(message = "옷 이름은 필수입니다.")
 	@Size(max = 100, message = "옷 이름은 최대 100자까지 입력 가능합니다.")
 	private String name;

@@ -1,4 +1,4 @@
-package com.miracle.coordifit.exception;
+package com.miracle.coordifit.common.exception;
 
 import lombok.Getter;
 

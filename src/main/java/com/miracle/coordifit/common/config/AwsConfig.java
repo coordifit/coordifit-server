@@ -1,4 +1,4 @@
-package com.miracle.coordifit.config;
+package com.miracle.coordifit.common.config;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;

@@ -1,263 +1,199 @@
 package com.miracle.coordifit.clothes.controller;
 
-import java.util.*;
-import java.util.stream.Collectors;
+import java.util.List;
 
-import org.springframework.http.MediaType;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.validation.BindingResult;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
 
-import com.miracle.coordifit.clothes.dto.*;
-import com.miracle.coordifit.clothes.repository.ClothesRepository;
+import com.miracle.coordifit.clothes.dto.ClothesDetailResponse;
+import com.miracle.coordifit.clothes.dto.ClothesRequest;
+import com.miracle.coordifit.clothes.dto.ClothesResponse;
 import com.miracle.coordifit.clothes.service.IClothesService;
 import com.miracle.coordifit.common.dto.ApiResponseDto;
-import com.miracle.coordifit.common.model.CommonCode;
-import com.miracle.coordifit.common.model.FileInfo;
-import com.miracle.coordifit.common.service.ICommonCodeService;
 
-import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
-@Tag(name = "Clothes", description = "옷 등록/수정/조회 API (Base64 이미지)")
-@RestController
-@RequiredArgsConstructor
-@RequestMapping("/api/clothes")
 @Slf4j
+@RestController
+@RequestMapping("/api/clothes")
+@RequiredArgsConstructor
 public class ClothesController {
 
 	private final IClothesService clothesService;
-	private final ICommonCodeService commonCodeService;
-	private final ClothesRepository clothesRepository;
 
-	// ================== 현재 로그인한 사용자 ID 추출 ==================
-	private String currentUserId() {
-		Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-		if (auth == null || auth.getPrincipal() == null)
-			return null;
-		return auth.getPrincipal().toString();
-	}
+	@PostMapping
+	public ResponseEntity<ApiResponseDto<Void>> createClothes(
+		@Valid ClothesRequest request,
+		BindingResult bindingResult,
+		Authentication authentication) {
 
-	@Operation(summary = "등록/수정 폼 데이터")
-	@GetMapping("/form")
-	public ApiResponseDto<Map<String, Object>> form() {
-		Map<String, Object> res = new HashMap<>();
-		Map<String, CommonCode> all = commonCodeService.getCommonCodes();
-		res.put("categories", all.get("B10001"));
-		res.put("uploadPolicy", Map.of("min", 1, "max", 5, "maxSizeMB", 10));
-		return ApiResponseDto.success("OK", res);
-	}
+		if (bindingResult.hasErrors()) {
+			String errorMessage = bindingResult.getFieldErrors().get(0).getDefaultMessage();
+			log.warn("옷 등록 실패 - 유효성 검사 오류: {}", errorMessage);
+			return ResponseEntity.badRequest()
+				.body(ApiResponseDto.error(errorMessage));
+		}
 
-	// ================== Base64 단건 등록 ==================
-	@Operation(summary = "옷 등록 (Base64 이미지)")
-	@PostMapping(path = "/base64", consumes = MediaType.APPLICATION_JSON_VALUE)
-	public ApiResponseDto<Map<String, Object>> createOne(
-		@Valid @RequestBody ClothesCreateWithImagesRequest req) {
 		try {
-			String actor = currentUserId();
+			String userId = authentication.getName();
 
-			if (actor == null)
-				return ApiResponseDto.error("인증 정보가 없습니다. 로그인 후 다시 시도하세요.");
+			log.info("옷 등록 요청: userId={}, name={}", userId, request.getName());
 
-			// ✅ JWT 기반 로그인 구조 대응 — userId를 강제 주입
-			req.setUserId(actor);
+			clothesService.createClothes(request, userId);
 
-			for (var img : req.getImages()) {
-				com.miracle.coordifit.common.service.FileService
-					.decodeBase64SafeForPreflight(img.getDataUrl());
-			}
-
-			validateCategoryCode(req.getCategoryCode());
-			String id = clothesService.createOneBase64(req, actor);
-			return ApiResponseDto.success("등록 성공", Map.of("clothesId", id));
+			return ResponseEntity.ok(
+				ApiResponseDto.success("옷이 성공적으로 등록되었습니다."));
+		} catch (IllegalArgumentException e) {
+			log.warn("옷 등록 실패 (잘못된 요청): {}", e.getMessage());
+			return ResponseEntity.badRequest()
+				.body(ApiResponseDto.error(e.getMessage()));
 		} catch (Exception e) {
-			return ApiResponseDto.error("등록 실패: " + root(e));
+			log.error("옷 등록 실패", e);
+			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+				.body(ApiResponseDto.error("옷 등록 중 오류가 발생했습니다." + e.getMessage()));
 		}
 	}
 
-	// ================== Base64 벌크 등록(병렬) ==================
-	@Operation(summary = "옷 일괄 등록 (Base64, 병렬)")
-	@PostMapping(path = "/base64/bulk", consumes = MediaType.APPLICATION_JSON_VALUE)
-	public ApiResponseDto<List<String>> bulkCreate(
-		@Valid @RequestBody ClothesBulkCreateWithImagesRequest req) {
-		try {
-			String actor = currentUserId();
-			if (actor == null)
-				return ApiResponseDto.error("인증 정보가 없습니다.");
-
-			// ✅ 모든 항목에 JWT 기반 userId 주입
-			if (req.getItems() != null) {
-				for (ClothesCreateWithImagesRequest item : req.getItems()) {
-					item.setUserId(actor);
-				}
-			}
-
-			if (req.getItems() != null && !req.getItems().isEmpty()) {
-				validateCategoryCodes(req.getItems().stream()
-					.map(ClothesCreateWithImagesRequest::getCategoryCode)
-					.collect(Collectors.toList()));
-			}
-
-			return ApiResponseDto.success("일괄 등록 성공",
-				clothesService.bulkCreateBase64Parallel(req, actor));
-		} catch (Exception e) {
-			return ApiResponseDto.error("일괄 등록 실패: " + root(e));
-		}
-	}
-
-	// ================== Base64 수정 ==================
-	@Operation(summary = "옷 수정 (Base64 이미지)")
-	@PutMapping(path = "/{clothesId}/base64", consumes = MediaType.APPLICATION_JSON_VALUE)
-	public ApiResponseDto<Void> update(
+	@PutMapping("/{clothesId}")
+	public ResponseEntity<ApiResponseDto<Void>> updateClothes(
 		@PathVariable String clothesId,
-		@Valid @RequestBody ClothesUpdateWithImagesRequest req) {
-		try {
-			String actor = currentUserId();
-			if (actor == null)
-				return ApiResponseDto.error("인증 정보가 없습니다.");
+		@Valid ClothesRequest request,
+		BindingResult bindingResult,
+		Authentication authentication) {
 
-			if (req.getCategoryCode() != null)
-				validateCategoryCode(req.getCategoryCode());
-			clothesService.updateBase64(clothesId, req, actor);
-			return ApiResponseDto.success("수정 성공");
+		if (bindingResult.hasErrors()) {
+			String errorMessage = bindingResult.getFieldErrors().get(0).getDefaultMessage();
+			log.warn("옷 수정 실패 - 유효성 검사 오류: {}", errorMessage);
+			return ResponseEntity.badRequest()
+				.body(ApiResponseDto.error(errorMessage));
+		}
+
+		try {
+			String userId = authentication.getName();
+
+			log.info("옷 수정 요청: clothesId={}, userId={}, deletedFileIds={}",
+				clothesId, userId, request.getDeletedFileIds());
+
+			clothesService.updateClothes(clothesId, request, userId);
+
+			log.info("옷 수정 완료: clothesId={}", clothesId);
+			return ResponseEntity.ok(
+				ApiResponseDto.success("옷이 성공적으로 수정되었습니다.", null));
+		} catch (IllegalArgumentException e) {
+			log.warn("옷 수정 실패 (잘못된 요청): {}", e.getMessage());
+			return ResponseEntity.badRequest()
+				.body(ApiResponseDto.error(e.getMessage()));
 		} catch (Exception e) {
-			return ApiResponseDto.error("수정 실패: " + root(e));
+			log.error("옷 수정 실패", e);
+			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+				.body(ApiResponseDto.error("옷 수정 중 오류가 발생했습니다." + e.getMessage()));
 		}
 	}
 
-	// ================== 이미지 개별 삭제 ==================
-	@Operation(summary = "이미지 개별 삭제")
-	@DeleteMapping("/{clothesId}/images/{fileId}")
-	public ApiResponseDto<Void> deleteImage(@PathVariable String clothesId, @PathVariable Long fileId) {
-		try {
-			clothesService.removeImage(clothesId, fileId);
-			return ApiResponseDto.success("이미지 삭제 성공");
-		} catch (Exception e) {
-			return ApiResponseDto.error("이미지 삭제 실패: " + root(e));
-		}
-	}
-
-	// ================== 삭제/벌크 삭제 ==================
-	@Operation(summary = "옷 삭제(소프트삭제)")
-	@DeleteMapping("/{clothesId}")
-	public ApiResponseDto<Void> remove(@PathVariable String clothesId) {
-		try {
-			clothesService.remove(clothesId);
-			return ApiResponseDto.success("삭제 성공");
-		} catch (Exception e) {
-			return ApiResponseDto.error("삭제 실패: " + root(e));
-		}
-	}
-
-	@Operation(summary = "옷 일괄 삭제")
-	@DeleteMapping("/bulk")
-	public ApiResponseDto<Void> bulkDelete(@RequestBody List<String> clothesIds) {
-		try {
-			clothesService.bulkDelete(clothesIds);
-			return ApiResponseDto.success("일괄 삭제 성공");
-		} catch (Exception e) {
-			return ApiResponseDto.error("일괄 삭제 실패: " + root(e));
-		}
-	}
-
-	// ================== 조회 ==================
-	@Operation(summary = "옷 상세 조회 (images[] + thumbnailUrl 포함)")
-	@GetMapping("/{clothesId}")
-	public ApiResponseDto<ClothesDetailDto> detail(@PathVariable String clothesId) {
-		try {
-			return ApiResponseDto.success("조회 성공", clothesService.findDetail(clothesId));
-		} catch (Exception e) {
-			return ApiResponseDto.error("조회 실패: " + root(e));
-		}
-	}
-
-	@Operation(summary = "내 옷 전체(썸네일 목록)")
-	@GetMapping("/me")
-	public ApiResponseDto<List<ClothesListItemDto>> myClothes() {
-		String userId = currentUserId();
-		if (userId == null)
-			return ApiResponseDto.error("인증 정보가 없습니다.");
-		return ApiResponseDto.success("OK", clothesService.findAllByUser(userId));
-	}
-
-	@Operation(summary = "옷 이미지 목록 (파일 상세)")
-	@GetMapping("/{clothesId}/images")
-	public ApiResponseDto<List<FileInfo>> images(@PathVariable String clothesId) {
-		return ApiResponseDto.success("OK", clothesService.findImages(clothesId));
-	}
-
-	@Operation(summary = "옷 전체 조회(정렬/필터/페이징)")
 	@GetMapping
-	public ApiResponseDto<Map<String, Object>> getClothes(
-		@RequestParam(required = false) String categoryCode,
-		@RequestParam(defaultValue = "purchaseDate") String sort,
-		@RequestParam(defaultValue = "desc") String dir,
-		@RequestParam(defaultValue = "0") int page,
-		@RequestParam(defaultValue = "20") int size) {
+	public ResponseEntity<ApiResponseDto<List<ClothesResponse>>> getUserClothes(
+		Authentication authentication) {
+		try {
+			String userId = authentication.getName();
 
-		List<ClothesDetailDto> all = clothesService.getClothes(categoryCode, null);
+			log.info("옷 목록 조회 요청: userId={}", userId);
 
-		Comparator<ClothesDetailDto> comp;
-		if ("price".equalsIgnoreCase(sort)) {
-			comp = Comparator.comparing(dto -> dto.getPrice() == null ? Integer.MIN_VALUE : dto.getPrice());
-		} else if ("name".equalsIgnoreCase(sort)) {
-			comp = Comparator.comparing(dto -> dto.getName() == null ? "" : dto.getName(),
-				String.CASE_INSENSITIVE_ORDER);
-		} else {
-			comp = Comparator.comparing(ClothesDetailDto::getPurchaseDate,
-				Comparator.nullsLast(Comparator.naturalOrder()));
-		}
-		if ("desc".equalsIgnoreCase(dir))
-			comp = comp.reversed();
+			List<ClothesResponse> clothesList = clothesService.getUserClothes(userId);
 
-		List<ClothesDetailDto> sorted = all.stream().sorted(comp).toList();
-		int safeSize = Math.max(size, 1);
-		int from = Math.max(page, 0) * safeSize;
-		int to = Math.min(from + safeSize, sorted.size());
-		List<ClothesDetailDto> content = from >= to ? List.of() : sorted.subList(from, to);
-
-		Map<String, Object> body = new HashMap<>();
-		body.put("content", content);
-		body.put("totalElements", sorted.size());
-		body.put("page", page);
-		body.put("size", safeSize);
-		return ApiResponseDto.success("OK", body);
-	}
-
-	// ================== 유틸 ==================
-	private void validateCategoryCode(String categoryCode) {
-		if (categoryCode == null)
-			return;
-		String code = categoryCode.trim();
-		if (code.isEmpty())
-			throw new IllegalArgumentException("유효하지 않은 categoryCode(공백)");
-		int n = clothesRepository.existsActiveCategoryCount(code);
-		if (n == 0)
-			throw new IllegalArgumentException("유효하지 않은 categoryCode: " + code);
-	}
-
-	private void validateCategoryCodes(List<String> codes) {
-		if (codes == null)
-			return;
-		for (String c : codes) {
-			if (c == null)
-				continue;
-			String code = c.trim();
-			if (code.isEmpty())
-				throw new IllegalArgumentException("유효하지 않은 categoryCode(공백)");
-			int n = clothesRepository.existsActiveCategoryCount(code);
-			if (n == 0)
-				throw new IllegalArgumentException("유효하지 않은 categoryCode: " + code);
+			log.info("옷 목록 조회 완료: count={}", clothesList.size());
+			return ResponseEntity.ok(
+				ApiResponseDto.success("옷 목록 조회 성공", clothesList));
+		} catch (Exception e) {
+			log.error("옷 목록 조회 실패", e);
+			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+				.body(ApiResponseDto.error("옷 목록 조회 중 오류가 발생했습니다."));
 		}
 	}
 
-	private String root(Throwable t) {
-		Throwable r = t;
-		while (r.getCause() != null)
-			r = r.getCause();
-		return r.getClass().getSimpleName() + ": " + String.valueOf(r.getMessage());
+	@GetMapping("/{clothesId}")
+	public ResponseEntity<ApiResponseDto<ClothesDetailResponse>> getClothesDetail(
+		@PathVariable String clothesId,
+		Authentication authentication) {
+		try {
+			String userId = authentication.getName();
+
+			log.info("옷 상세 조회 요청: clothesId={}, userId={}", clothesId, userId);
+
+			ClothesDetailResponse clothes = clothesService.getClothesDetail(clothesId, userId);
+
+			log.info("옷 상세 조회 완료: clothesId={}", clothesId);
+			return ResponseEntity.ok(
+				ApiResponseDto.success("옷 상세 조회 성공", clothes));
+		} catch (IllegalArgumentException e) {
+			log.warn("옷 상세 조회 실패 (잘못된 요청): {}", e.getMessage());
+			return ResponseEntity.badRequest()
+				.body(ApiResponseDto.error(e.getMessage()));
+		} catch (Exception e) {
+			log.error("옷 상세 조회 실패", e);
+			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+				.body(ApiResponseDto.error("옷 상세 조회 중 오류가 발생했습니다."));
+		}
+	}
+
+	@DeleteMapping("/{clothesId}")
+	public ResponseEntity<ApiResponseDto<Void>> deleteClothes(
+		@PathVariable String clothesId,
+		Authentication authentication) {
+		try {
+			String userId = authentication.getName();
+
+			log.info("옷 삭제 요청: clothesId={}, userId={}", clothesId, userId);
+
+			clothesService.deleteClothes(clothesId, userId);
+
+			log.info("옷 삭제 완료: clothesId={}", clothesId);
+			return ResponseEntity.ok(
+				ApiResponseDto.success("옷이 성공적으로 삭제되었습니다.", null));
+		} catch (IllegalArgumentException e) {
+			log.warn("옷 삭제 실패 (잘못된 요청): {}", e.getMessage());
+			return ResponseEntity.badRequest()
+				.body(ApiResponseDto.error(e.getMessage()));
+		} catch (Exception e) {
+			log.error("옷 삭제 실패", e);
+			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+				.body(ApiResponseDto.error("옷 삭제 중 오류가 발생했습니다."));
+		}
+	}
+
+	@DeleteMapping("/bulk")
+	public ResponseEntity<ApiResponseDto<Void>> bulkDeleteClothes(
+		@RequestBody List<String> clothesIds,
+		Authentication authentication) {
+		try {
+			String userId = authentication.getName();
+
+			log.info("옷 일괄 삭제 요청: count={}, userId={}", clothesIds.size(), userId);
+
+			clothesService.bulkDeleteClothes(clothesIds, userId);
+
+			log.info("옷 일괄 삭제 완료: count={}", clothesIds.size());
+			return ResponseEntity.ok(
+				ApiResponseDto.success("선택한 옷이 성공적으로 삭제되었습니다.", null));
+		} catch (IllegalArgumentException e) {
+			log.warn("옷 일괄 삭제 실패 (잘못된 요청): {}", e.getMessage());
+			return ResponseEntity.badRequest()
+				.body(ApiResponseDto.error(e.getMessage()));
+		} catch (Exception e) {
+			log.error("옷 일괄 삭제 실패", e);
+			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+				.body(ApiResponseDto.error("옷 일괄 삭제 중 오류가 발생했습니다."));
+		}
 	}
 }

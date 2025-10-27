@@ -1,21 +1,23 @@
-// src/main/java/com/miracle/coordifit/clothes/service/ClothesService.java
 package com.miracle.coordifit.clothes.service;
 
-import java.util.*;
-import java.util.concurrent.*;
-import java.util.stream.Collectors;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
+import java.util.List;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.transaction.support.TransactionTemplate;
+import org.springframework.web.multipart.MultipartFile;
 
-import com.miracle.coordifit.clothes.dto.*;
+import com.miracle.coordifit.clothes.dto.ClothesDetailResponse;
+import com.miracle.coordifit.clothes.dto.ClothesRequest;
+import com.miracle.coordifit.clothes.dto.ClothesResponse;
 import com.miracle.coordifit.clothes.model.Clothes;
-import com.miracle.coordifit.clothes.model.ClothesImageLink;
+import com.miracle.coordifit.clothes.model.ClothesImage;
 import com.miracle.coordifit.clothes.repository.ClothesRepository;
-import com.miracle.coordifit.common.dto.Base64ImageDto;
+import com.miracle.coordifit.common.aspect.SaveHistory;
 import com.miracle.coordifit.common.model.FileInfo;
-import com.miracle.coordifit.common.service.ICommonCodeService;
 import com.miracle.coordifit.common.service.IFileService;
 
 import lombok.RequiredArgsConstructor;
@@ -28,314 +30,191 @@ public class ClothesService implements IClothesService {
 
 	private final ClothesRepository clothesRepository;
 	private final IFileService fileService;
-	private final ICommonCodeService commonCodeService;
-	private final TransactionTemplate transactionTemplate; // 병렬 항목별 트랜잭션용
 
-	// ================== 등록(단건) Base64 ==================
 	@Override
 	@Transactional
-	public String createOneBase64(ClothesCreateWithImagesRequest req, String actor) {
-		if (req.getImages() == null || req.getImages().isEmpty()) {
+	@SaveHistory(entityType = "CLOTHES", actionType = "INSERT")
+	public Clothes createClothes(ClothesRequest request, String userId) {
+		if (request.getFiles() == null || request.getFiles().isEmpty()) {
 			throw new IllegalArgumentException("이미지는 최소 1장 필요합니다.");
 		}
-		validateCategoryOrThrow(req.getCategoryCode());
 
-		final String id = clothesRepository.selectNextClothesId();
+		log.info("옷 등록 시작: userId={}, name={}", userId, request.getName());
 
-		Clothes c = new Clothes();
-		c.setClothesId(id);
-		c.setUserId(req.getUserId());
-		c.setName(req.getName());
-		c.setBrand(req.getBrand());
-		c.setCategoryCode(req.getCategoryCode());
-		c.setClothesSize(req.getClothesSize());
-		c.setPrice(req.getPrice());
-		c.setPurchaseDate(req.getPurchaseDate());
-		c.setPurchaseUrl(req.getPurchaseUrl());
-		c.setDescription(req.getDescription());
-		c.setWearCount(0);
-		c.setIsActive("Y");
-		c.setCreatedBy(actor);
-		c.setUpdatedBy(actor);
+		String clothesId = generateClothesId();
 
-		clothesRepository.insertClothes(c);
+		Clothes clothes = Clothes.builder()
+			.clothesId(clothesId)
+			.userId(userId)
+			.name(request.getName())
+			.brand(request.getBrand())
+			.categoryCode(request.getCategoryCode())
+			.clothesSize(request.getClothesSize())
+			.price(request.getPrice())
+			.purchaseDate(request.getPurchaseDate() != null
+				? LocalDate.parse(request.getPurchaseDate(), DateTimeFormatter.ofPattern("yyyy-MM-dd"))
+				: null)
+			.purchaseUrl(request.getPurchaseUrl())
+			.description(request.getDescription())
+			.isActive("Y")
+			.createdBy(userId)
+			.build();
 
-		List<FileInfo> saved = fileService.uploadBase64Batch(req.getImages()); // FileService 안에서 공백/개행 제거 권장
-		linkImagesBatch(id, saved, actor);
-		return id;
-	}
+		clothesRepository.insertClothes(clothes);
 
-	// ================== 등록(벌크) Base64 - 순차 ==================
-	@Override
-	public List<String> bulkCreateBase64(ClothesBulkCreateWithImagesRequest req, String actor) {
-		if (req == null || req.getItems() == null || req.getItems().isEmpty())
-			return List.of();
+		for (MultipartFile file : request.getFiles()) {
+			if (file != null && !file.isEmpty()) {
+				FileInfo uploadedFile = fileService.uploadFile(file);
 
-		List<String> ids = new ArrayList<>();
-		for (ClothesCreateWithImagesRequest item : req.getItems()) {
-			if (item.getImages() == null || item.getImages().isEmpty()) {
-				throw new IllegalArgumentException("각 항목은 최소 1장 이미지가 필요합니다.");
-			}
-			validateCategoryOrThrow(item.getCategoryCode());
+				ClothesImage clothesImage = ClothesImage.builder()
+					.clothesId(clothesId)
+					.fileId(uploadedFile.getFileId().longValue())
+					.createdBy(userId)
+					.build();
 
-			final String id = clothesRepository.selectNextClothesId(); // ✅
-			ids.add(id);
-
-			transactionTemplate.execute(status -> {
-				try {
-					Clothes c = new Clothes();
-					c.setClothesId(id);
-					c.setUserId(item.getUserId());
-					c.setName(item.getName());
-					c.setBrand(item.getBrand());
-					c.setCategoryCode(item.getCategoryCode());
-					c.setClothesSize(item.getClothesSize());
-					c.setPrice(item.getPrice());
-					c.setPurchaseDate(item.getPurchaseDate());
-					c.setPurchaseUrl(item.getPurchaseUrl());
-					c.setDescription(item.getDescription());
-					c.setWearCount(0);
-					c.setIsActive("Y");
-					c.setCreatedBy(actor);
-					c.setUpdatedBy(actor);
-
-					clothesRepository.insertClothes(c);
-					List<FileInfo> saved = fileService.uploadBase64Batch(item.getImages());
-					linkImagesBatch(id, saved, actor);
-				} catch (Exception e) {
-					status.setRollbackOnly();
-					throw e;
-				}
-				return null;
-			});
-		}
-		return ids;
-	}
-
-	// ================== 등록(벌크) Base64 - 병렬 ==================
-	// ⚠️ 여기서는 메서드 전체 @Transactional 금지 (각 작업을 개별 트랜잭션으로)
-	@Override
-	public List<String> bulkCreateBase64Parallel(ClothesBulkCreateWithImagesRequest req, String actor) {
-		if (req == null || req.getItems() == null || req.getItems().isEmpty())
-			return List.of();
-
-		int threads = Math.min(4, Math.max(1, req.getItems().size()));
-		ExecutorService es = Executors.newFixedThreadPool(threads);
-		List<Future<String>> futures = new ArrayList<>();
-
-		for (ClothesCreateWithImagesRequest item : req.getItems()) {
-			futures.add(es.submit(() -> transactionTemplate.execute(status -> {
-				try {
-					if (item.getImages() == null || item.getImages().isEmpty()) {
-						throw new IllegalArgumentException("각 항목은 최소 1장 이미지 필요");
-					}
-					validateCategoryOrThrow(item.getCategoryCode());
-
-					final String id = clothesRepository.selectNextClothesId(); // ✅ 매 건마다
-
-					Clothes c = new Clothes();
-					c.setClothesId(id);
-					c.setUserId(item.getUserId());
-					c.setName(item.getName());
-					c.setBrand(item.getBrand());
-					c.setCategoryCode(item.getCategoryCode());
-					c.setClothesSize(item.getClothesSize());
-					c.setPrice(item.getPrice());
-					c.setPurchaseDate(item.getPurchaseDate());
-					c.setPurchaseUrl(item.getPurchaseUrl());
-					c.setDescription(item.getDescription());
-					c.setWearCount(0);
-					c.setIsActive("Y");
-					c.setCreatedBy(actor);
-					c.setUpdatedBy(actor);
-					c.setLastWornDate(item.getLastWornDate());
-
-					clothesRepository.insertClothes(c);
-					List<FileInfo> saved = fileService.uploadBase64Batch(item.getImages());
-					linkImagesBatch(id, saved, actor);
-					return id;
-				} catch (Exception e) {
-					status.setRollbackOnly();
-					throw new RuntimeException("벌크 항목 실패: " + item.getName() + " - " + e.getMessage(), e);
-				}
-			})));
-		}
-		es.shutdown();
-
-		// ✅ 하나라도 실패하면 전체 실패로 반환 (200 방지)
-		List<String> ids = new ArrayList<>();
-		for (Future<String> f : futures) {
-			try {
-				ids.add(f.get()); // 여기서 ExecutionException이면 catch로
-			} catch (Exception e) {
-				es.shutdownNow();
-				throw new RuntimeException("벌크 등록 중 일부 실패", e.getCause() != null ? e.getCause() : e);
-			}
-		}
-		return ids;
-	}
-
-	// ================== 수정 Base64 ==================
-	@Override
-	@Transactional
-	public void updateBase64(String clothesId, ClothesUpdateWithImagesRequest req, String actor) {
-		Clothes c = new Clothes();
-		c.setClothesId(clothesId);
-		c.setName(req.getName());
-		c.setBrand(req.getBrand());
-		c.setCategoryCode(req.getCategoryCode());
-		c.setClothesSize(req.getClothesSize());
-		c.setPrice(req.getPrice());
-		c.setPurchaseDate(req.getPurchaseDate());
-		c.setPurchaseUrl(req.getPurchaseUrl());
-		c.setDescription(req.getDescription());
-		c.setUpdatedBy(actor);
-		c.setLastWornDate(req.getLastWornDate());
-
-		if (req.getCategoryCode() != null)
-			validateCategoryOrThrow(req.getCategoryCode());
-		clothesRepository.updateClothes(c);
-
-		if (req.getDeletedImageIds() != null && !req.getDeletedImageIds().isEmpty()) {
-			for (Long fileId : req.getDeletedImageIds()) {
-				try {
-					removeImage(clothesId, fileId);
-				} catch (Exception e) {
-					// 삭제 중 예외가 발생하더라도 전체 트랜잭션에 영향 주지 않도록 로그만 남김
-					log.warn("이미지 삭제 중 오류 발생 - clothesId: {}, fileId: {}", clothesId, fileId, e);
+				int result = clothesRepository.insertClothesImage(clothesImage);
+				if (result <= 0) {
+					throw new RuntimeException("옷 이미지 등록 처리 중 오류가 발생했습니다.");
 				}
 			}
 		}
 
-		List<Base64ImageDto> imgs = req.getImages();
-		boolean replace = Boolean.TRUE.equals(req.getReplaceAllImages());
+		log.info("옷 등록 완료: clothesId={}", clothesId);
+		return clothes;
+	}
 
-		if (imgs != null) {
-			if (replace) {
-				clothesRepository.deleteAllImageLinks(clothesId);
+	@Override
+	@Transactional
+	@SaveHistory(entityType = "CLOTHES", actionType = "UPDATE")
+	public Clothes updateClothes(String clothesId, ClothesRequest request, String userId) {
+		log.info("옷 수정 시작: clothesId={}, userId={}", clothesId, userId);
+
+		Clothes clothes = Clothes.builder()
+			.clothesId(clothesId)
+			.name(request.getName())
+			.brand(request.getBrand())
+			.categoryCode(request.getCategoryCode())
+			.clothesSize(request.getClothesSize())
+			.price(request.getPrice())
+			.purchaseDate(request.getPurchaseDate() != null
+				? LocalDate.parse(request.getPurchaseDate(), DateTimeFormatter.ofPattern("yyyy-MM-dd"))
+				: null)
+			.purchaseUrl(request.getPurchaseUrl())
+			.description(request.getDescription())
+			.updatedBy(userId)
+			.build();
+
+		clothesRepository.updateClothes(clothes);
+
+		if (request.getDeletedFileIds() != null && !request.getDeletedFileIds().isEmpty()) {
+			for (Long fileId : request.getDeletedFileIds()) {
+				try {
+					clothesRepository.deleteClothesImage(clothesId, fileId);
+					log.info("이미지 삭제 완료: clothesId={}, fileId={}", clothesId, fileId);
+				} catch (Exception e) {
+					log.warn("이미지 삭제 실패: clothesId={}, fileId={}", clothesId, fileId, e);
+				}
 			}
-			if (!imgs.isEmpty()) {
-				List<FileInfo> saved = fileService.uploadBase64Batch(imgs);
-				linkImagesBatch(clothesId, saved, actor);
+		}
+
+		if (request.getFiles() != null && !request.getFiles().isEmpty()) {
+			for (MultipartFile file : request.getFiles()) {
+				if (file != null && !file.isEmpty()) {
+					FileInfo uploadedFile = fileService.uploadFile(file);
+
+					ClothesImage clothesImage = ClothesImage.builder()
+						.clothesId(clothesId)
+						.fileId(uploadedFile.getFileId().longValue())
+						.createdBy(userId)
+						.build();
+
+					clothesRepository.insertClothesImage(clothesImage);
+				}
 			}
 		}
-	}
 
-	// ================== 삭제/조회 ==================
-	@Override
-	@Transactional
-	public void remove(String clothesId) {
-		clothesRepository.deleteAllImageLinks(clothesId);
-		clothesRepository.deleteClothes(clothesId);
+		log.info("옷 수정 완료: clothesId={}", clothesId);
+		return clothes;
 	}
 
 	@Override
-	@Transactional
-	public void bulkDelete(List<String> clothesIds) {
-		if (clothesIds == null || clothesIds.isEmpty())
-			return;
-		clothesRepository.deleteImagesByClothesIds(clothesIds);
-		clothesRepository.deleteClothesByIds(clothesIds);
+	public List<ClothesResponse> getUserClothes(String userId) {
+		log.info("옷 목록 조회: userId={}", userId);
+
+		List<ClothesResponse> clothesList = clothesRepository.selectUserClothes(userId);
+
+		log.info("옷 목록 조회 완료: count={}", clothesList.size());
+		return clothesList;
 	}
 
 	@Override
-	@Transactional
-	public void removeImage(String clothesId, Long fileId) {
-		clothesRepository.deleteImageLink(clothesId, fileId);
-		fileService.deleteFileById(fileId);
-	}
+	public ClothesDetailResponse getClothesDetail(String clothesId, String userId) {
+		log.info("옷 상세 조회: clothesId={}, userId={}", clothesId, userId);
 
-	@Override
-	public Clothes findOne(String clothesId) {
-		return clothesRepository.findById(clothesId);
-	}
-
-	@Override
-	public List<FileInfo> findImages(String clothesId) {
-		return clothesRepository.findImageFiles(clothesId);
-	}
-
-	@Override
-	public List<Clothes> findMine(String userId) {
-		return clothesRepository.findAllByUser(userId);
-	}
-
-	@Override
-	public ClothesDetailDto findDetail(String clothesId) {
-		ClothesDetailDto dto = clothesRepository.findDetailById(clothesId);
-		if (dto == null)
-			throw new RuntimeException("해당 clothesId 없음: " + clothesId);
-
-		List<FileInfo> files = clothesRepository.findImageFiles(clothesId);
-		if (files == null)
-			files = List.of();
-
-		String thumbnail = files.stream()
-			.min(Comparator.comparing(FileInfo::getFileId))
-			.map(FileInfo::getS3Url).orElse(null);
-		dto.setThumbnailUrl(thumbnail);
-
-		dto.setImages(files.stream().map(f -> ClothesImageDto.builder()
-			.fileId(f.getFileId()).url(f.getS3Url()).build()).collect(Collectors.toList()));
-
-		try {
-			var codes = commonCodeService.getCommonCodes();
-			var cc = (codes != null) ? codes.get(dto.getCategoryCode()) : null;
-			if (cc != null)
-				dto.setCategoryName(cc.getCodeName());
-		} catch (Exception ignore) {}
-		return dto;
-	}
-
-	@Override
-	public List<ClothesDetailDto> getClothes(String categoryId, String subCategoryId) {
-		List<ClothesDetailDto> list;
-		if (subCategoryId != null && !subCategoryId.isEmpty()) {
-			list = clothesRepository.findBySubCategory(subCategoryId);
-		} else if (categoryId != null && !categoryId.isEmpty()) {
-			list = clothesRepository.findByCategory(categoryId);
-		} else {
-			list = clothesRepository.findAllClothes();
+		ClothesDetailResponse clothes = clothesRepository.selectClothesById(clothesId, userId);
+		if (clothes == null) {
+			throw new IllegalArgumentException("옷 정보를 찾을 수 없습니다.");
 		}
 
-		for (ClothesDetailDto dto : list) {
-			List<FileInfo> files = clothesRepository.findImageFiles(dto.getClothesId());
-			String thumbnail = files.stream()
-				.min(Comparator.comparing(FileInfo::getFileId))
-				.map(FileInfo::getS3Url).orElse(null);
-			dto.setThumbnailUrl(thumbnail);
-			dto.setImages(files.stream().map(f -> ClothesImageDto.builder()
-				.fileId(f.getFileId()).url(f.getS3Url()).build()).collect(Collectors.toList()));
-		}
-		return list;
+		List<ClothesDetailResponse.ClothesImage> images = clothesRepository.selectClothesImage(clothesId);
+		clothes.setImages(images);
+
+		log.info("옷 상세 조회 완료: clothesId={}", clothesId);
+		return clothes;
 	}
 
-	private void linkImagesBatch(String clothesId, List<FileInfo> files, String actor) {
-		if (files == null || files.isEmpty())
-			return;
-		List<ClothesImageLink> links = new ArrayList<>(files.size());
-		for (FileInfo f : files) {
-			links.add(ClothesImageLink.builder()
+	@Override
+	@Transactional
+	@SaveHistory(entityType = "CLOTHES", actionType = "DELETE")
+	public Clothes deleteClothes(String clothesId, String userId) {
+		log.info("옷 삭제 시작: clothesId={}, userId={}", clothesId, userId);
+
+		Clothes clothes = Clothes.builder()
+			.clothesId(clothesId)
+			.updatedBy(userId)
+			.build();
+
+		int result = clothesRepository.deleteClothes(clothes);
+		if (result <= 0) {
+			throw new IllegalArgumentException("옷 정보를 찾을 수 없거나 삭제할 수 없습니다.");
+		}
+
+		log.info("옷 삭제 완료: clothesId={}", clothesId);
+		return clothes;
+	}
+
+	@Override
+	@Transactional
+	@SaveHistory(entityType = "CLOTHES", actionType = "DELETE")
+	public List<Clothes> bulkDeleteClothes(List<String> clothesIds, String userId) {
+		if (clothesIds == null || clothesIds.isEmpty()) {
+			throw new IllegalArgumentException("삭제할 옷 ID 목록이 비어있습니다.");
+		}
+
+		log.info("옷 일괄 삭제 시작: count={}, userId={}", clothesIds.size(), userId);
+
+		List<Clothes> clothesList = new ArrayList<>();
+
+		for (String clothesId : clothesIds) {
+			Clothes clothes = Clothes.builder()
 				.clothesId(clothesId)
-				.fileId(f.getFileId())
-				.createdBy(actor)
-				.build());
+				.updatedBy(userId)
+				.build();
+
+			int result = clothesRepository.deleteClothes(clothes);
+			if (result > 0) {
+				clothesList.add(clothes);
+			} else {
+				log.warn("옷 삭제 실패: clothesId={}", clothesId);
+			}
 		}
-		clothesRepository.insertBulkImageLinks(links);
+
+		log.info("옷 일괄 삭제 완료: count={}", clothesList.size());
+		return clothesList;
 	}
 
-	private void validateCategoryOrThrow(String categoryCode) {
-		if (categoryCode == null || categoryCode.isBlank()) {
-			throw new IllegalArgumentException("categoryCode는 필수입니다.");
-		}
-		int cnt = clothesRepository.existsActiveCategoryCount(categoryCode);
-		if (cnt <= 0)
-			throw new IllegalArgumentException("유효하지 않은 categoryCode: " + categoryCode);
-	}
-
-	// 목록 카드용(필요시 구현)
-	@Override
-	public List<ClothesListItemDto> findAllByUser(String userId) {
-		return clothesRepository.findAllListByUser(userId);
+	private String generateClothesId() {
+		int nextSeq = clothesRepository.getNextClothesSequence();
+		return String.format("C%s%03d", LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyMMdd")), nextSeq);
 	}
 }
