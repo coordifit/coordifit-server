@@ -19,7 +19,7 @@ import com.miracle.coordifit.auth.service.IEmailService;
 import com.miracle.coordifit.auth.service.IJwtService;
 import com.miracle.coordifit.auth.service.IKakaoAuthService;
 import com.miracle.coordifit.common.dto.ApiResponseDto;
-import com.miracle.coordifit.exception.InactiveUserException;
+import com.miracle.coordifit.common.exception.InactiveUserException;
 import com.miracle.coordifit.user.model.User;
 import com.miracle.coordifit.user.service.IUserService;
 
