@@ -1,4 +1,4 @@
-package com.miracle.coordifit.clothes.sample.service;
+package com.miracle.coordifit.clothes.service;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -10,12 +10,12 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
-import com.miracle.coordifit.clothes.sample.dto.ClothesDetailResponseDto;
-import com.miracle.coordifit.clothes.sample.dto.ClothesRequestSample;
-import com.miracle.coordifit.clothes.sample.dto.ClothesResponseSample;
-import com.miracle.coordifit.clothes.sample.model.ClothesImageSample;
-import com.miracle.coordifit.clothes.sample.model.ClothesSample;
-import com.miracle.coordifit.clothes.sample.repository.ClothesRepositorySample;
+import com.miracle.coordifit.clothes.dto.ClothesDetailResponseDto;
+import com.miracle.coordifit.clothes.dto.ClothesRequestSample;
+import com.miracle.coordifit.clothes.dto.ClothesResponseSample;
+import com.miracle.coordifit.clothes.model.ClothesImageSample;
+import com.miracle.coordifit.clothes.model.ClothesSample;
+import com.miracle.coordifit.clothes.repository.ClothesRepositorySample;
 import com.miracle.coordifit.common.aspect.SaveHistory;
 import com.miracle.coordifit.common.model.FileInfo;
 import com.miracle.coordifit.common.service.IFileService;

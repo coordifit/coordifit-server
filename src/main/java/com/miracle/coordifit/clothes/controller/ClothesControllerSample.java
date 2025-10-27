@@ -1,4 +1,4 @@
-package com.miracle.coordifit.clothes.sample.controller;
+package com.miracle.coordifit.clothes.controller;
 
 import java.util.List;
 
@@ -15,10 +15,10 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.miracle.coordifit.clothes.sample.dto.ClothesDetailResponseDto;
-import com.miracle.coordifit.clothes.sample.dto.ClothesRequestSample;
-import com.miracle.coordifit.clothes.sample.dto.ClothesResponseSample;
-import com.miracle.coordifit.clothes.sample.service.IClothesServiceSample;
+import com.miracle.coordifit.clothes.dto.ClothesDetailResponseDto;
+import com.miracle.coordifit.clothes.dto.ClothesRequestSample;
+import com.miracle.coordifit.clothes.dto.ClothesResponseSample;
+import com.miracle.coordifit.clothes.service.IClothesServiceSample;
 import com.miracle.coordifit.common.dto.ApiResponseDto;
 
 import jakarta.validation.Valid;

@@ -1,4 +1,4 @@
-package com.miracle.coordifit.clothes.sample.model;
+package com.miracle.coordifit.clothes.model;
 
 import java.time.LocalDateTime;
 

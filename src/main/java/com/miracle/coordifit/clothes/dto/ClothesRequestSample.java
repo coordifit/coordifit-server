@@ -1,4 +1,4 @@
-package com.miracle.coordifit.clothes.sample.dto;
+package com.miracle.coordifit.clothes.dto;
 
 import java.util.List;
 

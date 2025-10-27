@@ -1,11 +1,11 @@
-package com.miracle.coordifit.clothes.sample.service;
+package com.miracle.coordifit.clothes.service;
 
 import java.util.List;
 
-import com.miracle.coordifit.clothes.sample.dto.ClothesDetailResponseDto;
-import com.miracle.coordifit.clothes.sample.dto.ClothesRequestSample;
-import com.miracle.coordifit.clothes.sample.dto.ClothesResponseSample;
-import com.miracle.coordifit.clothes.sample.model.ClothesSample;
+import com.miracle.coordifit.clothes.dto.ClothesDetailResponseDto;
+import com.miracle.coordifit.clothes.dto.ClothesRequestSample;
+import com.miracle.coordifit.clothes.dto.ClothesResponseSample;
+import com.miracle.coordifit.clothes.model.ClothesSample;
 
 public interface IClothesServiceSample {
 

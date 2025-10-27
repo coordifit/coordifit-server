@@ -1,14 +1,14 @@
-package com.miracle.coordifit.clothes.sample.repository;
+package com.miracle.coordifit.clothes.repository;
 
 import java.util.List;
 
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 
-import com.miracle.coordifit.clothes.sample.dto.ClothesDetailResponseDto;
-import com.miracle.coordifit.clothes.sample.dto.ClothesResponseSample;
-import com.miracle.coordifit.clothes.sample.model.ClothesImageSample;
-import com.miracle.coordifit.clothes.sample.model.ClothesSample;
+import com.miracle.coordifit.clothes.dto.ClothesDetailResponseDto;
+import com.miracle.coordifit.clothes.dto.ClothesResponseSample;
+import com.miracle.coordifit.clothes.model.ClothesImageSample;
+import com.miracle.coordifit.clothes.model.ClothesSample;
 
 @Mapper
 public interface ClothesRepositorySample {
