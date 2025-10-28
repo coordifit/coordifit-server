@@ -56,7 +56,7 @@
         	canvas_json AS canvasJson
         FROM DAILYLOOKS
         WHERE user_id = #{userId}
-          AND IS_ACTIVE = 'Y' 
+          AND (IS_ACTIVE = 'Y' OR IS_ACTIVE IS NULL)
           AND wear_date = TO_DATE(#{wearDate}, 'YYYY-MM-DD')
     </select>
 

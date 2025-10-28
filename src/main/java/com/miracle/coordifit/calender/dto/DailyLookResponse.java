@@ -21,4 +21,8 @@ public class DailyLookResponse {
 	public static DailyLookResponse empty() {
 		return DailyLookResponse.builder().build();
 	}
+
+	public boolean isEmpty() {
+		return this.dailylookId == null && this.wearDate == null;
+	}
 }
