@@ -25,7 +25,6 @@ import com.miracle.coordifit.calender.dto.DailyLookSummaryResponse;
 import com.miracle.coordifit.calender.model.DailyLook;
 import com.miracle.coordifit.calender.service.ICalenderService;
 import com.miracle.coordifit.common.dto.ApiResponseDto;
-import com.miracle.coordifit.common.service.FileService;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -36,7 +35,6 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class CalenderController {
 	private final ICalenderService calenderService;
-	private final FileService fileService;
 
 	@Transactional
 	@GetMapping("/date")

@@ -10,9 +10,6 @@ import com.miracle.coordifit.calender.model.DailyLook;
 
 public interface ICalenderService {
 	// 데일리룩 저장
-	int upsertDailyLook(DailyLook dailyLook);
-
-	// 데일리룩 저장
 	DailyLook insertDailyLook(String userId, String wearDate, MultipartFile image, String description,
 		String itemsJson);
 

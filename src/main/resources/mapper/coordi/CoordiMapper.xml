@@ -12,7 +12,9 @@
             description AS description,
             file_id AS fileId,
             canvas_json AS canvasJson
-        FROM coordis WHERE user_id = #{userId}
+        FROM coordis
+        WHERE user_id = #{userId} 
+        AND (is_active IS NULL OR is_active = 'Y')
     </select>
     
     <select id="getCoordiById" parameterType="string" resultType="com.miracle.coordifit.coordi.model.Coordi">
@@ -28,17 +30,21 @@
 
     <insert id="insertCoordi" parameterType="com.miracle.coordifit.coordi.model.Coordi">
         INSERT INTO coordis (
-            coordi_id, user_id, coordi_name, description, file_id, canvas_json, created_by, updated_by
+            coordi_id, user_id, coordi_name, description, file_id, canvas_json, is_active, created_by, updated_by
         ) VALUES (
-            #{coordiId}, #{userId}, #{coordiName}, #{description}, #{fileId}, #{canvasJson}, #{userId}, #{userId}
+            #{coordiId}, #{userId}, #{coordiName}, #{description}, #{fileId}, #{canvasJson}, 'Y',#{userId}, #{userId}
         )
     </insert>
 
     <insert id="insertCoordiItem" parameterType="com.miracle.coordifit.coordi.model.CoordiItem">
-        INSERT INTO LOOK_ITEMS
-            (coordi_id, clothes_id, created_by, created_at)
-        VALUES
-            (#{coordiId}, #{clothesId}, #{userId}, SYSTIMESTAMP)
+        MERGE INTO COORDI_ITEMS T
+        USING (SELECT #{coordiId} AS coordi_id, #{clothesId} AS clothes_id FROM DUAL) S
+        ON (T.COORDI_ID = S.COORDI_ID AND T.CLOTHES_ID = S.CLOTHES_ID)
+        WHEN MATCHED THEN
+            UPDATE SET T.IS_ACTIVE = 'Y', T.UPDATED_AT = SYSTIMESTAMP
+        WHEN NOT MATCHED THEN
+            INSERT (COORDI_ID, CLOTHES_ID, CREATED_BY, CREATED_AT, IS_ACTIVE)
+            VALUES (#{coordiId}, #{clothesId}, #{userId}, SYSTIMESTAMP, 'Y')
     </insert>
     
     <select id="getNextCoordiSequence" resultType="int">
@@ -67,9 +73,13 @@
         WHERE coordi_id = #{coordiId}
     </update>
 
-    <delete id="deleteCoordiById" parameterType="string">
-        DELETE FROM coordis WHERE coordi_id = #{coordiId}
-    </delete>
+    <update id="deleteCoordiById" parameterType="string">
+        UPDATE coordis
+        SET is_active = 'N',
+            updated_at = SYSTIMESTAMP,
+            updated_by = #{userId}
+        WHERE coordi_id = #{coordiId}
+    </update>
 
     <delete id="deleteCoordiItemsByLookId" parameterType="string">
         DELETE FROM coordi_items WHERE coordi_id = #{coordiId}

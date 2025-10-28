@@ -123,30 +123,6 @@ public class CalenderService implements ICalenderService {
 
 	@Override
 	@Transactional
-	public int upsertDailyLook(DailyLook dailyLook) {
-
-		Optional<DailyLook> existing = calenderRepository.getDailyLookByDate(dailyLook.getUserId(),
-			dailyLook.getWearDate());
-
-		if (existing.isPresent()) {
-			DailyLook exist = existing.get();
-
-			dailyLook.setDailylookId(exist.getDailylookId());
-
-			log.info(">>>>> dailyLook in update {}", dailyLook.toString());
-			return calenderRepository.updateDailyLook(dailyLook);
-		} else {
-			String dailylookId = generateDailylookId();
-
-			dailyLook.setDailylookId(dailylookId);
-
-			log.info(">>>>> dailyLook in insert {}", dailyLook.toString());
-			return calenderRepository.insertDailyLook(dailyLook);
-		}
-	}
-
-	@Override
-	@Transactional
 	public void insertDailyLookItem(String itemsJson, DailyLook dailyLook) {
 		List<DailyLookItem> items = parseItemsJson(itemsJson, dailyLook);
 		log.info("parsed items : {}", items);

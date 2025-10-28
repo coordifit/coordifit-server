@@ -27,7 +27,7 @@ public interface CoordiRepository {
 	int updateCoordiById(Coordi coordi);
 
 	// 코디 삭제
-	int deleteCoordiById(String coordiId);
+	int deleteCoordiById(String coordiId, String userId);
 
 	// 코디 아이템 삭제
 	int deleteCoordiItemsByLookId(String coordiId);

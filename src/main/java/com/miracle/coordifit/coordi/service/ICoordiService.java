@@ -11,13 +11,16 @@ public interface ICoordiService {
 
 	CoordiResponse getCoordiById(String coordiId);
 
-	int upsertCoordi(Coordi coordi);
+	Coordi insertCoordi(String userId, String canvasJson, String coordiName, String description, int fileId);
+
+	Coordi updateCoordi(String userId, String canvasJson, String coordiName, String description, int fileId,
+		String coordiId);
 
 	int updateAiFileId(String coordiId, Integer aiFileId, String updatedBy);
 
 	void insertCoordiItem(String canvasJson, Coordi coordi);
 
-	void deleteCoordi(String coordiId);
+	Coordi deleteCoordi(String coordiId, String userId);
 
-	void deleteCoordis(List<String> coordiIds);
+	void deleteCoordis(List<String> coordiIds, String userId);
 }
