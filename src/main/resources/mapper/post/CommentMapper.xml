@@ -11,10 +11,10 @@
 
   <insert id="insertComment" parameterType="com.miracle.coordifit.post.model.Comment">
     INSERT INTO comments (
-      comment_id, post_id, user_id, parent_id, content,
+      comment_id, post_id, user_id, <if test="parentId != null">parent_id,</if> content,
       like_count, is_active, created_at, created_by
     ) VALUES (
-      #{commentId}, #{postId}, #{userId}, #{parentId}, #{content},
+      #{commentId}, #{postId}, #{userId}, <if test="parentId != null">#{parentId},</if> #{content},
       0, #{isActive}, CURRENT_TIMESTAMP, #{createdBy}
     )
   </insert>
