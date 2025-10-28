@@ -2,13 +2,26 @@ package com.miracle.coordifit.calender.service;
 
 import java.util.List;
 
+import org.springframework.web.multipart.MultipartFile;
+
 import com.miracle.coordifit.calender.dto.DailyLookResponse;
 import com.miracle.coordifit.calender.dto.DailyLookSummaryResponse;
 import com.miracle.coordifit.calender.model.DailyLook;
 
 public interface ICalenderService {
 	// 데일리룩 저장
-	int upsertDailyLook(DailyLook dailyLook);
+	DailyLook insertDailyLook(String userId, String wearDate, MultipartFile image, String description,
+		String itemsJson);
+
+	// 데일리룩 업데이트
+	DailyLook updateDailyLook(String userId, String wearDate, MultipartFile image, String description,
+		String itemsJson);
+
+	// 데일리룩 삭제
+	DailyLook deleteDailyLookByDate(String userId, String wearDate);
+
+	// 데일리룩 아이템 삭제
+	void deleteDailyLookItemsByDailyLookId(String dailylookId);
 
 	// 데일리룩에 사용된 아이템 저장
 	void insertDailyLookItem(String itemsJson, DailyLook dailyLook);
@@ -19,9 +32,6 @@ public interface ICalenderService {
 	// 특정 날짜 데일리룩 조회
 	DailyLookResponse getDailyLookByDate(String userId, String wearDate);
 
-	// 데일리룩 삭제
-	public int deleteDailyLookByDate(String userId, String wearDate);
-
 	// 데일리룩 통계
-	public DailyLookSummaryResponse getDailyLookSummary(String userId, String yearMonth);
+	DailyLookSummaryResponse getDailyLookSummary(String userId, String yearMonth);
 }

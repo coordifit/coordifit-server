@@ -11,6 +11,7 @@ import java.util.Optional;
 import org.springframework.dao.DuplicateKeyException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -38,41 +39,98 @@ public class CalenderService implements ICalenderService {
 
 	@Override
 	@Transactional
-	public int deleteDailyLookByDate(String userId, String wearDate) {
+	public DailyLook deleteDailyLookByDate(String userId, String wearDate) {
+
 		Optional<DailyLook> existing = calenderRepository.getDailyLookByDate(userId, wearDate);
+
 		if (existing.isEmpty()) {
-			return 0;
+			log.warn(">> deleteDailyLookByDate 실패: {} 날짜의 데일리룩이 존재하지 않음", wearDate);
+			return null;
 		}
 
 		DailyLook target = existing.get();
 
-		int deleted = calenderRepository.deleteDailyLookById(target.getDailylookId());
+		try {
+			int deletedItems = calenderRepository.deleteDailyLookItemsByDailyLookId(target.getDailylookId());
+			log.info(">>>>> deleted {} coordi items for {}", deletedItems, target.getDailylookId());
+		} catch (Exception e) {
+			log.warn(">>>>> DAILYLOOK_ITEMS 삭제 중 예외 발생: {}", e.getMessage());
+		}
 
-		return deleted;
+		try {
+			int deleted = calenderRepository.deleteDailyLookById(target.getDailylookId());
+			log.info(">> deleteDailyLookByDate 완료: id={}, affectedRows={}", target.getDailylookId(), deleted);
+		} catch (Exception e) {
+			log.warn(">>>>> DAILYLOOK 삭제 중 예외 발생: {}", e.getMessage());
+		}
+
+		return target;
 	}
 
 	@Override
 	@Transactional
-	public int upsertDailyLook(DailyLook dailyLook) {
+	public DailyLook insertDailyLook(String userId, String wearDate, MultipartFile image,
+		String description, String itemsJson) {
+		FileInfo imageInfo = fileservice.uploadFileWithThumbnail(image);
 
-		Optional<DailyLook> existing = calenderRepository.getDailyLookByDate(dailyLook.getUserId(),
-			dailyLook.getWearDate());
+		DailyLook dailyLook = DailyLook.builder()
+			.userId(userId)
+			.wearDate(wearDate)
+			.description(description)
+			.fileId(imageInfo.getFileId())
+			.canvasJson(itemsJson)
+			.build();
 
-		if (existing.isPresent()) {
-			DailyLook exist = existing.get();
+		String dailylookId = generateDailylookId();
+		dailyLook.setDailylookId(dailylookId);
 
-			dailyLook.setDailylookId(exist.getDailylookId());
+		int result = calenderRepository.insertDailyLook(dailyLook);
+		log.info(">> insert dailyLook success: {}", result);
 
-			log.info(">>>>> dailyLook in update {}", dailyLook.toString());
-			return calenderRepository.updateDailyLook(dailyLook);
-		} else {
-			String dailylookId = generateDailylookId();
-
-			dailyLook.setDailylookId(dailylookId);
-
-			log.info(">>>>> dailyLook in insert {}", dailyLook.toString());
-			return calenderRepository.insertDailyLook(dailyLook);
+		if (dailyLook.getDailylookId() == null) {
+			throw new IllegalStateException("dailyLookId가 설정되지 않았습니다.");
 		}
+
+		insertDailyLookItem(itemsJson, dailyLook);
+
+		return dailyLook;
+	}
+
+	@Override
+	@Transactional
+	public DailyLook updateDailyLook(String userId, String wearDate, MultipartFile image, String description,
+		String itemsJson) {
+		Optional<DailyLook> existingOpt = calenderRepository.getDailyLookByDate(userId, wearDate);
+		if (existingOpt.isEmpty()) {
+			log.warn(">> updateDailyLook 실패: {} 날짜의 데일리룩이 존재하지 않음", wearDate);
+
+			return null;
+		}
+
+		DailyLook existing = existingOpt.get();
+
+		FileInfo imageInfo = fileservice.uploadFileWithThumbnail(image);
+
+		DailyLook dailyLook = DailyLook.builder()
+			.dailylookId(existing.getDailylookId())
+			.userId(userId)
+			.wearDate(wearDate)
+			.description(description)
+			.fileId(imageInfo.getFileId())
+			.canvasJson(itemsJson)
+			.build();
+
+		int result = calenderRepository.updateDailyLook(dailyLook);
+		log.info(">> update dailyLook success: {}", result);
+
+		if (dailyLook.getDailylookId() == null) {
+			throw new IllegalStateException("dailyLookId가 설정되지 않았습니다.");
+		}
+
+		deleteDailyLookItemsByDailyLookId(existing.getDailylookId());
+		insertDailyLookItem(itemsJson, dailyLook);
+
+		return dailyLook;
 	}
 
 	@Override
@@ -143,6 +201,11 @@ public class CalenderService implements ICalenderService {
 			.mostWornClothesOverall(mostWornClothes)
 			.mostWornClothesThisMonth(mostWornClothesByMonth)
 			.build();
+	}
+
+	@Override
+	public void deleteDailyLookItemsByDailyLookId(String dailylookId) {
+		calenderRepository.deleteDailyLookItemsByDailyLookId(dailylookId);
 	}
 
 	private List<DailyLookItem> parseItemsJson(String itemsJson, DailyLook dailyLook) {

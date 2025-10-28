@@ -97,19 +97,12 @@ public class CoordiController {
 
 			FileInfo imageInfo = fileService.uploadFileWithThumbnail(image);
 
-			Coordi coordi = Coordi.builder()
-				.userId(userId)
-				.coordiName(coordiName)
-				.fileId(imageInfo.getFileId())
-				.description(description)
-				.canvasJson(canvasJson)
-				.build();
+			Coordi result = coordiService.insertCoordi(userId, canvasJson, coordiName, description,
+				imageInfo.getFileId());
 
-			int affected = coordiService.upsertCoordi(coordi);
+			URI location = URI.create("/api/coordi/" + result.getCoordiId());
 
-			URI location = URI.create("/api/coordi/" + coordi.getCoordiId());
-
-			Map<String, Object> body = Map.of("coordiId", coordi.getCoordiId(), "affectedRows", affected);
+			Map<String, Object> body = Map.of("coordiId", result.getCoordiId());
 
 			return ResponseEntity.created(location).body(ApiResponseDto.success("코디 등록 성공", body));
 
@@ -123,13 +116,13 @@ public class CoordiController {
 	@Transactional
 	@PutMapping(value = "/{coordiId}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
 	public ResponseEntity<ApiResponseDto<?>> updateCoordi(
-		Authentication authentication,
 		@PathVariable("coordiId") @NotBlank String coordiId,
 		@RequestPart(value = "image") MultipartFile image,
 		@RequestParam("canvasJson") @NotBlank String canvasJson,
 		@RequestParam("coordiName") @NotBlank String coordiName,
-		@RequestParam(value = "description") String description) {
-		final String userId = (String)authentication.getPrincipal();
+		@RequestParam(value = "description") String description,
+		Authentication authentication) {
+		String userId = (String)authentication.getPrincipal();
 
 		try {
 			log.info(">> PUT /api/coordi/{} - userId={}", coordiId, userId);
@@ -137,20 +130,11 @@ public class CoordiController {
 			FileInfo originImage = fileService.uploadFileWithThumbnail(image);
 			int fileId = originImage.getFileId();
 
-			Coordi coordi = Coordi.builder()
-				.coordiId(coordiId)
-				.userId(userId)
-				.coordiName(coordiName)
-				.fileId(fileId)
-				.description(description)
-				.canvasJson(canvasJson)
-				.build();
-
-			int affected = coordiService.upsertCoordi(coordi);
+			Coordi result = coordiService.updateCoordi(userId, canvasJson, coordiName, description, fileId, coordiId);
 
 			Map<String, Object> body = Map.of(
-				"coordiId", coordiId,
-				"affectedRows", affected);
+				"coordiId", result.getCoordiId());
+
 			return ResponseEntity.ok(ApiResponseDto.success("코디 수정 성공", body));
 
 		} catch (Exception e) {
@@ -168,7 +152,7 @@ public class CoordiController {
 		String userId = (String)authentication.getPrincipal();
 		try {
 			log.info(">> DELETE /api/coordi/{} - userId={}", coordiId, userId);
-			coordiService.deleteCoordi(coordiId);
+			coordiService.deleteCoordi(coordiId, userId);
 			return ResponseEntity.ok(ApiResponseDto.success("코디 삭제 성공", coordiId));
 		} catch (Exception e) {
 			log.error(">> deleteCoordi failed", e);
@@ -179,9 +163,12 @@ public class CoordiController {
 
 	@Transactional
 	@DeleteMapping
-	public ResponseEntity<ApiResponseDto<?>> deleteCoordis(@RequestBody List<String> coordiIds) {
+	public ResponseEntity<ApiResponseDto<?>> deleteCoordis(@RequestBody List<String> coordiIds,
+		Authentication authentication) {
+		String userId = (String)authentication.getPrincipal();
+
 		log.info("DELETE /api/coordi - 다중 삭제 요청: {}", coordiIds);
-		coordiService.deleteCoordis(coordiIds);
+		coordiService.deleteCoordis(coordiIds, userId);
 		return ResponseEntity.ok(ApiResponseDto.success("코디 다중 삭제 성공", coordiIds));
 	}
 }

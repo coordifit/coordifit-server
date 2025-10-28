@@ -134,22 +134,64 @@ public class CoordiService implements ICoordiService {
 		return coordiMapper.toResponse(coordi, originImageUrl, thumbImageUrl, aiImageUrl);
 	};
 
-	@Override
 	@Transactional
-	public int upsertCoordi(Coordi coordi) {
-		if (coordi.getCoordiId() == null || coordi.getCoordiId().isBlank()) {
-			String coordiId = generateCoordiId();
-			coordi.setCoordiId(coordiId);
-			log.info(">>>>> [INSERT] coordi: {}", coordi);
-			int result = coordiRepository.insertCoordi(coordi);
+	@Override
+	public Coordi insertCoordi(String userId, String canvasJson, String coordiName, String description, int fileId) {
+		Coordi coordi = Coordi.builder()
+			.userId(userId)
+			.coordiName(coordiName)
+			.fileId(fileId)
+			.description(description)
+			.canvasJson(canvasJson)
+			.build();
 
-			return result;
-		} else {
-			log.info(">>>>> [UPDATE] coordi: {}", coordi);
-			int result = coordiRepository.updateCoordiById(coordi);
+		String coordiId = generateCoordiId();
+		coordi.setCoordiId(coordiId);
 
-			return result;
+		int result = coordiRepository.insertCoordi(coordi);
+		log.info(">>>>> [INSERT] coordi Success: {}", result);
+
+		if (coordi.getCoordiId() == null) {
+			throw new IllegalStateException("coordiId가 설정되지 않았습니다.");
 		}
+
+		insertCoordiItem(canvasJson, coordi);
+
+		return coordi;
+	};
+
+	@Transactional
+	@Override
+	public Coordi updateCoordi(String userId, String canvasJson, String coordiName, String description, int fileId,
+		String coordiId) {
+		Optional<Coordi> existingOpt = coordiRepository.getCoordiById(coordiId);
+
+		if (existingOpt.isEmpty()) {
+			log.warn(">> updateCoordi 실패: {} 해당 코디가 존재하지 않음", coordiId);
+
+			return null;
+		}
+
+		Coordi coordi = Coordi.builder()
+			.coordiId(coordiId)
+			.userId(userId)
+			.coordiName(coordiName)
+			.fileId(fileId)
+			.description(description)
+			.canvasJson(canvasJson)
+			.build();
+
+		int result = coordiRepository.updateCoordiById(coordi);
+		log.info(">>>>> [UPDATE] coordi success: {}", result);
+
+		if (coordi.getCoordiId() == null) {
+			throw new IllegalStateException("coordiId가 설정되지 않았습니다.");
+		}
+
+		deleteCoordiItem(coordiId);
+		insertCoordiItem(canvasJson, coordi);
+
+		return coordi;
 	};
 
 	@Override
@@ -167,6 +209,11 @@ public class CoordiService implements ICoordiService {
 	}
 
 	@Override
+	public void deleteCoordiItem(String coordiId) {
+		coordiRepository.deleteCoordiItemsByCoordiId(coordiId);
+	}
+
+	@Override
 	@Transactional
 	public void insertCoordiItem(String canvasJson, Coordi coordi) {
 		List<CoordiItem> itemList = parseCanvasJson(canvasJson, coordi);
@@ -180,8 +227,9 @@ public class CoordiService implements ICoordiService {
 
 	@Override
 	@Transactional
-	public void deleteCoordi(String coordiId) {
+	public Coordi deleteCoordi(String coordiId, String userId) {
 		Optional<Coordi> optional = coordiRepository.getCoordiById(coordiId);
+
 		if (optional.isEmpty()) {
 			throw new RuntimeException("삭제하려는 코디가 존재하지 않습니다. ID: " + coordiId);
 		}
@@ -190,13 +238,13 @@ public class CoordiService implements ICoordiService {
 		log.info(">>>>> deleteCoordi - target: {}", coordi.toString());
 
 		try {
-			int deletedItems = coordiRepository.deleteCoordiItemsByLookId(coordiId);
+			int deletedItems = coordiRepository.deleteCoordiItemsByCoordiId(coordiId);
 			log.info(">>>>> deleted {} coordi items for {}", deletedItems, coordiId);
 		} catch (Exception e) {
-			log.warn(">>>>> LOOK_ITEMS 삭제 중 예외 발생 (CASCADE 설정일 가능성): {}", e.getMessage());
+			log.warn(">>>>> LOOK_ITEMS 삭제 중 예외 발생: {}", e.getMessage());
 		}
 
-		int deletedCoordi = coordiRepository.deleteCoordiById(coordiId);
+		int deletedCoordi = coordiRepository.deleteCoordiById(coordiId, userId);
 		log.info(">>>>> deleted coordi {}, result={}", coordiId, deletedCoordi);
 
 		if (deletedCoordi == 0) {
@@ -204,11 +252,13 @@ public class CoordiService implements ICoordiService {
 		}
 
 		log.info(">>>>> deleteCoordi 완료: {}", coordiId);
+
+		return coordi;
 	}
 
 	@Override
 	@Transactional
-	public void deleteCoordis(List<String> coordiIds) {
+	public void deleteCoordis(List<String> coordiIds, String userId) {
 		if (coordiIds == null || coordiIds.isEmpty()) {
 			throw new IllegalArgumentException("삭제할 코디 ID 목록이 비어 있습니다.");
 		}
@@ -217,7 +267,7 @@ public class CoordiService implements ICoordiService {
 
 		for (String coordiId : coordiIds) {
 			try {
-				deleteCoordi(coordiId); // 기존 단일 삭제 메서드 재사용
+				deleteCoordi(coordiId, userId); // 기존 단일 삭제 메서드 재사용
 			} catch (Exception e) {
 				log.error(">>>>> deleteCoordi 실패 (coordiId={}): {}", coordiId, e.getMessage());
 			}
