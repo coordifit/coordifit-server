@@ -35,6 +35,10 @@
     )
   </insert>
 
+  <delete id="deleteDailyLookItemsByDailyLookId">
+    DELETE FROM dailylook_items WHERE dailylook_id = #{dailylookId}
+  </delete>
+
     <!-- 특정 월의 데일리룩 조회 -->
     <select id="getDailyLooksByMonth" resultType="com.miracle.coordifit.calender.model.DailyLook">
       SELECT *

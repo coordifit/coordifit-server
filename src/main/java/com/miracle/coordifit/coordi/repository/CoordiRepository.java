@@ -20,17 +20,17 @@ public interface CoordiRepository {
 	// 코디 생성
 	int insertCoordi(Coordi coordi);
 
-	// 코디 아이템 히스토리
+	// 코디 아이템 생성
 	int insertCoordiItem(CoordiItem coordiItem);
+
+	// 코디 아이템 삭제
+	int deleteCoordiItemsByCoordiId(String coordiId);
 
 	// 코디 업데이트
 	int updateCoordiById(Coordi coordi);
 
 	// 코디 삭제
 	int deleteCoordiById(String coordiId, String userId);
-
-	// 코디 아이템 삭제
-	int deleteCoordiItemsByLookId(String coordiId);
 
 	// 코디 아이디 생성
 	int getNextCoordiSequence();

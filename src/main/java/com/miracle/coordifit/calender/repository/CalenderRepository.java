@@ -12,10 +12,17 @@ import com.miracle.coordifit.calender.model.MostWornClothesDto;
 
 @Mapper
 public interface CalenderRepository {
-	// 데일리룩 저장
+	// 데일리룩 생성
 	int insertDailyLook(DailyLook dailyLook);
 
+	// 데일리룩 아이템 생성
 	int insertDailyLookItem(DailyLookItem item);
+
+	// 데일리룩 삭제
+	int deleteDailyLookById(String dailylookId);
+
+	// 데일리룩 아이템 삭제
+	int deleteDailyLookItemsByDailyLookId(String dailylookId);
 
 	// 특정 월 데일리룩 조회
 	List<DailyLook> getDailyLooksByMonth(
@@ -32,8 +39,6 @@ public interface CalenderRepository {
 
 	// 데일리룩 Id 생성
 	int getNextDailyLookSequence();
-
-	int deleteDailyLookById(String dailylookId);
 
 	// 데일리룩 통계
 	int selectDailyLookCountByMonth(String userId, String yearMonth);

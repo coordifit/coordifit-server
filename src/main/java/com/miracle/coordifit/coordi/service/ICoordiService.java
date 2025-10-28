@@ -20,6 +20,8 @@ public interface ICoordiService {
 
 	void insertCoordiItem(String canvasJson, Coordi coordi);
 
+	void deleteCoordiItem(String coordiId);
+
 	Coordi deleteCoordi(String coordiId, String userId);
 
 	void deleteCoordis(List<String> coordiIds, String userId);

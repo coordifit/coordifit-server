@@ -50,8 +50,19 @@ public class CalenderService implements ICalenderService {
 
 		DailyLook target = existing.get();
 
-		int deleted = calenderRepository.deleteDailyLookById(target.getDailylookId());
-		log.info(">> deleteDailyLookByDate 완료: id={}, affectedRows={}", target.getDailylookId(), deleted);
+		try {
+			int deletedItems = calenderRepository.deleteDailyLookItemsByDailyLookId(target.getDailylookId());
+			log.info(">>>>> deleted {} coordi items for {}", deletedItems, target.getDailylookId());
+		} catch (Exception e) {
+			log.warn(">>>>> DAILYLOOK_ITEMS 삭제 중 예외 발생: {}", e.getMessage());
+		}
+
+		try {
+			int deleted = calenderRepository.deleteDailyLookById(target.getDailylookId());
+			log.info(">> deleteDailyLookByDate 완료: id={}, affectedRows={}", target.getDailylookId(), deleted);
+		} catch (Exception e) {
+			log.warn(">>>>> DAILYLOOK 삭제 중 예외 발생: {}", e.getMessage());
+		}
 
 		return target;
 	}
@@ -116,6 +127,7 @@ public class CalenderService implements ICalenderService {
 			throw new IllegalStateException("dailyLookId가 설정되지 않았습니다.");
 		}
 
+		deleteDailyLookItemsByDailyLookId(existing.getDailylookId());
 		insertDailyLookItem(itemsJson, dailyLook);
 
 		return dailyLook;
@@ -189,6 +201,11 @@ public class CalenderService implements ICalenderService {
 			.mostWornClothesOverall(mostWornClothes)
 			.mostWornClothesThisMonth(mostWornClothesByMonth)
 			.build();
+	}
+
+	@Override
+	public void deleteDailyLookItemsByDailyLookId(String dailylookId) {
+		calenderRepository.deleteDailyLookItemsByDailyLookId(dailylookId);
 	}
 
 	private List<DailyLookItem> parseItemsJson(String itemsJson, DailyLook dailyLook) {

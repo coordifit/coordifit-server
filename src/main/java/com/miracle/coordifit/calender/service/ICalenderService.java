@@ -20,6 +20,9 @@ public interface ICalenderService {
 	// 데일리룩 삭제
 	DailyLook deleteDailyLookByDate(String userId, String wearDate);
 
+	// 데일리룩 아이템 삭제
+	void deleteDailyLookItemsByDailyLookId(String dailylookId);
+
 	// 데일리룩에 사용된 아이템 저장
 	void insertDailyLookItem(String itemsJson, DailyLook dailyLook);
 

@@ -37,14 +37,11 @@
     </insert>
 
     <insert id="insertCoordiItem" parameterType="com.miracle.coordifit.coordi.model.CoordiItem">
-        MERGE INTO COORDI_ITEMS T
-        USING (SELECT #{coordiId} AS coordi_id, #{clothesId} AS clothes_id FROM DUAL) S
-        ON (T.COORDI_ID = S.COORDI_ID AND T.CLOTHES_ID = S.CLOTHES_ID)
-        WHEN MATCHED THEN
-            UPDATE SET T.IS_ACTIVE = 'Y', T.UPDATED_AT = SYSTIMESTAMP
-        WHEN NOT MATCHED THEN
-            INSERT (COORDI_ID, CLOTHES_ID, CREATED_BY, CREATED_AT, IS_ACTIVE)
-            VALUES (#{coordiId}, #{clothesId}, #{userId}, SYSTIMESTAMP, 'Y')
+        INSERT INTO COORDI_ITEMS (
+            coordi_id, clothes_id, created_at, created_by
+        ) VALUES (
+           #{coordiId}, #{clothesId}, SYSTIMESTAMP, #{userId}
+        )
     </insert>
     
     <select id="getNextCoordiSequence" resultType="int">
@@ -65,6 +62,10 @@
         WHERE coordi_id = #{coordiId}
     </update>
 
+    <delete id="deleteCoordiItemsByCoordiId" parameterType="String">
+        delete from coordi_items WHERE coordi_id = #{coordiId}
+    </delete>
+
     <update id="updateAiFileId">
         UPDATE coordis
         SET ai_file_id = #{aiFileId},
@@ -80,8 +81,4 @@
             updated_by = #{userId}
         WHERE coordi_id = #{coordiId}
     </update>
-
-    <delete id="deleteCoordiItemsByLookId" parameterType="string">
-        DELETE FROM coordi_items WHERE coordi_id = #{coordiId}
-    </delete>
 </mapper>

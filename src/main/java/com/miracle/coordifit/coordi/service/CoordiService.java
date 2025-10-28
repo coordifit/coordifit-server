@@ -188,6 +188,7 @@ public class CoordiService implements ICoordiService {
 			throw new IllegalStateException("coordiId가 설정되지 않았습니다.");
 		}
 
+		deleteCoordiItem(coordiId);
 		insertCoordiItem(canvasJson, coordi);
 
 		return coordi;
@@ -205,6 +206,11 @@ public class CoordiService implements ICoordiService {
 
 		log.info(">>>>> [UPDATE AI_FILE_ID] coordiId={}, aiFileId={}, updatedBy={}", coordiId, aiFileId, updatedBy);
 		return coordiRepository.updateAiFileId(coordiId, aiFileId, updatedBy);
+	}
+
+	@Override
+	public void deleteCoordiItem(String coordiId) {
+		coordiRepository.deleteCoordiItemsByCoordiId(coordiId);
 	}
 
 	@Override
@@ -232,10 +238,10 @@ public class CoordiService implements ICoordiService {
 		log.info(">>>>> deleteCoordi - target: {}", coordi.toString());
 
 		try {
-			int deletedItems = coordiRepository.deleteCoordiItemsByLookId(coordiId);
+			int deletedItems = coordiRepository.deleteCoordiItemsByCoordiId(coordiId);
 			log.info(">>>>> deleted {} coordi items for {}", deletedItems, coordiId);
 		} catch (Exception e) {
-			log.warn(">>>>> LOOK_ITEMS 삭제 중 예외 발생 (CASCADE 설정일 가능성): {}", e.getMessage());
+			log.warn(">>>>> LOOK_ITEMS 삭제 중 예외 발생: {}", e.getMessage());
 		}
 
 		int deletedCoordi = coordiRepository.deleteCoordiById(coordiId, userId);
