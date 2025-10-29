@@ -19,11 +19,14 @@ public class CommonCodeService implements ICommonCodeService {
 	private final CommonCodeRepository commonCodeRepository;
 
 	@Override
-	public CommonCode createCommonCode(CommonCode commonCode) {
+	public void createCommonCode(CommonCode commonCode, String userId) {
 		String codeId = generateCodeId(commonCode.getParentCodeId());
 		commonCode.setCodeId(codeId);
-		commonCodeRepository.insertCommonCode(commonCode);
-		return commonCode;
+		commonCode.setCreatedBy(userId);
+		int result = commonCodeRepository.insertCommonCode(commonCode);
+		if (result <= 0) {
+			throw new RuntimeException("공통 코드 생성 실패");
+		}
 	}
 
 	private String generateCodeId(String parentCodeId) {
@@ -69,20 +72,25 @@ public class CommonCodeService implements ICommonCodeService {
 	@Override
 	public Map<String, CommonCode> getCommonCodes() {
 		List<CommonCode> commonCodes = commonCodeRepository.selectCommonCodes();
-
 		return createCommonCodeMap(commonCodes);
 	}
 
 	@Override
-	public CommonCode updateCommonCode(CommonCode commonCode) {
-		commonCodeRepository.updateCommonCode(commonCode);
-
-		return commonCode;
+	public void updateCommonCode(CommonCode commonCode, String codeId, String userId) {
+		commonCode.setCodeId(codeId);
+		commonCode.setUpdatedBy(userId);
+		int result = commonCodeRepository.updateCommonCode(commonCode);
+		if (result <= 0) {
+			throw new RuntimeException("공통 코드 수정 실패");
+		}
 	}
 
 	@Override
 	public void deleteCommonCode(String codeId) {
-		commonCodeRepository.deleteCommonCode(codeId);
+		int result = commonCodeRepository.deleteCommonCode(codeId);
+		if (result <= 0) {
+			throw new RuntimeException("공통 코드 삭제 실패");
+		}
 	}
 
 	private Map<String, CommonCode> createCommonCodeMap(List<CommonCode> commonCodes) {
