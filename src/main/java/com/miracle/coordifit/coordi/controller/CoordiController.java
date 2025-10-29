@@ -22,8 +22,10 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
 import com.miracle.coordifit.common.dto.ApiResponseDto;
+import com.miracle.coordifit.common.dto.Base64ImageDto;
 import com.miracle.coordifit.common.model.FileInfo;
 import com.miracle.coordifit.common.service.IFileService;
+import com.miracle.coordifit.coordi.dto.CoordiAiImageRequest;
 import com.miracle.coordifit.coordi.dto.CoordiResponse;
 import com.miracle.coordifit.coordi.model.Coordi;
 import com.miracle.coordifit.coordi.service.ICoordiService;
@@ -111,6 +113,44 @@ public class CoordiController {
 			return ResponseEntity.internalServerError()
 				.body(ApiResponseDto.error("코디 저장 실패", e.getMessage()));
 		}
+	}
+
+	@Transactional
+	@PostMapping("/ai-image")
+	public ResponseEntity<ApiResponseDto<?>> uploadAiImage(@RequestBody CoordiAiImageRequest request) {
+		if (request.getCoordiId() == null || request.getCoordiId().isBlank()) {
+			throw new IllegalArgumentException("coordiId는 필수입니다.");
+		}
+
+		if (request.getBase64() == null || request.getBase64().isBlank()) {
+			throw new IllegalArgumentException("base64 데이터가 비어 있습니다.");
+		}
+
+		log.info(">> [AI 이미지 업로드 요청] coordiId={}, fileName={}",
+			request.getCoordiId(), request.getFileName());
+
+		FileInfo uploaded = fileService.uploadBase64(
+			new Base64ImageDto(request.getBase64(), request.getFileName()));
+
+		int updated = coordiService.updateAiFileId(
+			request.getCoordiId(),
+			uploaded.getFileId());
+
+		if (updated <= 0) {
+			log.warn("⚠️ coordiId={} 업데이트 실패", request.getCoordiId());
+			return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+				.body(ApiResponseDto.error("코디 업데이트 실패"));
+		}
+
+		log.info("✅ AI 이미지 업로드 및 연결 완료: coordiId={}, fileId={}",
+			request.getCoordiId(), uploaded.getFileId());
+
+		return ResponseEntity.ok(ApiResponseDto.success(
+			"AI 이미지 저장 성공",
+			Map.of(
+				"coordiId", request.getCoordiId(),
+				"aiFileId", uploaded.getFileId(),
+				"aiImageUrl", uploaded.getS3Url())));
 	}
 
 	@Transactional

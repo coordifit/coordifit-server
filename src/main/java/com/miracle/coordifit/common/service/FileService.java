@@ -267,31 +267,53 @@ public class FileService implements IFileService {
 		if (dto == null || dto.getDataUrl() == null || dto.getDataUrl().isBlank()) {
 			throw new IllegalArgumentException("dataUrl이 비어 있습니다.");
 		}
-		byte[] bytes = decodeBase64Safe(dto.getDataUrl()); // ★ 강화된 디코더 사용
+
+		// Base 64 decoding
+		byte[] bytes = decodeBase64Safe(dto.getDataUrl());
 		String contentType = guessContentType(bytes, null);
-		String safeName = (dto.getFileName() == null || dto.getFileName().isBlank())
-			? ("image".concat(contentType != null && contentType.contains("png") ? ".png"
-				: contentType != null && contentType.contains("jpeg") ? ".jpg" : ""))
+
+		// content type 보정
+		if (contentType == null || contentType.isBlank()) {
+			if (dto.getDataUrl().startsWith("data:image/webp")) {
+				contentType = "image/webp";
+			} else {
+				contentType = "image/jpeg";
+			}
+		}
+
+		// file name setting
+		String fileName = (dto.getFileName() == null || dto.getFileName().isBlank())
+			? ("image" + (contentType.contains("png") ? ".png"
+				: contentType.contains("jpeg") ? ".jpg" : contentType.contains("webp") ? ".webp" : ".bin"))
 			: dto.getFileName();
 
 		try {
-			String url = s3Service.uploadBytes(bytes, safeName, contentType);
+			log.info("📤 Base64 업로드 요청: name={}, size={} bytes, type={}", fileName, bytes.length, contentType);
+
+			// s3 image upload
+			String url = s3Service.uploadBytes(bytes, fileName, contentType);
 			String key = url.substring(url.lastIndexOf('/') + 1);
 
-			FileInfo fi = FileInfo.builder()
-				.originalName(safeName)
+			FileInfo fileInfo = FileInfo.builder()
+				.originalName(fileName)
 				.s3Key(key)
 				.s3Url(url)
 				.bucketName(bucketName)
 				.fileSize((long)bytes.length)
 				.fileType(contentType)
-				.uploadBy("ADMIN")
+				.uploadBy(getCurrentUser())
 				.build();
 
-			fileRepository.insertFileInfo(fi);
-			return fi;
+			fileRepository.insertFileInfo(fileInfo);
+			log.info("✅ Base64 이미지 업로드 성공: {}", url);
+
+			return fileInfo;
 		} catch (IOException e) {
-			throw new RuntimeException("S3 업로드 실패", e);
+			log.error("❌ S3 업로드 실패: {}", e.getMessage(), e);
+			throw new RuntimeException("S3 업로드 중 오류가 발생했습니다.", e);
+		} catch (IllegalArgumentException e) {
+			log.error("❌ Base64 디코딩 실패: {}", e.getMessage(), e);
+			throw new RuntimeException("Base64 디코딩에 실패했습니다.", e);
 		}
 	}
 

@@ -10,6 +10,8 @@ import java.util.Optional;
 
 import org.apache.ibatis.jdbc.RuntimeSqlException;
 import org.springframework.dao.DataAccessException;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -196,7 +198,7 @@ public class CoordiService implements ICoordiService {
 
 	@Override
 	@Transactional
-	public int updateAiFileId(String coordiId, Integer aiFileId, String updatedBy) {
+	public int updateAiFileId(String coordiId, Integer aiFileId) {
 		if (coordiId == null || coordiId.isBlank()) {
 			throw new IllegalArgumentException("coordiId는 필수값입니다.");
 		}
@@ -204,8 +206,9 @@ public class CoordiService implements ICoordiService {
 			throw new IllegalArgumentException("aiFileId는 null일 수 없습니다.");
 		}
 
-		log.info(">>>>> [UPDATE AI_FILE_ID] coordiId={}, aiFileId={}, updatedBy={}", coordiId, aiFileId, updatedBy);
-		return coordiRepository.updateAiFileId(coordiId, aiFileId, updatedBy);
+		log.info(">>>>> [UPDATE AI_FILE_ID] coordiId={}, aiFileId={}, updatedBy={}", coordiId, aiFileId,
+			getCurrentUserId());
+		return coordiRepository.updateAiFileId(coordiId, aiFileId, getCurrentUserId());
 	}
 
 	@Override
@@ -294,6 +297,21 @@ public class CoordiService implements ICoordiService {
 		} catch (Exception e) {
 			throw new RuntimeSqlException("canvasItems 파싱 실패", e);
 		}
+	}
+
+	private String getCurrentUserId() {
+		try {
+			Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+			if (authentication != null && authentication.isAuthenticated()) {
+				String principal = authentication.getName();
+				if (principal != null && !principal.equals("anonymousUser")) {
+					return principal;
+				}
+			}
+		} catch (Exception e) {
+			log.warn("SecurityContext에서 사용자 정보를 가져올 수 없습니다.", e);
+		}
+		return "ADMIN";
 	}
 
 	private String generateCoordiId() {
