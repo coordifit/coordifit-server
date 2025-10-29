@@ -3,7 +3,9 @@ package com.miracle.coordifit.common.controller;
 import java.util.List;
 import java.util.Map;
 
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -13,8 +15,9 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.miracle.coordifit.common.dto.ApiResponseDto;
 import com.miracle.coordifit.common.model.CommonCode;
-import com.miracle.coordifit.common.service.CommonCodeService;
+import com.miracle.coordifit.common.service.ICommonCodeService;
 
 import lombok.RequiredArgsConstructor;
 
@@ -22,32 +25,68 @@ import lombok.RequiredArgsConstructor;
 @RequestMapping("api/common-codes")
 @RequiredArgsConstructor
 public class CommonCodeController {
-	private final CommonCodeService commonCodeService;
+	private final ICommonCodeService commonCodeService;
 
 	@GetMapping
-	public Map<String, CommonCode> getCommonCodes() {
-		return commonCodeService.getCommonCodes();
+	public ResponseEntity<ApiResponseDto<Map<String, CommonCode>>> getCommonCodes() {
+		try {
+			Map<String, CommonCode> commonCodes = commonCodeService.getCommonCodes();
+			return ResponseEntity.ok(ApiResponseDto.success("공통 코드 조회 성공", commonCodes));
+		} catch (Exception e) {
+			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+				.body(ApiResponseDto.error("공통 코드 조회 실패: " + e.getMessage()));
+		}
 	}
 
 	@GetMapping("/{parentCodeId}")
-	public List<CommonCode> getCommonCodesByParentCodeId(@PathVariable("parentCodeId") String parentCodeId) {
-		return commonCodeService.getCommonCodesByParentCodeId(parentCodeId);
+	public ResponseEntity<ApiResponseDto<List<CommonCode>>> getCommonCodesByParentCodeId(
+		@PathVariable("parentCodeId") String parentCodeId) {
+		try {
+			List<CommonCode> commonCodes = commonCodeService.getCommonCodesByParentCodeId(parentCodeId);
+			return ResponseEntity.ok(ApiResponseDto.success("공통 코드 조회 성공", commonCodes));
+		} catch (Exception e) {
+			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+				.body(ApiResponseDto.error("공통 코드 조회 실패: " + e.getMessage()));
+		}
 	}
 
 	@PostMapping
-	public CommonCode createCommonCode(@RequestBody CommonCode commonCode) {
-		return commonCodeService.createCommonCode(commonCode);
+	public ResponseEntity<ApiResponseDto<Void>> createCommonCode(
+		@RequestBody CommonCode commonCode,
+		Authentication authentication) {
+		try {
+			String userId = authentication.getName();
+			commonCodeService.createCommonCode(commonCode, userId);
+			return ResponseEntity.ok(ApiResponseDto.success("공통 코드 생성 성공"));
+		} catch (Exception e) {
+			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+				.body(ApiResponseDto.error("공통 코드 생성 실패: " + e.getMessage()));
+		}
 	}
 
 	@PutMapping("/{codeId}")
-	public CommonCode updateCommonCode(@PathVariable("codeId") String codeId, @RequestBody CommonCode commonCode) {
-		commonCode.setCodeId(codeId);
-		return commonCodeService.updateCommonCode(commonCode);
+	public ResponseEntity<ApiResponseDto<Void>> updateCommonCode(
+		@PathVariable("codeId") String codeId,
+		@RequestBody CommonCode commonCode,
+		Authentication authentication) {
+		try {
+			String userId = authentication.getName();
+			commonCodeService.updateCommonCode(commonCode, codeId, userId);
+			return ResponseEntity.ok(ApiResponseDto.success("공통 코드 수정 성공"));
+		} catch (Exception e) {
+			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+				.body(ApiResponseDto.error("공통 코드 수정 실패: " + e.getMessage()));
+		}
 	}
 
 	@DeleteMapping("/{codeId}")
-	public ResponseEntity<Void> deleteCommonCode(@PathVariable("codeId") String codeId) {
-		commonCodeService.deleteCommonCode(codeId);
-		return ResponseEntity.ok().build();
+	public ResponseEntity<ApiResponseDto<Void>> deleteCommonCode(@PathVariable("codeId") String codeId) {
+		try {
+			commonCodeService.deleteCommonCode(codeId);
+			return ResponseEntity.ok(ApiResponseDto.success("공통 코드 삭제 성공"));
+		} catch (Exception e) {
+			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+				.body(ApiResponseDto.error("공통 코드 삭제 실패: " + e.getMessage()));
+		}
 	}
 }

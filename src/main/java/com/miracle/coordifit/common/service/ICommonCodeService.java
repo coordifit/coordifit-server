@@ -6,13 +6,13 @@ import java.util.Map;
 import com.miracle.coordifit.common.model.CommonCode;
 
 public interface ICommonCodeService {
-	CommonCode createCommonCode(CommonCode commonCode);
+	void createCommonCode(CommonCode commonCode, String userId);
 
 	List<CommonCode> getCommonCodesByParentCodeId(String parentCodeId);
 
 	Map<String, CommonCode> getCommonCodes();
 
-	CommonCode updateCommonCode(CommonCode commonCode);
+	void updateCommonCode(CommonCode commonCode, String codeId, String userId);
 
 	void deleteCommonCode(String codeId);
 }
