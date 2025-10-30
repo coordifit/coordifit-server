@@ -16,6 +16,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.miracle.coordifit.common.dto.ApiResponseDto;
+import com.miracle.coordifit.common.dto.CategoryResponseDto;
 import com.miracle.coordifit.common.model.CommonCode;
 import com.miracle.coordifit.common.service.ICommonCodeService;
 
@@ -47,6 +48,17 @@ public class CommonCodeController {
 		} catch (Exception e) {
 			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
 				.body(ApiResponseDto.error("공통 코드 조회 실패: " + e.getMessage()));
+		}
+	}
+
+	@GetMapping("/category")
+	public ResponseEntity<ApiResponseDto<CategoryResponseDto>> getCategoryData() {
+		try {
+			CategoryResponseDto categoryData = commonCodeService.getCategoryData();
+			return ResponseEntity.ok(ApiResponseDto.success("카테고리 데이터 조회 성공", categoryData));
+		} catch (Exception e) {
+			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+				.body(ApiResponseDto.error("카테고리 데이터 조회 실패: " + e.getMessage()));
 		}
 	}
 

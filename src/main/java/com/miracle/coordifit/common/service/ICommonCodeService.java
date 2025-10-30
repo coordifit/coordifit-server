@@ -3,6 +3,7 @@ package com.miracle.coordifit.common.service;
 import java.util.List;
 import java.util.Map;
 
+import com.miracle.coordifit.common.dto.CategoryResponseDto;
 import com.miracle.coordifit.common.model.CommonCode;
 
 public interface ICommonCodeService {
@@ -11,6 +12,8 @@ public interface ICommonCodeService {
 	List<CommonCode> getCommonCodesByParentCodeId(String parentCodeId);
 
 	Map<String, CommonCode> getCommonCodes();
+
+	CategoryResponseDto getCategoryData();
 
 	void updateCommonCode(CommonCode commonCode, String codeId, String userId);
 
