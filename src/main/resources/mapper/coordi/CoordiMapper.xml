@@ -11,6 +11,7 @@
             coordi_name AS coordiName,
             description AS description,
             file_id AS fileId,
+            ai_file_id AS aiFileId,
             canvas_json AS canvasJson
         FROM coordis
         WHERE user_id = #{userId} 
@@ -25,6 +26,7 @@
             coordi_name AS coordiName,
             description AS description,
             file_id AS fileId,
+            ai_file_id AS aiFileId,
             canvas_json AS canvasJson
         FROM coordis WHERE coordi_id = #{coordiId}
     </select>

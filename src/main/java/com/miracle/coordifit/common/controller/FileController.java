@@ -45,11 +45,4 @@ public class FileController {
 	public ResponseEntity<FileInfo> uploadBase64(@Valid @RequestBody Base64ImageDto dto) {
 		return ResponseEntity.ok(fileService.uploadBase64(dto));
 	}
-
-	// --- Base64 배치 (신규) ---
-	@PostMapping(value = "/base64/batch", consumes = MediaType.APPLICATION_JSON_VALUE)
-	public ResponseEntity<List<FileInfo>> uploadBase64Batch(@Valid @RequestBody List<Base64ImageDto> list) {
-		return ResponseEntity.ok(fileService.uploadBase64Batch(list));
-	}
-
 }

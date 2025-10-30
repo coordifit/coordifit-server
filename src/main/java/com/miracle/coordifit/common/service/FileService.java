@@ -4,8 +4,10 @@ import java.awt.image.BufferedImage;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.ArrayList;
+import java.text.SimpleDateFormat;
+import java.util.Base64;
 import java.util.Collections;
+import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.regex.Pattern;
@@ -96,41 +98,6 @@ public class FileService implements IFileService {
 		}
 
 		return s;
-	}
-
-	public static byte[] decodeBase64SafeForPreflight(String dataUrlOrRaw) {
-		return decodeBase64SafeImpl(dataUrlOrRaw, true);
-	}
-
-	public static byte[] decodeBase64Safe(String dataUrlOrRaw) {
-		return decodeBase64SafeImpl(dataUrlOrRaw, false);
-	}
-
-	private static byte[] decodeBase64SafeImpl(String dataUrlOrRaw, boolean verbose) {
-		String cleaned = sanitizeBase64(dataUrlOrRaw);
-		if (cleaned == null || cleaned.isBlank()) {
-			throw new IllegalArgumentException("Base64 비어있음");
-		}
-
-		// 허용문자 검사 (A-Z a-z 0-9 + / =) — sanitize 후라 내부 '=' 는 끝 패딩에만 있음
-		if (!BASE64_ALLOWED_BODY.matcher(cleaned).matches()) {
-			String bad = cleaned.replaceAll("[A-Za-z0-9+/=]", "");
-			String sample = bad.substring(0, Math.min(20, bad.length()));
-			throw new IllegalArgumentException("허용되지 않는 문자: '" + sample + "'");
-		}
-
-		try {
-			return java.util.Base64.getMimeDecoder().decode(cleaned);
-		} catch (IllegalArgumentException e) {
-			int len = cleaned.length();
-			int mod = len % 4;
-			String head = cleaned.substring(0, Math.min(30, len));
-			String tail = cleaned.substring(Math.max(0, len - 30));
-			if (verbose) {
-				log.error("Base64 decode failed head='{}' tail='{}' len={} mod={}", head, tail, len, mod);
-			}
-			throw new IllegalArgumentException("Base64 디코딩 실패(length=" + len + ", mod4=" + mod + ")", e);
-		}
 	}
 
 	/** 간이 Content-Type 추정 (시그니처 기반) */
@@ -244,48 +211,60 @@ public class FileService implements IFileService {
 
 	@Override
 	@Transactional
-	public List<FileInfo> uploadBase64Batch(List<Base64ImageDto> list) {
-		if (list == null || list.isEmpty())
-			return List.of();
-		List<FileInfo> out = new ArrayList<>(list.size());
-		for (int i = 0; i < list.size(); i++) {
-			Base64ImageDto dto = list.get(i);
-			String name = (dto != null && dto.getFileName() != null) ? dto.getFileName() : "(no-name)";
-			try {
-				out.add(uploadBase64(dto)); // 내부에서 decodeBase64Safe 사용
-			} catch (IllegalArgumentException e) {
-				// 어떤 인덱스/이름에서 실패했는지 노출 → API 응답에 그대로 반영하면 디버깅 쉬움
-				throw new IllegalArgumentException("이미지 #" + (i + 1) + " (" + name + ") 실패: " + e.getMessage(), e);
-			}
-		}
-		return out;
-	}
-
-	@Override
-	@Transactional
 	public FileInfo uploadBase64(Base64ImageDto dto) {
 		if (dto == null || dto.getDataUrl() == null || dto.getDataUrl().isBlank()) {
 			throw new IllegalArgumentException("dataUrl이 비어 있습니다.");
 		}
 
+		log.debug("RAW dataUrl START: {}", dto.getDataUrl().substring(0, Math.min(120, dto.getDataUrl().length())));
+		log.debug("RAW dataUrl END: {}", dto.getDataUrl().substring(Math.max(dto.getDataUrl().length() - 120, 0)));
+
+		// prefix 분리
+		String dataUrl = dto.getDataUrl().trim();
+		String base64Data = dataUrl;
+		String contentType = null;
+
+		if (dataUrl.startsWith("data:") && dataUrl.contains(";base64,")) {
+			int start = dataUrl.indexOf(":") + 1;
+			int end = dataUrl.indexOf(";base64,");
+			contentType = dataUrl.substring(start, end); // ex) "image/png"
+			base64Data = dataUrl.substring(end + 8); // ex) "iVBORw0KGgoAAAANSUhEUgAA..."
+		}
+
+		base64Data = base64Data
+			.replaceAll("\n", "")
+			.replaceAll("\r", "")
+			.replaceAll(" ", "");
+
+		log.debug("CLEAN base64 START: {}", base64Data.substring(0, Math.min(80, base64Data.length())));
+		log.debug("CLEAN base64 END: {}", base64Data.substring(Math.max(base64Data.length() - 80, 0)));
+
 		// Base 64 decoding
-		byte[] bytes = decodeBase64Safe(dto.getDataUrl());
-		String contentType = guessContentType(bytes, null);
+		byte[] bytes;
+		try {
+			bytes = Base64.getDecoder().decode(base64Data);
+		} catch (IllegalArgumentException e) {
+			log.error("❌ Base64 디코딩 실패. 앞 60자 프리뷰={}", base64Data.substring(0, Math.min(60, base64Data.length())));
+			throw new RuntimeException("Base64 디코딩 실패: 유효하지 않은 데이터", e);
+		}
 
 		// content type 보정
 		if (contentType == null || contentType.isBlank()) {
-			if (dto.getDataUrl().startsWith("data:image/webp")) {
-				contentType = "image/webp";
-			} else {
-				contentType = "image/jpeg";
-			}
+			String guessed = guessContentType(bytes, null);
+			contentType = (guessed != null) ? guessed : "image/jpeg";
 		}
 
-		// file name setting
-		String fileName = (dto.getFileName() == null || dto.getFileName().isBlank())
-			? ("image" + (contentType.contains("png") ? ".png"
-				: contentType.contains("jpeg") ? ".jpg" : contentType.contains("webp") ? ".webp" : ".bin"))
-			: dto.getFileName();
+		// ext mapping
+		String ext = switch (contentType) {
+			case "image/png" -> ".png";
+			case "image/webp" -> ".webp";
+			case "image/gif" -> ".gif";
+			default -> ".jpg";
+		};
+
+		String baseName = "ai-fitting-" + new SimpleDateFormat("yyyyMMdd_HHmmss").format(new Date());
+
+		String fileName = baseName + ext;
 
 		try {
 			log.info("📤 Base64 업로드 요청: name={}, size={} bytes, type={}", fileName, bytes.length, contentType);
