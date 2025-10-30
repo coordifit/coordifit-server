@@ -1,6 +1,7 @@
 package com.miracle.coordifit.coordi.controller;
 
 import java.net.URI;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -22,6 +23,7 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
 import com.miracle.coordifit.common.dto.ApiResponseDto;
+import com.miracle.coordifit.common.dto.Base64ImageDto;
 import com.miracle.coordifit.common.model.FileInfo;
 import com.miracle.coordifit.common.service.IFileService;
 import com.miracle.coordifit.coordi.dto.CoordiResponse;
@@ -86,11 +88,12 @@ public class CoordiController {
 	@Transactional
 	@PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
 	public ResponseEntity<ApiResponseDto<?>> createCoordi(
-		Authentication authentication,
 		@RequestPart("image") MultipartFile image,
 		@RequestParam("canvasJson") @NotBlank String canvasJson,
 		@RequestParam("coordiName") @NotBlank String coordiName,
-		@RequestParam(value = "description", required = false) String description) {
+		@RequestParam(value = "description", required = false) String description,
+		@RequestParam(value = "dataUrl", required = false) String dataUrl,
+		Authentication authentication) {
 		final String userId = (String)authentication.getPrincipal();
 		try {
 			log.info(">> POST /api/coordi - userId={}", userId);
@@ -99,6 +102,21 @@ public class CoordiController {
 
 			Coordi result = coordiService.insertCoordi(userId, canvasJson, coordiName, description,
 				imageInfo.getFileId());
+
+			Integer aiFileId = null;
+
+			if (dataUrl != null && !dataUrl.isBlank()) {
+				Base64ImageDto dto = new Base64ImageDto();
+				dto.setDataUrl(dataUrl);
+
+				FileInfo aiImage = fileService.uploadBase64(dto);
+				aiFileId = aiImage.getFileId();
+
+				int updated = coordiService.updateAiFileId(result.getCoordiId(), aiFileId);
+				if (updated <= 0) {
+					log.warn(">> updateCoordi: ai_file_id 반영 실패 (coordiId={})", result.getCoordiId());
+				}
+			}
 
 			URI location = URI.create("/api/coordi/" + result.getCoordiId());
 
@@ -114,6 +132,40 @@ public class CoordiController {
 	}
 
 	@Transactional
+	@PutMapping("/{coordiId}/ai-image")
+	public ResponseEntity<ApiResponseDto<?>> updateCoordiAiFile(
+		@PathVariable("coordiId") @NotBlank String coordiId,
+		@RequestBody Base64ImageDto dto,
+		Authentication authentication) {
+		String userId = (String)authentication.getPrincipal();
+
+		try {
+			log.info(">> PUT /api/coordi/{}/ai-image - userId={}", coordiId, userId);
+
+			FileInfo aiImage = fileService.uploadBase64(dto);
+			Integer aiFileId = aiImage.getFileId();
+
+			int updated = coordiService.updateAiFileId(coordiId, aiFileId);
+			if (updated <= 0) {
+				return ResponseEntity.status(HttpStatus.NOT_FOUND)
+					.body(ApiResponseDto.error("대상 코디를 찾을 수 없습니다.", "coordiId=" + coordiId));
+			}
+
+			Map<String, Object> body = Map.of(
+				"coordiId", coordiId,
+				"aiFileId", aiFileId,
+				"aiImageUrl", aiImage.getS3Url());
+
+			return ResponseEntity.ok(ApiResponseDto.success("AI 이미지가 업데이트되었습니다.", body));
+
+		} catch (Exception e) {
+			log.error(">> updateCoordiAiImage failed", e);
+			return ResponseEntity.internalServerError()
+				.body(ApiResponseDto.error("AI 이미지 업데이트 실패", e.getMessage()));
+		}
+	}
+
+	@Transactional
 	@PutMapping(value = "/{coordiId}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
 	public ResponseEntity<ApiResponseDto<?>> updateCoordi(
 		@PathVariable("coordiId") @NotBlank String coordiId,
@@ -121,6 +173,7 @@ public class CoordiController {
 		@RequestParam("canvasJson") @NotBlank String canvasJson,
 		@RequestParam("coordiName") @NotBlank String coordiName,
 		@RequestParam(value = "description") String description,
+		@RequestParam(value = "dataUrl", required = false) String dataUrl,
 		Authentication authentication) {
 		String userId = (String)authentication.getPrincipal();
 
@@ -132,8 +185,24 @@ public class CoordiController {
 
 			Coordi result = coordiService.updateCoordi(userId, canvasJson, coordiName, description, fileId, coordiId);
 
-			Map<String, Object> body = Map.of(
-				"coordiId", result.getCoordiId());
+			Integer aiFileId = null;
+
+			if (dataUrl != null && !dataUrl.isBlank()) {
+				Base64ImageDto dto = new Base64ImageDto();
+				dto.setDataUrl(dataUrl);
+
+				FileInfo aiImage = fileService.uploadBase64(dto);
+				aiFileId = aiImage.getFileId();
+
+				int updated = coordiService.updateAiFileId(coordiId, aiFileId);
+				if (updated <= 0) {
+					log.warn(">> updateCoordi: ai_file_id 반영 실패 (coordiId={})", coordiId);
+				}
+			}
+
+			Map<String, Object> body = new HashMap<>();
+			body.put("coordiId", result.getCoordiId());
+			body.put("fileId", fileId);
 
 			return ResponseEntity.ok(ApiResponseDto.success("코디 수정 성공", body));
 

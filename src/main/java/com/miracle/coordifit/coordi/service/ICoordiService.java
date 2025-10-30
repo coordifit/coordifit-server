@@ -16,7 +16,7 @@ public interface ICoordiService {
 	Coordi updateCoordi(String userId, String canvasJson, String coordiName, String description, int fileId,
 		String coordiId);
 
-	int updateAiFileId(String coordiId, Integer aiFileId, String updatedBy);
+	int updateAiFileId(String coordiId, Integer aiFileId);
 
 	void insertCoordiItem(String canvasJson, Coordi coordi);
 

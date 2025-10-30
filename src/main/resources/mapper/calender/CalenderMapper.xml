@@ -10,7 +10,7 @@
       file_id, canvas_json, created_by, is_active,
       created_at, updated_at)
     VALUES
-      (#{dailylookId}, #{userId}, #{wearDate}, #{description},
+      (#{dailylookId}, #{userId}, TO_DATE(#{wearDate}, 'YYYY-MM-DD'), #{description},
       #{fileId}, #{canvasJson}, #{userId}, 'Y',
       SYSTIMESTAMP, SYSTIMESTAMP)
   </insert>
