@@ -22,6 +22,7 @@ import com.miracle.coordifit.calender.model.DailyLook;
 import com.miracle.coordifit.calender.model.DailyLookItem;
 import com.miracle.coordifit.calender.model.MostWornClothesDto;
 import com.miracle.coordifit.calender.repository.CalenderRepository;
+import com.miracle.coordifit.common.aspect.SaveHistory;
 import com.miracle.coordifit.common.model.FileInfo;
 import com.miracle.coordifit.common.service.IFileService;
 
@@ -39,6 +40,7 @@ public class CalenderService implements ICalenderService {
 
 	@Override
 	@Transactional
+	@SaveHistory(entityType = "DAILYLOOKS", actionType = "DELETE")
 	public DailyLook deleteDailyLookByDate(String userId, String wearDate) {
 
 		Optional<DailyLook> existing = calenderRepository.getDailyLookByDate(userId, wearDate);
@@ -69,6 +71,7 @@ public class CalenderService implements ICalenderService {
 
 	@Override
 	@Transactional
+	@SaveHistory(entityType = "DAILYLOOK", actionType = "INSERT")
 	public DailyLook insertDailyLook(String userId, String wearDate, MultipartFile image,
 		String description, String itemsJson) {
 		FileInfo imageInfo = fileservice.uploadFileWithThumbnail(image);
@@ -98,6 +101,7 @@ public class CalenderService implements ICalenderService {
 
 	@Override
 	@Transactional
+	@SaveHistory(entityType = "DAILYLOOKS", actionType = "UPDATE")
 	public DailyLook updateDailyLook(String userId, String wearDate, MultipartFile image, String description,
 		String itemsJson) {
 		Optional<DailyLook> existingOpt = calenderRepository.getDailyLookByDate(userId, wearDate);
