@@ -67,8 +67,9 @@ dependencies {
 	implementation 'org.springframework.boot:spring-boot-starter-jdbc'
 	runtimeOnly 'com.oracle.database.jdbc:ojdbc11'
 	
-	// Redis (for token storage)
+	// Redis
 	implementation 'org.springframework.boot:spring-boot-starter-data-redis'
+	implementation 'org.springframework.boot:spring-boot-starter-cache'
 	
 	// SQL 파라미터 로깅을 위한 log4jdbc
 	runtimeOnly 'org.bgee.log4jdbc-log4j2:log4jdbc-log4j2-jdbc4.1:1.16'
