@@ -5,6 +5,7 @@ import java.util.List;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 
+import com.miracle.coordifit.calender.model.DailyLookItem;
 import com.miracle.coordifit.clothes.dto.ClothesDetailResponse;
 import com.miracle.coordifit.clothes.dto.ClothesResponse;
 import com.miracle.coordifit.clothes.model.Clothes;
@@ -30,4 +31,12 @@ public interface ClothesRepository {
 	int deleteClothesImage(@Param("clothesId") String clothesId, @Param("fileId") Long fileId);
 
 	int deleteClothes(Clothes clothes);
+
+	int increaseWearCountByClothesId(DailyLookItem dailyLookItem);
+
+	int decreaseWearCountByClothesIds(@Param("dailylookId") String dailylookId, @Param("userId") String userId);
+
+	int updateLastWornDateByClothesId(DailyLookItem dailyLookItem);
+
+	int updateLastWornDateByDailylookId(@Param("dailylookId") String dailylookId, @Param("userId") String userId);
 }

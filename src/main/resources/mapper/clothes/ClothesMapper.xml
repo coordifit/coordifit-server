@@ -142,4 +142,59 @@
     WHERE clothes_id = #{clothesId}
   </update>
 
+  <update id="increaseWearCountByClothesId" parameterType="com.miracle.coordifit.calender.model.DailyLookItem">
+    UPDATE clothes
+    SET 
+      wear_count = wear_count + 1,
+      updated_at = CURRENT_TIMESTAMP,
+      updated_by = #{userId}
+    WHERE clothes_id = #{clothesId}
+  </update>
+
+  <update id="decreaseWearCountByClothesIds" parameterType="string">
+    UPDATE clothes
+    SET 
+      wear_count = wear_count - 1,
+      updated_at = CURRENT_TIMESTAMP,
+      updated_by = #{userId}
+    WHERE clothes_id IN (
+      SELECT clothes_id 
+      FROM dailylook_items 
+      WHERE dailylook_id = #{dailylookId}
+    )
+  </update>
+
+  <update id="updateLastWornDateByClothesId" parameterType="com.miracle.coordifit.calender.model.DailyLookItem">
+    UPDATE clothes
+    SET 
+      last_worn_date = (
+        SELECT MAX(wear_date) 
+        FROM dailylook_items 
+        WHERE clothes_id = #{clothesId}
+        AND TRUNC(wear_date) <![CDATA[<]]> TRUNC(SYSDATE + 1)
+      ),
+      updated_at = CURRENT_TIMESTAMP,
+      updated_by = #{userId}
+    WHERE clothes_id = #{clothesId}
+  </update>
+
+  <update id="updateLastWornDateByDailylookId" parameterType="string">
+    UPDATE clothes
+    SET last_worn_date = (
+        SELECT MAX(wear_date)
+        FROM dailylook_items
+        WHERE clothes_id = clothes.clothes_id        
+        AND dailylook_id != #{dailylookId}
+        AND TRUNC(wear_date) <![CDATA[<]]> TRUNC(SYSDATE + 1)
+      ), 
+      updated_at = CURRENT_TIMESTAMP,
+      updated_by = #{userId}
+    WHERE clothes_id IN (
+          SELECT clothes_id
+          FROM dailylook_items
+          WHERE dailylook_id = #{dailylookId}
+    )
+  </update>
+
+
 </mapper>
