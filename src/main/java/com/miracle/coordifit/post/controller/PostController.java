@@ -2,10 +2,8 @@ package com.miracle.coordifit.post.controller;
 
 import java.util.List;
 
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
-import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -27,9 +25,7 @@ import com.miracle.coordifit.user.dto.UserDto;
 
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 
-@Slf4j
 @RestController
 @RequestMapping("/api/posts")
 @RequiredArgsConstructor
@@ -41,103 +37,41 @@ public class PostController {
 
 	@GetMapping
 	public ResponseEntity<ApiResponseDto<List<PostDto>>> getAllPosts(Authentication authentication) {
-		try {
-			String userId = authentication.getName();
-			List<PostDto> posts = postService.getAllPosts(userId);
-			log.info("전체 게시물 조회 완료: {} 개 (userId={})", posts.size(), userId);
-			return ResponseEntity.ok(ApiResponseDto.success("전체 게시물 조회 성공", posts));
-		} catch (Exception e) {
-			log.error("전체 게시물 조회 실패", e);
-			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-				.body(ApiResponseDto.error("전체 게시물 조회 실패: " + e.getMessage()));
-		}
+		List<PostDto> posts = postService.getAllPosts(authentication.getName());
+		return ResponseEntity.ok(ApiResponseDto.success("전체 게시물 조회 성공", posts));
 	}
 
 	@PostMapping
 	public ResponseEntity<ApiResponseDto<Void>> createPost(
 		@Valid PostRequest request,
-		BindingResult bindingResult,
 		Authentication authentication) {
-
-		if (bindingResult.hasErrors()) {
-			String errorMessage = bindingResult.getFieldErrors().get(0).getDefaultMessage();
-			log.warn("게시물 등록 실패 - 유효성 검사 오류: {}", errorMessage);
-			return ResponseEntity.badRequest()
-				.body(ApiResponseDto.error(errorMessage));
-		}
-
-		try {
-			String userId = authentication.getName();
-			postService.createPost(request, userId);
-
-			log.info("게시물 등록 완료: userId={}", userId);
-			return ResponseEntity.ok(ApiResponseDto.success("게시물 등록 완료"));
-		} catch (Exception e) {
-			log.error("게시물 등록 실패: userId={}", authentication.getName(), e);
-			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-				.body(ApiResponseDto.error("게시물 등록 실패: " + e.getMessage()));
-		}
+		postService.createPost(request, authentication.getName());
+		return ResponseEntity.ok(ApiResponseDto.success("게시물 등록 완료"));
 	}
 
 	@GetMapping("/{postId}")
 	public ResponseEntity<ApiResponseDto<PostDetailResponse>> getPostDetail(
 		@PathVariable String postId,
 		Authentication authentication) {
-		try {
-			String userId = authentication.getName();
-			PostDetailResponse postDetail = postService.getPostDetail(postId, userId);
-
-			log.info("게시물 상세 조회 완료: postId={}", postId);
-			return ResponseEntity.ok(ApiResponseDto.success("게시물 상세 조회 성공", postDetail));
-		} catch (Exception e) {
-			log.error("게시물 상세 조회 실패: postId={}", postId, e);
-			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-				.body(ApiResponseDto.error("게시물 상세 조회 실패: " + e.getMessage()));
-		}
+		PostDetailResponse postDetail = postService.getPostDetail(postId, authentication.getName());
+		return ResponseEntity.ok(ApiResponseDto.success("게시물 상세 조회 성공", postDetail));
 	}
 
 	@PutMapping("/{postId}")
 	public ResponseEntity<ApiResponseDto<Void>> updatePost(
 		@PathVariable String postId,
 		@Valid PostRequest request,
-		BindingResult bindingResult,
 		Authentication authentication) {
-
-		if (bindingResult.hasErrors()) {
-			String errorMessage = bindingResult.getFieldErrors().get(0).getDefaultMessage();
-			log.warn("게시물 수정 실패 - 유효성 검사 오류: {}", errorMessage);
-			return ResponseEntity.badRequest()
-				.body(ApiResponseDto.error(errorMessage));
-		}
-
-		try {
-			String userId = authentication.getName();
-			postService.updatePost(postId, request, userId);
-
-			log.info("게시물 수정 완료: postId={}, userId={}", postId, userId);
-			return ResponseEntity.ok(ApiResponseDto.success("게시물 수정 완료"));
-		} catch (Exception e) {
-			log.error("게시물 수정 실패: postId={}", postId, e);
-			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-				.body(ApiResponseDto.error("게시물 수정 실패: " + e.getMessage()));
-		}
+		postService.updatePost(postId, request, authentication.getName());
+		return ResponseEntity.ok(ApiResponseDto.success("게시물 수정 완료"));
 	}
 
 	@PostMapping("/{postId}/like")
 	public ResponseEntity<ApiResponseDto<Void>> togglePostLike(
 		@PathVariable String postId,
 		Authentication authentication) {
-		try {
-			String userId = authentication.getName();
-			likeService.toggleLike(postId, "POST", userId);
-
-			log.info("게시글 좋아요 토글 완료: postId={}", postId);
-			return ResponseEntity.ok(ApiResponseDto.success("좋아요 처리 완료"));
-		} catch (Exception e) {
-			log.error("게시글 좋아요 처리 실패: postId={}", postId, e);
-			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-				.body(ApiResponseDto.error("좋아요 처리 실패: " + e.getMessage()));
-		}
+		likeService.toggleLike(postId, "POST", authentication.getName());
+		return ResponseEntity.ok(ApiResponseDto.success("좋아요 처리 완료"));
 	}
 
 	@PostMapping("/{postId}/comments")
@@ -146,80 +80,38 @@ public class PostController {
 		@RequestParam String content,
 		@RequestParam(required = false) String parentId,
 		Authentication authentication) {
-		try {
-			String userId = authentication.getName();
-			commentService.createComment(postId, content, parentId, userId);
-
-			log.info("댓글 등록 완료: postId={}", postId);
-			return ResponseEntity.ok(ApiResponseDto.success("댓글 등록 완료"));
-		} catch (Exception e) {
-			log.error("댓글 등록 실패: postId={}", postId, e);
-			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-				.body(ApiResponseDto.error("댓글 등록 실패: " + e.getMessage()));
-		}
+		commentService.createComment(postId, content, parentId, authentication.getName());
+		return ResponseEntity.ok(ApiResponseDto.success("댓글 등록 완료"));
 	}
 
 	@GetMapping("/{postId}/comments")
 	public ResponseEntity<ApiResponseDto<List<CommentResponseDto>>> getComments(
 		@PathVariable String postId,
 		Authentication authentication) {
-		try {
-			String userId = authentication.getName();
-			List<CommentResponseDto> comments = commentService.getCommentsByPostId(postId, userId);
-
-			log.info("댓글 목록 조회 완료: postId={}, count={}", postId, comments.size());
-			return ResponseEntity.ok(ApiResponseDto.success("댓글 목록 조회 성공", comments));
-		} catch (Exception e) {
-			log.error("댓글 목록 조회 실패: postId={}", postId, e);
-			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-				.body(ApiResponseDto.error("댓글 목록 조회 실패: " + e.getMessage()));
-		}
+		List<CommentResponseDto> comments = commentService.getCommentsByPostId(postId, authentication.getName());
+		return ResponseEntity.ok(ApiResponseDto.success("댓글 목록 조회 성공", comments));
 	}
 
 	@PostMapping("/comments/{commentId}/like")
 	public ResponseEntity<ApiResponseDto<Void>> toggleCommentLike(
 		@PathVariable String commentId,
 		Authentication authentication) {
-		try {
-			String userId = authentication.getName();
-			likeService.toggleLike(commentId, "COMMENT", userId);
-
-			log.info("댓글 좋아요 토글 완료: commentId={}", commentId);
-			return ResponseEntity.ok(ApiResponseDto.success("댓글 좋아요 처리 완료"));
-		} catch (Exception e) {
-			log.error("댓글 좋아요 처리 실패: commentId={}", commentId, e);
-			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-				.body(ApiResponseDto.error("댓글 좋아요 처리 실패: " + e.getMessage()));
-		}
+		likeService.toggleLike(commentId, "COMMENT", authentication.getName());
+		return ResponseEntity.ok(ApiResponseDto.success("댓글 좋아요 처리 완료"));
 	}
 
 	@GetMapping("/{postId}/likes")
 	public ResponseEntity<ApiResponseDto<List<UserDto>>> getPostLikes(
 		@PathVariable String postId) {
-		try {
-			List<UserDto> likeUsers = likeService.getLikeUsers(postId);
-
-			log.info("게시글 좋아요 목록 조회 완료: postId={}, count={}", postId, likeUsers.size());
-			return ResponseEntity.ok(ApiResponseDto.success("좋아요 목록 조회 성공", likeUsers));
-		} catch (Exception e) {
-			log.error("게시글 좋아요 목록 조회 실패: postId={}", postId, e);
-			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-				.body(ApiResponseDto.error("좋아요 목록 조회 실패: " + e.getMessage()));
-		}
+		List<UserDto> likeUsers = likeService.getLikeUsers(postId);
+		return ResponseEntity.ok(ApiResponseDto.success("좋아요 목록 조회 성공", likeUsers));
 	}
 
 	@DeleteMapping("/{postId}")
 	public ResponseEntity<ApiResponseDto<Void>> deletePost(
 		@PathVariable String postId,
 		Authentication authentication) {
-		try {
-			String userId = authentication.getName();
-			postService.deletePost(postId, userId);
-			return ResponseEntity.ok(ApiResponseDto.success("게시물 삭제 성공"));
-		} catch (Exception e) {
-			log.error("게시물 삭제 실패: postId={}", postId, e);
-			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-				.body(ApiResponseDto.error("게시물 삭제 실패: " + e.getMessage()));
-		}
+		postService.deletePost(postId, authentication.getName());
+		return ResponseEntity.ok(ApiResponseDto.success("게시물 삭제 성공"));
 	}
 }

@@ -84,6 +84,12 @@ public class CommonCodeService implements ICommonCodeService {
 	}
 
 	@Override
+	@Cacheable(value = "commonCodes", key = "'code:' + #codeId")
+	public CommonCode getCommonCodeByCodeId(String codeId) {
+		return commonCodeRepository.selectCommonCodeByCodeId(codeId);
+	}
+
+	@Override
 	@CacheEvict(value = "commonCodes", allEntries = true, beforeInvocation = false)
 	public void updateCommonCode(CommonCode commonCode, String codeId, String userId) {
 		commonCode.setCodeId(codeId);
