@@ -32,6 +32,16 @@ public class HistoryConfig {
 		return new GenericHistorySaver(historyRepository, "clothes_history");
 	}
 
+	@Bean
+	public HistorySaver coordiHistorySaver() {
+		return new GenericHistorySaver(historyRepository, "coordi_history");
+	}
+
+	@Bean
+	public HistorySaver dailyLookHistorySaver() {
+		return new GenericHistorySaver(historyRepository, "dailylooks_history");
+	}
+
 	// 새로운 엔티티 히스토리 저장을 추가하려면 여기에 Bean을 추가하세요
 	// 예시:
 	// @Bean
