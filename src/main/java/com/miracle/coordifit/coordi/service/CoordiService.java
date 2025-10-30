@@ -17,6 +17,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.miracle.coordifit.common.aspect.SaveHistory;
 import com.miracle.coordifit.common.model.FileInfo;
 import com.miracle.coordifit.common.service.IFileService;
 import com.miracle.coordifit.coordi.dto.CoordiResponse;
@@ -138,6 +139,7 @@ public class CoordiService implements ICoordiService {
 
 	@Transactional
 	@Override
+	@SaveHistory(entityType = "COORDI", actionType = "INSERT")
 	public Coordi insertCoordi(String userId, String canvasJson, String coordiName, String description, int fileId) {
 		Coordi coordi = Coordi.builder()
 			.userId(userId)
@@ -164,6 +166,7 @@ public class CoordiService implements ICoordiService {
 
 	@Transactional
 	@Override
+	@SaveHistory(entityType = "COORDI", actionType = "UPDATE")
 	public Coordi updateCoordi(String userId, String canvasJson, String coordiName, String description, int fileId,
 		String coordiId) {
 		Optional<Coordi> existingOpt = coordiRepository.getCoordiById(coordiId);
