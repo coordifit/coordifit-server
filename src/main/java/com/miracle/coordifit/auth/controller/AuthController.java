@@ -1,11 +1,8 @@
 package com.miracle.coordifit.auth.controller;
 
-import java.util.HashMap;
 import java.util.Map;
 
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -19,15 +16,12 @@ import com.miracle.coordifit.auth.service.IEmailService;
 import com.miracle.coordifit.auth.service.IJwtService;
 import com.miracle.coordifit.auth.service.IKakaoAuthService;
 import com.miracle.coordifit.common.dto.ApiResponseDto;
-import com.miracle.coordifit.common.exception.InactiveUserException;
 import com.miracle.coordifit.user.model.User;
 import com.miracle.coordifit.user.service.IUserService;
 
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 
-@Slf4j
 @RestController
 @RequestMapping("/api/auth")
 @RequiredArgsConstructor
@@ -39,236 +33,97 @@ public class AuthController {
 
 	@PostMapping("/signup")
 	public ResponseEntity<ApiResponseDto<Void>> signUp(
-		@Valid @RequestBody AuthRequestDto requestDto,
-		BindingResult bindingResult) {
-
-		log.info("회원가입 요청: {}", requestDto.getEmail());
-
-		if (bindingResult.hasErrors()) {
-			String errorMessage = bindingResult.getFieldErrors().get(0).getDefaultMessage();
-			return ResponseEntity.badRequest()
-				.body(ApiResponseDto.error(errorMessage));
-		}
-
-		try {
-			userService.signUp(requestDto);
-			return ResponseEntity.status(HttpStatus.CREATED)
-				.body(ApiResponseDto.success("회원가입이 완료되었습니다."));
-
-		} catch (IllegalArgumentException e) {
-			log.warn("회원가입 실패 - 유효성 오류: {}", e.getMessage());
-			return ResponseEntity.badRequest()
-				.body(ApiResponseDto.error(e.getMessage()));
-
-		} catch (Exception e) {
-			log.error("회원가입 실패 - 시스템 오류", e);
-			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-				.body(ApiResponseDto.error("회원가입 처리 중 오류가 발생했습니다."));
-		}
+		@Valid @RequestBody AuthRequestDto requestDto) {
+		userService.signUp(requestDto);
+		return ResponseEntity.ok(ApiResponseDto.success("회원가입이 완료되었습니다."));
 	}
 
 	@PostMapping("/send-verification")
 	public ResponseEntity<ApiResponseDto<String>> sendVerificationCode(
-		@Valid @RequestBody AuthRequestDto requestDto,
-		BindingResult bindingResult) {
-
-		log.info("이메일 인증 코드 발송 요청: {}", requestDto.getEmail());
-		return sendVerificationCode(requestDto, bindingResult, true);
+		@Valid @RequestBody AuthRequestDto requestDto) {
+		return sendVerificationCode(requestDto, true);
 	}
 
 	@GetMapping("/check-email")
 	public ResponseEntity<ApiResponseDto<Boolean>> checkEmailAvailability(
 		@RequestParam("email") String email) {
 
-		log.info("이메일 중복 검사: {}", email);
-
-		try {
-			boolean available = userService.isEmailAvailable(email);
-			String message = available ? "사용 가능한 이메일입니다." : "이미 사용 중인 이메일입니다.";
-
-			return ResponseEntity.ok()
-				.body(ApiResponseDto.success(message, available));
-
-		} catch (Exception e) {
-			log.error("이메일 중복 검사 실패", e);
-			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-				.body(ApiResponseDto.error("이메일 중복 검사 중 오류가 발생했습니다."));
-		}
+		boolean available = userService.isEmailAvailable(email);
+		String message = available ? "사용 가능한 이메일입니다." : "이미 사용 중인 이메일입니다.";
+		return ResponseEntity.ok(ApiResponseDto.success(message, available));
 	}
 
 	@GetMapping("/check-nickname")
 	public ResponseEntity<ApiResponseDto<Boolean>> checkNicknameAvailability(
 		@RequestParam("nickname") String nickname) {
 
-		log.info("닉네임 중복 검사: {}", nickname);
-
-		try {
-			boolean available = userService.isNicknameAvailable(nickname);
-			String message = available ? "사용 가능한 닉네임입니다." : "이미 사용 중인 닉네임입니다.";
-
-			return ResponseEntity.ok()
-				.body(ApiResponseDto.success(message, available));
-
-		} catch (Exception e) {
-			log.error("닉네임 중복 검사 실패", e);
-			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-				.body(ApiResponseDto.error("닉네임 중복 검사 중 오류가 발생했습니다."));
-		}
+		boolean available = userService.isNicknameAvailable(nickname);
+		String message = available ? "사용 가능한 닉네임입니다." : "이미 사용 중인 닉네임입니다.";
+		return ResponseEntity.ok(ApiResponseDto.success(message, available));
 	}
 
 	@PostMapping("/login")
 	public ResponseEntity<ApiResponseDto<Map<String, Object>>> login(
 		@RequestBody Map<String, Object> loginRequest) {
 
-		log.info("로그인 요청: {}", loginRequest.get("email"));
-
-		try {
-			String email = (String)loginRequest.get("email");
-			String password = (String)loginRequest.get("password");
-
-			if (email == null || email.trim().isEmpty()) {
-				log.warn("이메일을 입력해주세요.");
-				return ResponseEntity.badRequest()
-					.body(ApiResponseDto.error("이메일을 입력해주세요."));
-			}
-
-			if (password == null || password.trim().isEmpty()) {
-				log.warn("비밀번호를 입력해주세요.");
-				return ResponseEntity.badRequest()
-					.body(ApiResponseDto.error("비밀번호를 입력해주세요."));
-			}
-
-			User user = userService.authenticate(email, password);
-
-			if (user == null) {
-				log.warn("이메일 또는 비밀번호가 올바르지 않습니다.");
-				return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-					.body(ApiResponseDto.error("이메일 또는 비밀번호가 올바르지 않습니다."));
-			}
-
-			Map<String, Object> responseData = jwtService.createTokens(user);
-
-			log.info("로그인이 완료되었습니다.");
-			return ResponseEntity.ok()
-				.body(ApiResponseDto.success("로그인이 완료되었습니다.", responseData));
-
-		} catch (InactiveUserException e) {
-			return createInactiveUserResponse(e.getUserId());
-
-		} catch (Exception e) {
-			log.error("로그인 실패", e);
-			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-				.body(ApiResponseDto.error("로그인 처리 중 오류가 발생했습니다."));
+		String email = (String)loginRequest.get("email");
+		String password = (String)loginRequest.get("password");
+		if (email == null || email.trim().isEmpty()) {
+			return ResponseEntity.badRequest().body(ApiResponseDto.error("이메일을 입력해주세요."));
 		}
+		if (password == null || password.trim().isEmpty()) {
+			return ResponseEntity.badRequest().body(ApiResponseDto.error("비밀번호를 입력해주세요."));
+		}
+		User user = userService.authenticate(email, password);
+		if (user == null) {
+			return ResponseEntity.status(401).body(ApiResponseDto.error("이메일 또는 비밀번호가 올바르지 않습니다."));
+		}
+		Map<String, Object> responseData = jwtService.createTokens(user);
+		return ResponseEntity.ok(ApiResponseDto.success("로그인이 완료되었습니다.", responseData));
 	}
 
 	@PostMapping("/refresh")
 	public ResponseEntity<ApiResponseDto<Map<String, Object>>> refreshToken(
 		@RequestBody Map<String, String> refreshRequest) {
 
-		log.info("토큰 갱신 요청");
-
-		try {
-			String refreshToken = refreshRequest.get("refreshToken");
-
-			if (refreshToken == null || refreshToken.trim().isEmpty()) {
-				return ResponseEntity.badRequest()
-					.body(ApiResponseDto.error("리프레시 토큰을 입력해주세요."));
-			}
-
-			if (!jwtService.validateToken(refreshToken)) {
-				log.warn("리프레시 토큰 JWT 검증 실패");
-				return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-					.body(ApiResponseDto.error("유효하지 않은 리프레시 토큰입니다."));
-			}
-
-			log.info("리프레시 토큰 검증 성공");
-
-			String userId = jwtService.getUserIdFromToken(refreshToken);
-			User user = userService.getUserById(userId);
-
-			if (user == null) {
-				return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-					.body(ApiResponseDto.error("사용자를 찾을 수 없습니다."));
-			}
-
-			Map<String, Object> responseData = jwtService.refreshAccessToken(user);
-
-			return ResponseEntity.ok()
-				.body(ApiResponseDto.success("토큰이 갱신되었습니다.", responseData));
-
-		} catch (Exception e) {
-			log.error("토큰 갱신 실패", e);
-			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-				.body(ApiResponseDto.error("토큰 갱신 중 오류가 발생했습니다."));
+		String refreshToken = refreshRequest.get("refreshToken");
+		if (refreshToken == null || refreshToken.trim().isEmpty()) {
+			return ResponseEntity.badRequest().body(ApiResponseDto.error("리프레시 토큰을 입력해주세요."));
 		}
+		if (!jwtService.validateToken(refreshToken)) {
+			return ResponseEntity.status(401).body(ApiResponseDto.error("유효하지 않은 리프레시 토큰입니다."));
+		}
+		String userId = jwtService.getUserIdFromToken(refreshToken);
+		User user = userService.getUserById(userId);
+		if (user == null) {
+			return ResponseEntity.status(401).body(ApiResponseDto.error("사용자를 찾을 수 없습니다."));
+		}
+		Map<String, Object> responseData = jwtService.refreshAccessToken(user);
+		return ResponseEntity.ok(ApiResponseDto.success("토큰이 갱신되었습니다.", responseData));
 	}
 
 	@PostMapping("/logout")
 	public ResponseEntity<ApiResponseDto<Void>> logout(
 		@RequestBody String userId) {
 
-		log.info("로그아웃 요청: {}", userId);
-
-		try {
-			if (userId == null || userId.trim().isEmpty()) {
-				log.warn("사용자 ID가 필요합니다.");
-				return ResponseEntity.badRequest()
-					.body(ApiResponseDto.error("사용자 ID가 필요합니다."));
-			}
-
-			jwtService.deleteAllUserTokens(userId);
-
-			log.info("로그아웃 완료: {}", userId);
-
-			return ResponseEntity.ok()
-				.body(ApiResponseDto.success("로그아웃이 완료되었습니다."));
-
-		} catch (Exception e) {
-			log.error("로그아웃 처리 중 오류", e);
-			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-				.body(ApiResponseDto.error("로그아웃 처리 중 오류가 발생했습니다." + e.getMessage()));
+		if (userId == null || userId.trim().isEmpty()) {
+			return ResponseEntity.badRequest().body(ApiResponseDto.error("사용자 ID가 필요합니다."));
 		}
+		jwtService.deleteAllUserTokens(userId);
+		return ResponseEntity.ok(ApiResponseDto.success("로그아웃이 완료되었습니다."));
 	}
 
 	@PostMapping("/send-password-reset-code")
 	public ResponseEntity<ApiResponseDto<String>> sendPasswordResetCode(
-		@Valid @RequestBody AuthRequestDto requestDto,
-		BindingResult bindingResult) {
-
-		log.info("비밀번호 재설정 인증 코드 발송 요청: {}", requestDto.getEmail());
-		return sendVerificationCode(requestDto, bindingResult, false);
+		@Valid @RequestBody AuthRequestDto requestDto) {
+		return sendVerificationCode(requestDto, false);
 	}
 
 	@PostMapping("/reset-password")
 	public ResponseEntity<ApiResponseDto<Void>> resetPassword(
-		@Valid @RequestBody AuthRequestDto requestDto,
-		BindingResult bindingResult) {
-
-		log.info("비밀번호 재설정 요청: {}", requestDto.getEmail());
-
-		if (bindingResult.hasErrors()) {
-			String errorMessage = bindingResult.getFieldErrors().get(0).getDefaultMessage();
-			return ResponseEntity.badRequest()
-				.body(ApiResponseDto.error(errorMessage));
-		}
-
-		try {
-			userService.resetPassword(requestDto);
-
-			return ResponseEntity.ok()
-				.body(ApiResponseDto.success("비밀번호가 성공적으로 재설정되었습니다."));
-
-		} catch (IllegalArgumentException e) {
-			log.warn("비밀번호 재설정 실패 - 유효성 오류: {}", e.getMessage());
-			return ResponseEntity.badRequest()
-				.body(ApiResponseDto.error(e.getMessage()));
-
-		} catch (Exception e) {
-			log.error("비밀번호 재설정 실패 - 시스템 오류", e);
-			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-				.body(ApiResponseDto.error("비밀번호 재설정 처리 중 오류가 발생했습니다."));
-		}
+		@Valid @RequestBody AuthRequestDto requestDto) {
+		userService.resetPassword(requestDto);
+		return ResponseEntity.ok(ApiResponseDto.success("비밀번호가 성공적으로 재설정되었습니다."));
 	}
 
 	@PostMapping("/kakao/login")
@@ -277,75 +132,34 @@ public class AuthController {
 
 		String code = request.get("code");
 		String redirectUri = request.get("redirectUri");
-
-		log.info("카카오 로그인 요청: code={}", code);
-
-		try {
-			KakaoUserResponse kakaoUserResponse = kakaoAuthService.getKakaoUserInfo(code, redirectUri);
-
-			User user = userService.processKakaoLogin(kakaoUserResponse);
-
-			Map<String, Object> responseData = jwtService.createTokens(user);
-
-			log.info("카카오 로그인 성공: userId={}", user.getUserId());
-			return ResponseEntity.ok()
-				.body(ApiResponseDto.success("카카오 로그인이 완료되었습니다.", responseData));
-
-		} catch (InactiveUserException e) {
-			return createInactiveUserResponse(e.getUserId());
-		} catch (Exception e) {
-			log.error("카카오 로그인 실패", e);
-			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-				.body(ApiResponseDto.error("카카오 로그인 처리 중 오류가 발생했습니다: " + e.getMessage()));
-		}
+		KakaoUserResponse kakaoUserResponse = kakaoAuthService.getKakaoUserInfo(code, redirectUri);
+		User user = userService.processKakaoLogin(kakaoUserResponse);
+		Map<String, Object> responseData = jwtService.createTokens(user);
+		return ResponseEntity.ok(ApiResponseDto.success("카카오 로그인이 완료되었습니다.", responseData));
 	}
 
 	private ResponseEntity<ApiResponseDto<Map<String, Object>>> createInactiveUserResponse(String userId) {
-		Map<String, Object> responseData = new HashMap<>();
-		responseData.put("isActive", false);
-		responseData.put("message", "비활성화된 계정입니다. 계정을 다시 활성화하시겠습니까?");
-		responseData.put("userId", userId);
-
-		log.warn("비활성화된 계정 로그인 시도: userId={}", userId);
-		return ResponseEntity.status(HttpStatus.FORBIDDEN)
+		Map<String, Object> responseData = Map.of(
+			"isActive", false,
+			"message", "비활성화된 계정입니다. 계정을 다시 활성화하시겠습니까?",
+			"userId", userId);
+		return ResponseEntity.status(403)
 			.body(ApiResponseDto.error("비활성화된 계정입니다.", responseData));
 	}
 
 	private ResponseEntity<ApiResponseDto<String>> sendVerificationCode(
 		AuthRequestDto requestDto,
-		BindingResult bindingResult,
 		boolean isSignUp) {
-
-		if (bindingResult.hasErrors()) {
-			String errorMessage = bindingResult.getFieldErrors().get(0).getDefaultMessage();
-			return ResponseEntity.badRequest()
-				.body(ApiResponseDto.error(errorMessage));
+		boolean emailAvailable = userService.isEmailAvailable(requestDto.getEmail());
+		if (isSignUp && !emailAvailable) {
+			return ResponseEntity.badRequest().body(ApiResponseDto.error("이미 사용 중인 이메일입니다."));
+		} else if (!isSignUp && emailAvailable) {
+			return ResponseEntity.badRequest().body(ApiResponseDto.error("존재하지 않는 이메일입니다."));
 		}
-
-		try {
-			boolean emailAvailable = userService.isEmailAvailable(requestDto.getEmail());
-
-			if (isSignUp && !emailAvailable) {
-				return ResponseEntity.badRequest()
-					.body(ApiResponseDto.error("이미 사용 중인 이메일입니다."));
-			} else if (!isSignUp && emailAvailable) {
-				return ResponseEntity.badRequest()
-					.body(ApiResponseDto.error("존재하지 않는 이메일입니다."));
-			}
-
-			String verificationCode = emailService.sendVerificationCode(requestDto.getEmail(), isSignUp);
-			if (verificationCode != null) {
-				return ResponseEntity.ok()
-					.body(ApiResponseDto.success("인증 코드가 발송되었습니다.", verificationCode));
-			} else {
-				return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-					.body(ApiResponseDto.error("인증 코드 발송에 실패했습니다."));
-			}
-
-		} catch (Exception e) {
-			log.error("인증 코드 발송 실패", e);
-			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-				.body(ApiResponseDto.error("인증 코드 발송 중 오류가 발생했습니다."));
+		String verificationCode = emailService.sendVerificationCode(requestDto.getEmail(), isSignUp);
+		if (verificationCode == null) {
+			return ResponseEntity.internalServerError().body(ApiResponseDto.error("인증 코드 발송에 실패했습니다."));
 		}
+		return ResponseEntity.ok(ApiResponseDto.success("인증 코드가 발송되었습니다.", verificationCode));
 	}
 }
