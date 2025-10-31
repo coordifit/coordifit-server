@@ -19,7 +19,7 @@ import com.miracle.coordifit.clothes.model.ClothesImage;
 import com.miracle.coordifit.clothes.repository.ClothesRepository;
 import com.miracle.coordifit.common.aspect.SaveHistory;
 import com.miracle.coordifit.common.model.FileInfo;
-import com.miracle.coordifit.common.service.IFileService;
+import com.miracle.coordifit.common.service.BackgroundRemovalService;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -30,7 +30,7 @@ import lombok.extern.slf4j.Slf4j;
 public class ClothesService implements IClothesService {
 
 	private final ClothesRepository clothesRepository;
-	private final IFileService fileService;
+	private final BackgroundRemovalService backgroundRemovalService;
 	private final CalenderRepository calenderRepository;
 
 	@Override
@@ -66,7 +66,7 @@ public class ClothesService implements IClothesService {
 
 		for (MultipartFile file : request.getFiles()) {
 			if (file != null && !file.isEmpty()) {
-				FileInfo uploadedFile = fileService.uploadFile(file);
+				FileInfo uploadedFile = backgroundRemovalService.removeBackgroundAndUpload(file);
 
 				ClothesImage clothesImage = ClothesImage.builder()
 					.clothesId(clothesId)
@@ -122,7 +122,7 @@ public class ClothesService implements IClothesService {
 		if (request.getFiles() != null && !request.getFiles().isEmpty()) {
 			for (MultipartFile file : request.getFiles()) {
 				if (file != null && !file.isEmpty()) {
-					FileInfo uploadedFile = fileService.uploadFile(file);
+					FileInfo uploadedFile = backgroundRemovalService.removeBackgroundAndUpload(file);
 
 					ClothesImage clothesImage = ClothesImage.builder()
 						.clothesId(clothesId)
@@ -211,6 +211,8 @@ public class ClothesService implements IClothesService {
 			} else {
 				log.warn("옷 삭제 실패: clothesId={}", clothesId);
 			}
+
+			calenderRepository.deleteDailyLookByClothesId(clothesId, userId);
 		}
 
 		log.info("옷 일괄 삭제 완료: count={}", clothesList.size());
