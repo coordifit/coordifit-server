@@ -15,7 +15,14 @@
             canvas_json AS canvasJson
         FROM coordis
         WHERE user_id = #{userId} 
-        AND (is_active IS NULL OR is_active = 'Y')
+        AND is_active = 'Y'
+        AND NOT EXISTS (
+            SELECT 1 
+            FROM coordi_items ci
+            INNER JOIN clothes c ON ci.clothes_id = c.clothes_id
+            WHERE ci.coordi_id = coordis.coordi_id
+            AND c.is_active = 'N'
+        )
         ORDER BY created_at DESC
     </select>
     

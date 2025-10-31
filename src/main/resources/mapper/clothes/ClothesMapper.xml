@@ -181,11 +181,13 @@
   <update id="updateLastWornDateByDailylookId" parameterType="string">
     UPDATE clothes
     SET last_worn_date = (
-        SELECT MAX(wear_date)
-        FROM dailylook_items
-        WHERE clothes_id = clothes.clothes_id        
-        AND dailylook_id != #{dailylookId}
-        AND TRUNC(wear_date) <![CDATA[<]]> TRUNC(SYSDATE + 1)
+        SELECT MAX(di.wear_date)
+        FROM dailylook_items di
+        INNER JOIN dailylooks d ON di.dailylook_id = d.dailylook_id
+        WHERE di.clothes_id = clothes.clothes_id        
+        AND di.dailylook_id != #{dailylookId}
+        AND d.is_active = 'Y'
+        AND TRUNC(di.wear_date) <![CDATA[<]]> TRUNC(SYSDATE + 1)
       ), 
       updated_at = CURRENT_TIMESTAMP,
       updated_by = #{userId}
