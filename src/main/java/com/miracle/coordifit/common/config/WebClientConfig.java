@@ -28,6 +28,12 @@ public class WebClientConfig {
 	@Value("${app.openai.timeout-ms}")
 	private int openAiTimeoutMs;
 
+	@Value("${app.ai.base-url}")
+	private String aiBaseUrl;
+
+	@Value("${app.ai.connect-timeout-ms}")
+	private int aiTimeoutMs;
+
 	@Bean(name = "geminiWebClient")
 	public WebClient geminiWebClient(WebClient.Builder builder) {
 		HttpClient httpClient = createHttpClient(timeoutMs);
@@ -43,6 +49,16 @@ public class WebClientConfig {
 		HttpClient httpClient = createHttpClient(openAiTimeoutMs);
 		return builder.clone()
 			.baseUrl(openAiBaseUrl)
+			.clientConnector(new ReactorClientHttpConnector(httpClient))
+			.exchangeStrategies(defaultExchangeStrategies())
+			.build();
+	}
+
+	@Bean(name = "fastApiWebClient")
+	public WebClient fastApiWebClient(WebClient.Builder builder) {
+		HttpClient httpClient = createHttpClient(aiTimeoutMs);
+		return builder.clone()
+			.baseUrl(aiBaseUrl)
 			.clientConnector(new ReactorClientHttpConnector(httpClient))
 			.exchangeStrategies(defaultExchangeStrategies())
 			.build();
