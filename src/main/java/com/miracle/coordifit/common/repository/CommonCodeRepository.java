@@ -15,6 +15,8 @@ public interface CommonCodeRepository {
 
 	List<CommonCode> selectCommonCodes();
 
+	CommonCode selectCommonCodeByCodeId(String codeId);
+
 	int insertCommonCode(CommonCode commonCode);
 
 	int updateCommonCode(CommonCode commonCode);

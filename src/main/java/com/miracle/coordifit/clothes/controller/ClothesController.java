@@ -2,10 +2,8 @@ package com.miracle.coordifit.clothes.controller;
 
 import java.util.List;
 
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
-import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -23,9 +21,7 @@ import com.miracle.coordifit.common.dto.ApiResponseDto;
 
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 
-@Slf4j
 @RestController
 @RequestMapping("/api/clothes")
 @RequiredArgsConstructor
@@ -36,164 +32,48 @@ public class ClothesController {
 	@PostMapping
 	public ResponseEntity<ApiResponseDto<Void>> createClothes(
 		@Valid ClothesRequest request,
-		BindingResult bindingResult,
 		Authentication authentication) {
-
-		if (bindingResult.hasErrors()) {
-			String errorMessage = bindingResult.getFieldErrors().get(0).getDefaultMessage();
-			log.warn("옷 등록 실패 - 유효성 검사 오류: {}", errorMessage);
-			return ResponseEntity.badRequest()
-				.body(ApiResponseDto.error(errorMessage));
-		}
-
-		try {
-			String userId = authentication.getName();
-
-			log.info("옷 등록 요청: userId={}, name={}", userId, request.getName());
-
-			clothesService.createClothes(request, userId);
-
-			return ResponseEntity.ok(
-				ApiResponseDto.success("옷이 성공적으로 등록되었습니다."));
-		} catch (IllegalArgumentException e) {
-			log.warn("옷 등록 실패 (잘못된 요청): {}", e.getMessage());
-			return ResponseEntity.badRequest()
-				.body(ApiResponseDto.error(e.getMessage()));
-		} catch (Exception e) {
-			log.error("옷 등록 실패", e);
-			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-				.body(ApiResponseDto.error("옷 등록 중 오류가 발생했습니다." + e.getMessage()));
-		}
+		clothesService.createClothes(request, authentication.getName());
+		return ResponseEntity.ok(ApiResponseDto.success("옷이 성공적으로 등록되었습니다."));
 	}
 
 	@PutMapping("/{clothesId}")
 	public ResponseEntity<ApiResponseDto<Void>> updateClothes(
 		@PathVariable String clothesId,
 		@Valid ClothesRequest request,
-		BindingResult bindingResult,
 		Authentication authentication) {
-
-		if (bindingResult.hasErrors()) {
-			String errorMessage = bindingResult.getFieldErrors().get(0).getDefaultMessage();
-			log.warn("옷 수정 실패 - 유효성 검사 오류: {}", errorMessage);
-			return ResponseEntity.badRequest()
-				.body(ApiResponseDto.error(errorMessage));
-		}
-
-		try {
-			String userId = authentication.getName();
-
-			log.info("옷 수정 요청: clothesId={}, userId={}, deletedFileIds={}",
-				clothesId, userId, request.getDeletedFileIds());
-
-			clothesService.updateClothes(clothesId, request, userId);
-
-			log.info("옷 수정 완료: clothesId={}", clothesId);
-			return ResponseEntity.ok(
-				ApiResponseDto.success("옷이 성공적으로 수정되었습니다.", null));
-		} catch (IllegalArgumentException e) {
-			log.warn("옷 수정 실패 (잘못된 요청): {}", e.getMessage());
-			return ResponseEntity.badRequest()
-				.body(ApiResponseDto.error(e.getMessage()));
-		} catch (Exception e) {
-			log.error("옷 수정 실패", e);
-			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-				.body(ApiResponseDto.error("옷 수정 중 오류가 발생했습니다." + e.getMessage()));
-		}
+		clothesService.updateClothes(clothesId, request, authentication.getName());
+		return ResponseEntity.ok(ApiResponseDto.success("옷이 성공적으로 수정되었습니다.", null));
 	}
 
 	@GetMapping
 	public ResponseEntity<ApiResponseDto<List<ClothesResponse>>> getUserClothes(
 		Authentication authentication) {
-		try {
-			String userId = authentication.getName();
-
-			log.info("옷 목록 조회 요청: userId={}", userId);
-
-			List<ClothesResponse> clothesList = clothesService.getUserClothes(userId);
-
-			log.info("옷 목록 조회 완료: count={}", clothesList.size());
-			return ResponseEntity.ok(
-				ApiResponseDto.success("옷 목록 조회 성공", clothesList));
-		} catch (Exception e) {
-			log.error("옷 목록 조회 실패", e);
-			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-				.body(ApiResponseDto.error("옷 목록 조회 중 오류가 발생했습니다."));
-		}
+		List<ClothesResponse> clothesList = clothesService.getUserClothes(authentication.getName());
+		return ResponseEntity.ok(ApiResponseDto.success("옷 목록 조회 성공", clothesList));
 	}
 
 	@GetMapping("/{clothesId}")
 	public ResponseEntity<ApiResponseDto<ClothesDetailResponse>> getClothesDetail(
 		@PathVariable String clothesId,
 		Authentication authentication) {
-		try {
-			String userId = authentication.getName();
-
-			log.info("옷 상세 조회 요청: clothesId={}, userId={}", clothesId, userId);
-
-			ClothesDetailResponse clothes = clothesService.getClothesDetail(clothesId, userId);
-
-			log.info("옷 상세 조회 완료: clothesId={}", clothesId);
-			return ResponseEntity.ok(
-				ApiResponseDto.success("옷 상세 조회 성공", clothes));
-		} catch (IllegalArgumentException e) {
-			log.warn("옷 상세 조회 실패 (잘못된 요청): {}", e.getMessage());
-			return ResponseEntity.badRequest()
-				.body(ApiResponseDto.error(e.getMessage()));
-		} catch (Exception e) {
-			log.error("옷 상세 조회 실패", e);
-			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-				.body(ApiResponseDto.error("옷 상세 조회 중 오류가 발생했습니다."));
-		}
+		ClothesDetailResponse clothes = clothesService.getClothesDetail(clothesId, authentication.getName());
+		return ResponseEntity.ok(ApiResponseDto.success("옷 상세 조회 성공", clothes));
 	}
 
 	@DeleteMapping("/{clothesId}")
 	public ResponseEntity<ApiResponseDto<Void>> deleteClothes(
 		@PathVariable String clothesId,
 		Authentication authentication) {
-		try {
-			String userId = authentication.getName();
-
-			log.info("옷 삭제 요청: clothesId={}, userId={}", clothesId, userId);
-
-			clothesService.deleteClothes(clothesId, userId);
-
-			log.info("옷 삭제 완료: clothesId={}", clothesId);
-			return ResponseEntity.ok(
-				ApiResponseDto.success("옷이 성공적으로 삭제되었습니다.", null));
-		} catch (IllegalArgumentException e) {
-			log.warn("옷 삭제 실패 (잘못된 요청): {}", e.getMessage());
-			return ResponseEntity.badRequest()
-				.body(ApiResponseDto.error(e.getMessage()));
-		} catch (Exception e) {
-			log.error("옷 삭제 실패", e);
-			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-				.body(ApiResponseDto.error("옷 삭제 중 오류가 발생했습니다."));
-		}
+		clothesService.deleteClothes(clothesId, authentication.getName());
+		return ResponseEntity.ok(ApiResponseDto.success("옷이 성공적으로 삭제되었습니다.", null));
 	}
 
 	@DeleteMapping("/bulk")
 	public ResponseEntity<ApiResponseDto<Void>> bulkDeleteClothes(
 		@RequestBody List<String> clothesIds,
 		Authentication authentication) {
-		try {
-			String userId = authentication.getName();
-
-			log.info("옷 일괄 삭제 요청: count={}, userId={}", clothesIds.size(), userId);
-
-			clothesService.bulkDeleteClothes(clothesIds, userId);
-
-			log.info("옷 일괄 삭제 완료: count={}", clothesIds.size());
-			return ResponseEntity.ok(
-				ApiResponseDto.success("선택한 옷이 성공적으로 삭제되었습니다.", null));
-		} catch (IllegalArgumentException e) {
-			log.warn("옷 일괄 삭제 실패 (잘못된 요청): {}", e.getMessage());
-			return ResponseEntity.badRequest()
-				.body(ApiResponseDto.error(e.getMessage()));
-		} catch (Exception e) {
-			log.error("옷 일괄 삭제 실패", e);
-			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-				.body(ApiResponseDto.error("옷 일괄 삭제 중 오류가 발생했습니다."));
-		}
+		clothesService.bulkDeleteClothes(clothesIds, authentication.getName());
+		return ResponseEntity.ok(ApiResponseDto.success("선택한 옷이 성공적으로 삭제되었습니다.", null));
 	}
 }

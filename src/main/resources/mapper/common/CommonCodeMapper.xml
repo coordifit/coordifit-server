@@ -66,4 +66,13 @@
         WHERE parent_code_id = #{parentCodeId}
         AND is_active = 'Y'
     </select>
+
+    <select id="selectCommonCodeByCodeId" resultType="com.miracle.coordifit.common.model.CommonCode">
+        SELECT 
+            code_id,
+            code_name,
+            is_active
+        FROM common_codes
+        WHERE code_id = #{codeId}
+    </select>
 </mapper>

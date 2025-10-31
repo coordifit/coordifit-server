@@ -13,6 +13,8 @@ public interface ICommonCodeService {
 
 	Map<String, CommonCode> getCommonCodes();
 
+	CommonCode getCommonCodeByCodeId(String codeId);
+
 	CategoryResponseDto getCategoryData();
 
 	void updateCommonCode(CommonCode commonCode, String codeId, String userId);

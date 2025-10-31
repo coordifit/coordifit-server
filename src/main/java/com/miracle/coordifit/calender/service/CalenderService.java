@@ -8,7 +8,6 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 
-import org.springframework.dao.DuplicateKeyException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
@@ -22,6 +21,7 @@ import com.miracle.coordifit.calender.model.DailyLook;
 import com.miracle.coordifit.calender.model.DailyLookItem;
 import com.miracle.coordifit.calender.model.MostWornClothesDto;
 import com.miracle.coordifit.calender.repository.CalenderRepository;
+import com.miracle.coordifit.clothes.repository.ClothesRepository;
 import com.miracle.coordifit.common.aspect.SaveHistory;
 import com.miracle.coordifit.common.model.FileInfo;
 import com.miracle.coordifit.common.service.IFileService;
@@ -35,12 +35,12 @@ import lombok.extern.slf4j.Slf4j;
 public class CalenderService implements ICalenderService {
 	private final CalenderRepository calenderRepository;
 	private final DailyLookMapper dailyLookMapper;
+	private final ClothesRepository clothesRepository;
 	private final IFileService fileservice;
 	private final ObjectMapper objectMapper;
 
 	@Override
 	@Transactional
-	@SaveHistory(entityType = "DAILYLOOKS", actionType = "DELETE")
 	public DailyLook deleteDailyLookByDate(String userId, String wearDate) {
 
 		Optional<DailyLook> existing = calenderRepository.getDailyLookByDate(userId, wearDate);
@@ -53,6 +53,10 @@ public class CalenderService implements ICalenderService {
 		DailyLook target = existing.get();
 
 		try {
+			if (!LocalDate.parse(target.getWearDate().substring(0, 10)).isAfter(LocalDate.now())) {
+				clothesRepository.decreaseWearCountByClothesIds(target.getDailylookId(), userId);
+			}
+			clothesRepository.updateLastWornDateByDailylookId(target.getDailylookId(), userId);
 			int deletedItems = calenderRepository.deleteDailyLookItemsByDailyLookId(target.getDailylookId());
 			log.info(">>>>> deleted {} coordi items for {}", deletedItems, target.getDailylookId());
 		} catch (Exception e) {
@@ -131,25 +135,26 @@ public class CalenderService implements ICalenderService {
 			throw new IllegalStateException("dailyLookId가 설정되지 않았습니다.");
 		}
 
-		deleteDailyLookItemsByDailyLookId(existing.getDailylookId());
+		if (!LocalDate.parse(existing.getWearDate().substring(0, 10)).isAfter(LocalDate.now())) {
+			clothesRepository.decreaseWearCountByClothesIds(existing.getDailylookId(), userId);
+		}
+		clothesRepository.updateLastWornDateByDailylookId(existing.getDailylookId(), userId);
+		calenderRepository.deleteDailyLookItemsByDailyLookId(existing.getDailylookId());
+
 		insertDailyLookItem(itemsJson, dailyLook);
 
 		return dailyLook;
 	}
 
-	@Override
-	@Transactional
-	public void insertDailyLookItem(String itemsJson, DailyLook dailyLook) {
+	private void insertDailyLookItem(String itemsJson, DailyLook dailyLook) {
 		List<DailyLookItem> items = parseItemsJson(itemsJson, dailyLook);
-		log.info("parsed items : {}", items);
 
 		for (DailyLookItem item : items) {
-			try {
-				calenderRepository.insertDailyLookItem(item);
-			} catch (DuplicateKeyException e) {
-				log.warn("이미 등록된 아이템: dailylookId={}, clothesId={}",
-					item.getDailylookId(), item.getClothesId());
+			calenderRepository.insertDailyLookItem(item);
+			if (!LocalDate.parse(item.getWearDate().toString()).isAfter(LocalDate.now())) {
+				clothesRepository.increaseWearCountByClothesId(item);
 			}
+			clothesRepository.updateLastWornDateByClothesId(item);
 		}
 	}
 
@@ -205,11 +210,6 @@ public class CalenderService implements ICalenderService {
 			.mostWornClothesOverall(mostWornClothes)
 			.mostWornClothesThisMonth(mostWornClothesByMonth)
 			.build();
-	}
-
-	@Override
-	public void deleteDailyLookItemsByDailyLookId(String dailylookId) {
-		calenderRepository.deleteDailyLookItemsByDailyLookId(dailylookId);
 	}
 
 	private List<DailyLookItem> parseItemsJson(String itemsJson, DailyLook dailyLook) {

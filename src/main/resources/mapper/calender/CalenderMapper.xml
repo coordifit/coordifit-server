@@ -29,7 +29,7 @@
         #{dailylookId},
         #{clothesId},
         #{userId},
-        TO_DATE(#{wearDate}, 'YYYY-MM-DD'),
+        #{wearDate},
         SYSTIMESTAMP,
         #{userId}
     )
