@@ -10,6 +10,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
+import com.miracle.coordifit.calender.repository.CalenderRepository;
 import com.miracle.coordifit.clothes.dto.ClothesDetailResponse;
 import com.miracle.coordifit.clothes.dto.ClothesRequest;
 import com.miracle.coordifit.clothes.dto.ClothesResponse;
@@ -30,6 +31,7 @@ public class ClothesService implements IClothesService {
 
 	private final ClothesRepository clothesRepository;
 	private final IFileService fileService;
+	private final CalenderRepository calenderRepository;
 
 	@Override
 	@Transactional
@@ -178,6 +180,8 @@ public class ClothesService implements IClothesService {
 		if (result <= 0) {
 			throw new IllegalArgumentException("옷 정보를 찾을 수 없거나 삭제할 수 없습니다.");
 		}
+
+		calenderRepository.deleteDailyLookByClothesId(clothesId, userId);
 
 		log.info("옷 삭제 완료: clothesId={}", clothesId);
 		return clothes;

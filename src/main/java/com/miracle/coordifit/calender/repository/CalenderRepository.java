@@ -46,4 +46,6 @@ public interface CalenderRepository {
 	MostWornClothesDto selectMostWornClothesByMonth(String userId, String yearMonth);
 
 	MostWornClothesDto selectMostWornClothes(String userId);
+
+	int deleteDailyLookByClothesId(@Param("clothesId") String clothesId, @Param("userId") String userId);
 }

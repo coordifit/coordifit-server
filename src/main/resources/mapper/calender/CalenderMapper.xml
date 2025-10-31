@@ -146,4 +146,20 @@
       FETCH FIRST 1 ROWS ONLY
     </select>
 
+    <update id="deleteDailyLookByClothesId" parameterType="string">
+      UPDATE dailylooks
+      SET is_active = 'N',
+          updated_by = #{userId},
+          updated_at = SYSTIMESTAMP
+      WHERE is_active = 'Y'
+        AND TRUNC(wear_date) <![CDATA[>]]> TRUNC(SYSDATE)
+        AND EXISTS (
+            SELECT 1
+            FROM dailylook_items di
+            INNER JOIN clothes c ON di.clothes_id = c.clothes_id
+            WHERE di.dailylook_id = dailylooks.dailylook_id
+            AND c.clothes_id = #{clothesId}
+            AND c.is_active = 'N'
+        )
+    </update>
 </mapper>
