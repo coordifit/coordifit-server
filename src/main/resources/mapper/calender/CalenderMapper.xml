@@ -97,39 +97,53 @@
 
     <select id="selectMostWornClothes" resultType="com.miracle.coordifit.calender.model.MostWornClothesDto">
       SELECT
-        C.CLOTHES_ID AS clothesId,
-        C.NAME AS name,
-        FI.S3_URL AS imageUrl,
+        c.clothes_id AS clothesId,
+        c.name AS name,
+        i.s3_url AS imageUrl,
         COUNT(*) AS wearCount
-      FROM DAILYLOOK_ITEMS DI
-      JOIN DAILYLOOKS D ON DI.DAILYLOOK_ID = D.DAILYLOOK_ID
-      JOIN CLOTHES C ON DI.CLOTHES_ID = C.CLOTHES_ID
-      LEFT JOIN CLOTHES_IMAGES CI ON CI.CLOTHES_ID = C.CLOTHES_ID
-      LEFT JOIN FILE_INFO FI ON CI.FILE_ID = FI.FILE_ID
-      WHERE D.USER_ID = #{userId}
-        AND D.IS_ACTIVE = 'Y'
-        AND (C.IS_ACTIVE = 'Y' OR C.IS_ACTIVE IS NULL)
-      GROUP BY C.CLOTHES_ID, C.NAME, FI.S3_URL
+      FROM dailylook_items di
+      INNER JOIN dailylooks d ON di.dailylook_id = d.dailylook_id
+      INNER JOIN clothes c ON di.clothes_id = c.clothes_id
+      INNER JOIN (
+        SELECT
+          ci.clothes_id,
+          f.s3_url,
+          ROW_NUMBER() OVER (PARTITION BY ci.clothes_id ORDER BY ci.created_at) AS rowrum
+        FROM clothes_images ci
+        INNER JOIN file_info f ON ci.file_id = f.file_id
+      ) i ON c.clothes_id = i.clothes_id AND i.rowrum = 1
+      WHERE d.user_id = #{userId}
+      AND d.is_active = 'Y'
+      AND c.is_active = 'Y'
+      GROUP BY c.clothes_id, c.name, i.s3_url
       ORDER BY wearCount DESC
       FETCH FIRST 1 ROWS ONLY
     </select>
 
     <select id="selectMostWornClothesByMonth" resultType="com.miracle.coordifit.calender.model.MostWornClothesDto">
       SELECT
-        C.CLOTHES_ID AS clothesId,
-        C.NAME AS name,
-        FI.S3_URL AS imageUrl,
+        c.clothes_id AS clothesId,
+        c.name AS name,
+        i.s3_url AS imageUrl,
         COUNT(*) AS wearCount
-      FROM DAILYLOOK_ITEMS DI
-      JOIN DAILYLOOKS D ON DI.DAILYLOOK_ID = D.DAILYLOOK_ID
-      JOIN CLOTHES C ON DI.CLOTHES_ID = C.CLOTHES_ID
-      LEFT JOIN CLOTHES_IMAGES CI ON CI.CLOTHES_ID = C.CLOTHES_ID
-      LEFT JOIN FILE_INFO FI ON CI.FILE_ID = FI.FILE_ID 
-      WHERE D.USER_ID = #{userId}
-        AND D.IS_ACTIVE = 'Y'
-        AND TO_CHAR(D.WEAR_DATE, 'YYYY-MM') = #{yearMonth} 
-      GROUP BY C.CLOTHES_ID, C.NAME, FI.S3_URL
+      FROM dailylook_items di
+      INNER JOIN dailylooks d ON di.dailylook_id = d.dailylook_id
+      INNER JOIN clothes c ON di.clothes_id = c.clothes_id
+      INNER JOIN (
+        SELECT
+          ci.clothes_id,
+          f.s3_url,
+          ROW_NUMBER() OVER (PARTITION BY ci.clothes_id ORDER BY ci.created_at) AS rowrum
+        FROM clothes_images ci
+        INNER JOIN file_info f ON ci.file_id = f.file_id
+      ) i ON c.clothes_id = i.clothes_id AND i.rowrum = 1 
+      WHERE d.user_id = #{userId}
+      AND d.is_active = 'Y'
+      AND c.is_active = 'Y'
+      AND TO_CHAR(d.wear_date, 'YYYY-MM') = #{yearMonth} 
+      GROUP BY c.clothes_id, c.name, i.s3_url
       ORDER BY wearCount DESC
       FETCH FIRST 1 ROWS ONLY
     </select>
+
 </mapper>
