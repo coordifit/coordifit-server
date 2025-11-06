@@ -10,6 +10,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
+import com.miracle.coordifit.calender.repository.CalenderRepository;
 import com.miracle.coordifit.clothes.dto.ClothesDetailResponse;
 import com.miracle.coordifit.clothes.dto.ClothesRequest;
 import com.miracle.coordifit.clothes.dto.ClothesResponse;
@@ -18,7 +19,7 @@ import com.miracle.coordifit.clothes.model.ClothesImage;
 import com.miracle.coordifit.clothes.repository.ClothesRepository;
 import com.miracle.coordifit.common.aspect.SaveHistory;
 import com.miracle.coordifit.common.model.FileInfo;
-import com.miracle.coordifit.common.service.IFileService;
+import com.miracle.coordifit.common.service.BackgroundRemovalService;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -29,7 +30,8 @@ import lombok.extern.slf4j.Slf4j;
 public class ClothesService implements IClothesService {
 
 	private final ClothesRepository clothesRepository;
-	private final IFileService fileService;
+	private final BackgroundRemovalService backgroundRemovalService;
+	private final CalenderRepository calenderRepository;
 
 	@Override
 	@Transactional
@@ -64,7 +66,7 @@ public class ClothesService implements IClothesService {
 
 		for (MultipartFile file : request.getFiles()) {
 			if (file != null && !file.isEmpty()) {
-				FileInfo uploadedFile = fileService.uploadFile(file);
+				FileInfo uploadedFile = backgroundRemovalService.removeBackgroundAndUpload(file);
 
 				ClothesImage clothesImage = ClothesImage.builder()
 					.clothesId(clothesId)
@@ -120,7 +122,7 @@ public class ClothesService implements IClothesService {
 		if (request.getFiles() != null && !request.getFiles().isEmpty()) {
 			for (MultipartFile file : request.getFiles()) {
 				if (file != null && !file.isEmpty()) {
-					FileInfo uploadedFile = fileService.uploadFile(file);
+					FileInfo uploadedFile = backgroundRemovalService.removeBackgroundAndUpload(file);
 
 					ClothesImage clothesImage = ClothesImage.builder()
 						.clothesId(clothesId)
@@ -179,6 +181,8 @@ public class ClothesService implements IClothesService {
 			throw new IllegalArgumentException("옷 정보를 찾을 수 없거나 삭제할 수 없습니다.");
 		}
 
+		calenderRepository.deleteDailyLookByClothesId(clothesId, userId);
+
 		log.info("옷 삭제 완료: clothesId={}", clothesId);
 		return clothes;
 	}
@@ -207,6 +211,8 @@ public class ClothesService implements IClothesService {
 			} else {
 				log.warn("옷 삭제 실패: clothesId={}", clothesId);
 			}
+
+			calenderRepository.deleteDailyLookByClothesId(clothesId, userId);
 		}
 
 		log.info("옷 일괄 삭제 완료: count={}", clothesList.size());
