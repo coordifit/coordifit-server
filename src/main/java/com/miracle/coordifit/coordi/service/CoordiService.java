@@ -2,6 +2,7 @@ package com.miracle.coordifit.coordi.service;
 
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -264,22 +265,32 @@ public class CoordiService implements ICoordiService {
 
 	@Override
 	@Transactional
-	public void deleteCoordis(List<String> coordiIds, String userId) {
+	public List<Coordi> deleteCoordis(List<String> coordiIds, String userId) {
 		if (coordiIds == null || coordiIds.isEmpty()) {
 			throw new IllegalArgumentException("삭제할 코디 ID 목록이 비어 있습니다.");
 		}
 
 		log.info(">>>>> deleteCoordis - 요청된 ID 개수: {}", coordiIds.size());
 
+		List<Coordi> deletedCoordis = new ArrayList<>();
+
 		for (String coordiId : coordiIds) {
 			try {
-				deleteCoordi(coordiId, userId); // 기존 단일 삭제 메서드 재사용
+				Coordi deletedCoordi = deleteCoordi(coordiId, userId); // 기존 단일 삭제 메서드 재사용
+
+				if (deletedCoordi != null) {
+					deletedCoordis.add(deletedCoordi);
+					log.debug(">>>>> 삭제 성공: {}", coordiId);
+				} else {
+					log.warn(">>>>> 삭제된 Coordi가 null입니다. (coordiId={})", coordiId);
+				}
 			} catch (Exception e) {
 				log.error(">>>>> deleteCoordi 실패 (coordiId={}): {}", coordiId, e.getMessage());
 			}
 		}
 
 		log.info(">>>>> deleteCoordis 완료 - 총 {}개 요청 처리", coordiIds.size());
+		return deletedCoordis;
 	}
 
 	private List<CoordiItem> parseCanvasJson(String canvasJson, Coordi coordi) {

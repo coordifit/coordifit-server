@@ -2,6 +2,7 @@ name: coordifit
 
 networks:
   app_network:
+    name: app_network
     driver: bridge
 
 volumes:
@@ -73,7 +74,6 @@ services:
       - SPRING_PROFILES_ACTIVE=prod
     depends_on:
       - spring-boot
-      - fastapi
 
     ports:
       - "80:80"
@@ -104,4 +104,7 @@ services:
       - app_network
     ports:
       - "8000:8000"
-    restart: unless-stopped
+    restart: "no"
+    volumes:
+      - /home/ubuntu/coordifit/ocr-models:/root/.EasyOCR
+      - /home/ubuntu/coordifit/u2net-model:/root/.u2net

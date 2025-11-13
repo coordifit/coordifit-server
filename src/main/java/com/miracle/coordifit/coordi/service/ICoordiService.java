@@ -24,5 +24,5 @@ public interface ICoordiService {
 
 	Coordi deleteCoordi(String coordiId, String userId);
 
-	void deleteCoordis(List<String> coordiIds, String userId);
+	List<Coordi> deleteCoordis(List<String> coordiIds, String userId);
 }
